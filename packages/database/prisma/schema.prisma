@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  MENTEE
+  MENTOR
+  ADMIN
+}
+
+enum MentorStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  REFUNDED
+}
+
+enum WaitlistAudience {
+  MENTEE
+  MENTOR
+}
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  role           UserRole
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  mentorProfile  MentorProfile?
+  menteeProfile  MenteeProfile?
+  mentorBookings Booking[]      @relation("MentorBookings")
+  menteeBookings Booking[]      @relation("MenteeBookings")
+  reviewsGiven   Review[]       @relation("ReviewsGiven")
+}
+
+model MentorProfile {
+  id                String       @id @default(cuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline          String
+  bio               String
+  industry          String
+  yearsOfExperience Int
+  company           String?
+  jobTitle          String?
+  linkedinUrl       String?
+  pricePerSession   Int
+  currency          String       @default("NGN")
+  status            MentorStatus @default(DRAFT)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model MenteeProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careerStage String?
+  goals       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  mentorId        String
+  mentor          User          @relation("MentorBookings", fields: [mentorId], references: [id])
+  menteeId        String
+  mentee          User          @relation("MenteeBookings", fields: [menteeId], references: [id])
+  startsAt        DateTime
+  durationMinutes Int
+  status          BookingStatus @default(PENDING_PAYMENT)
+  notes           String?
+  meetingUrl      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  payment         Payment?
+  session         Session?
+  review          Review?
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  bookingId         String        @unique
+  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount            Int
+  currency          String        @default("NGN")
+  status            PaymentStatus @default(PENDING)
+  provider          String        @default("PAYSTACK")
+  providerReference String?       @unique
+  authorizationUrl  String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  bookingId        String    @unique
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  completedAt      DateTime?
+  completedMinutes Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("ReviewsGiven", fields: [authorId], references: [id])
+  rating    Int
+  comment   String?
+  npsScore  Int?
+  createdAt DateTime @default(now())
+}
+
+model WaitlistEntry {
+  id          String           @id @default(cuid())
+  email       String
+  firstName   String
+  lastName    String
+  audience    WaitlistAudience
+  location    String?
+  expertise   String
+  currentRole String
+  company     String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([email, audience])
+  @@index([audience])
+  @@index([createdAt])
+}
