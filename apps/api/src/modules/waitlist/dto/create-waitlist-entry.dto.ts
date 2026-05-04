@@ -4,7 +4,8 @@ export type CreateWaitlistEntryDto = {
   email: string;
   audience: 'MENTEE' | 'MENTOR';
   location?: string;
-  expertise: string;
+  expertise?: string;
   currentRole: string;
-  company: string;
+  company?: string;
+  levelOfExperience?: string;
 };

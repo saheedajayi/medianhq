@@ -25,6 +25,7 @@ export class WaitlistService {
         expertise: data.expertise,
         currentRole: data.currentRole,
         company: data.company,
+        levelOfExperience: data.levelOfExperience,
       },
       select: {
         id: true,
@@ -47,9 +48,7 @@ export class WaitlistService {
     const firstName = this.requiredString(dto.firstName, 'firstName');
     const lastName = this.requiredString(dto.lastName, 'lastName');
     const email = this.requiredString(dto.email, 'email').toLowerCase();
-    const expertise = this.requiredString(dto.expertise, 'expertise');
     const currentRole = this.requiredString(dto.currentRole, 'currentRole');
-    const company = this.requiredString(dto.company, 'company');
     const location = this.optionalString(dto.location);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -60,6 +59,19 @@ export class WaitlistService {
       throw new BadRequestException('A valid waitlist audience is required.');
     }
 
+    const expertise =
+      dto.audience === WaitlistAudience.MENTOR
+        ? this.requiredString(dto.expertise, 'expertise')
+        : this.optionalString(dto.expertise);
+    const company =
+      dto.audience === WaitlistAudience.MENTOR
+        ? this.requiredString(dto.company, 'company')
+        : this.optionalString(dto.company);
+    const levelOfExperience =
+      dto.audience === WaitlistAudience.MENTEE
+        ? this.requiredString(dto.levelOfExperience, 'levelOfExperience')
+        : this.optionalString(dto.levelOfExperience);
+
     return {
       firstName,
       lastName,
@@ -69,6 +81,7 @@ export class WaitlistService {
       expertise,
       currentRole,
       company,
+      levelOfExperience,
     };
   }
 

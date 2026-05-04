@@ -24,13 +24,6 @@ export const metadata: Metadata = {
     "Join Median's waitlist for vetted mentorship built for ambitious African professionals.",
 };
 
-const mentorBenefits = [
-  "Earn from sessions",
-  "Smart booking calendar",
-  "Featured mentor placement",
-  "Manage mentee roster",
-];
-
 const featureCards = [
   {
     icon: "👥",
@@ -174,7 +167,7 @@ export default function WaitlistPage() {
           <span>Professionals already on the waitlist</span>
         </div>
 
-        <WaitlistForm benefits={mentorBenefits} />
+        <WaitlistForm />
       </section>
 
       <section

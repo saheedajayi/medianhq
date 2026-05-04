@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/base/button";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,6 @@ export function AudienceSwitch({
 }) {
   const [internalSelected, setInternalSelected] = useState<Audience>("mentors");
   const selected = value ?? internalSelected;
-  const activeIndex = options.findIndex((option) => option.value === selected);
 
   return (
     <div
@@ -29,11 +29,6 @@ export function AudienceSwitch({
       role="radiogroup"
       aria-label="Choose waitlist audience"
     >
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-primary shadow-sm transition-transform duration-300 ease-out"
-        style={{ transform: `translateX(${activeIndex * 100}%)` }}
-      />
       {options.map((option) => {
         const isActive = selected === option.value;
 
@@ -53,6 +48,14 @@ export function AudienceSwitch({
               isActive ? "text-white" : "text-text-700"
             )}
           >
+            {isActive ? (
+              <motion.span
+                layoutId="waitlist-audience-thumb"
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 rounded-lg bg-primary shadow-sm"
+                transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              />
+            ) : null}
             {option.label}
           </Button>
         );

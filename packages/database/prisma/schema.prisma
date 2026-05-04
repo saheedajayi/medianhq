@@ -144,9 +144,10 @@ model WaitlistEntry {
   lastName    String
   audience    WaitlistAudience
   location    String?
-  expertise   String
+  expertise   String?
   currentRole String
-  company     String
+  company     String?
+  levelOfExperience String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 

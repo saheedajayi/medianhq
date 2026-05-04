@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type EmptyStateProps = {
   eyebrow: string;
   title: string;
@@ -7,9 +9,9 @@ type EmptyStateProps = {
 export function EmptyState({ eyebrow, title, description }: EmptyStateProps) {
   return (
     <main className="grid min-h-svh items-center bg-background p-8 text-foreground">
-      <a className="absolute left-[5vw] top-8 text-xl font-extrabold" href="/">
+      <Link className="absolute left-[5vw] top-8 text-xl font-extrabold" href="/">
         Median
-      </a>
+      </Link>
       <section className="mx-auto w-full max-w-[680px] rounded-lg border border-border bg-card p-8">
         <span className="mb-4 inline-block text-xs font-extrabold uppercase text-primary">
           {eyebrow}

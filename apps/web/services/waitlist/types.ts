@@ -8,9 +8,10 @@ export type WaitlistPayload = {
   email: string;
   audience: WaitlistAudience;
   location?: string;
-  expertise: string;
+  expertise?: string;
   currentRole: string;
-  company: string;
+  company?: string;
+  levelOfExperience?: string;
 };
 
 export type WaitlistFieldErrors = Partial<
