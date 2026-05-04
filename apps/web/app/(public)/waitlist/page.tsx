@@ -141,8 +141,8 @@ export default function WaitlistPage() {
         className="flex h-[100px] w-full items-center justify-between px-5 sm:px-8 lg:px-[100px]"
       >
         <Logo />
-        <Button asChild className="hidden h-12 px-5 text-sm text-white font-semibold sm:inline-flex">
-          <a href="#waitlist-form">Join waitlist</a>
+        <Button asChild className="hidden h-12 px-5 text-sm font-semibold sm:inline-flex">
+          <a href="#waitlist-form" className="!text-white">Join waitlist</a>
         </Button>
       </header>
 
