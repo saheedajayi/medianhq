@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { type FormEvent, type ReactNode } from "react";
 import { ArrowRight, Check, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 
@@ -14,11 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/base/select";
-import { apiFetch } from "@/lib/api/client";
+import { useWaitlistStore } from "@/features/waitlist/store";
+import { useCreateWaitlistEntry } from "@/services/waitlist/queries/waitlist.queries";
 import { AudienceSwitch } from "./audience-switch";
-
-type Audience = "mentees" | "mentors";
-type SubmitState = "idle" | "submitting" | "success" | "error";
 
 const waitlistSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required."),
@@ -38,18 +36,6 @@ const waitlistSchema = z.object({
   currentRole: z.string().trim().min(1, "Current role is required."),
   company: z.string().trim().min(1, "Company is required."),
 });
-
-type WaitlistPayload = z.infer<typeof waitlistSchema>;
-type FieldErrors = Partial<Record<keyof WaitlistPayload, string>>;
-
-type WaitlistResponse = {
-  status: "ok";
-  entry: {
-    id: string;
-    email: string;
-    audience: "MENTEE" | "MENTOR";
-  };
-};
 
 function Field({
   id,
@@ -78,12 +64,19 @@ function Field({
 }
 
 export function WaitlistForm({ benefits }: { benefits: string[] }) {
-  const [audience, setAudience] = useState<Audience>("mentors");
-  const [submitState, setSubmitState] = useState<SubmitState>("idle");
-  const [message, setMessage] = useState("");
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const audience = useWaitlistStore((state) => state.audience);
+  const submitState = useWaitlistStore((state) => state.submitState);
+  const message = useWaitlistStore((state) => state.message);
+  const errors = useWaitlistStore((state) => state.errors);
+  const setAudience = useWaitlistStore((state) => state.setAudience);
+  const setSubmitState = useWaitlistStore((state) => state.setSubmitState);
+  const setMessage = useWaitlistStore((state) => state.setMessage);
+  const setErrors = useWaitlistStore((state) => state.setErrors);
+  const resetFeedback = useWaitlistStore((state) => state.resetFeedback);
+  const waitlistMutation = useCreateWaitlistEntry();
+  const createWaitlistEntry = waitlistMutation.mutate;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const form = event.currentTarget;
@@ -99,8 +92,7 @@ export function WaitlistForm({ benefits }: { benefits: string[] }) {
       company: String(formData.get("company") ?? ""),
     });
 
-    setMessage("");
-    setErrors({});
+    resetFeedback();
 
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
@@ -122,23 +114,21 @@ export function WaitlistForm({ benefits }: { benefits: string[] }) {
 
     setSubmitState("submitting");
 
-    try {
-      await apiFetch<WaitlistResponse>("/waitlist", {
-        method: "POST",
-        body: JSON.stringify(result.data),
-      });
-
-      form.reset();
-      setSubmitState("success");
-      setErrors({});
-      setMessage("You're on the waitlist. We'll be in touch soon.");
-    } catch {
-      setSubmitState("error");
-      setMessage("We couldn't save your details. Please try again.");
-    }
+    createWaitlistEntry(result.data, {
+      onSuccess: () => {
+        form.reset();
+        setSubmitState("success");
+        setErrors({});
+        setMessage("You're on the waitlist. We'll be in touch soon.");
+      },
+      onError: () => {
+        setSubmitState("error");
+        setMessage("We couldn't save your details. Please try again.");
+      },
+    });
   }
 
-  const isSubmitting = submitState === "submitting";
+  const isSubmitting = submitState === "submitting" || waitlistMutation.isPending;
 
   return (
     <>

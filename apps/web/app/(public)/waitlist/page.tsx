@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
-import { ArrowRight, Square, X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 
 import {
   Accordion,
@@ -33,31 +33,37 @@ const mentorBenefits = [
 
 const featureCards = [
   {
+    icon: "👥",
     title: "Group Calls",
     description:
       "Learn alongside peers in small, curated group sessions led by experienced mentors.",
   },
   {
+    icon: "🤝",
     title: "One-on-One Sessions",
     description:
       "Deep, focused conversations with a mentor dedicated entirely to your goals.",
   },
   {
+    icon: "✅",
     title: "Vetted mentors, only",
     description:
       "Every mentor on Median is reviewed for experience, expertise, and credibility.",
   },
   {
+    icon: "💡",
     title: "Become a thought leader",
     description:
       "Your verified profile and session activity establish you as a trusted voice in your field.",
   },
   {
+    icon: "🙌",
     title: "Opportunity to give back",
     description:
       "Help the next generation of professionals navigate their careers with clarity.",
   },
   {
+    icon: "💸",
     title: "Earning potential",
     description:
       "Your expertise is valuable. Median helps you monetise it with zero friction.",
@@ -109,7 +115,7 @@ const faqs = [
   },
 ];
 
-const defaultFaq = faqs[1]?.question ?? faqs[0]?.question;
+const defaultFaq = faqs[0]?.question;
 
 function Logo({ inverse = false }: { inverse?: boolean }) {
   return (
@@ -135,7 +141,7 @@ export default function WaitlistPage() {
         className="flex h-[100px] w-full items-center justify-between px-5 sm:px-8 lg:px-[100px]"
       >
         <Logo />
-        <Button asChild className="hidden h-12 px-5 text-sm font-semibold sm:inline-flex">
+        <Button asChild className="hidden h-12 px-5 text-sm text-white font-semibold sm:inline-flex">
           <a href="#waitlist-form">Join waitlist</a>
         </Button>
       </header>
@@ -192,8 +198,8 @@ export default function WaitlistPage() {
               className="border-text-100 bg-white"
             >
               <CardContent className="p-6">
-                <div className="mb-6 inline-flex size-8 items-center justify-center rounded-md bg-accent-50 text-[#4e0703]">
-                  <Square className="size-4 fill-current" />
+                <div className="mb-6 inline-flex size-8 items-center justify-center rounded-md bg-accent-50 text-lg">
+                  <span aria-hidden="true">{card.icon}</span>
                 </div>
                 <h3 className="text-base font-bold text-text-800">
                   {card.title}
