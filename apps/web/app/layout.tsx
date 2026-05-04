@@ -13,8 +13,70 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Median",
-  description: "Vetted mentorship for African professionals.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.medianhq.co",
+  ),
+  title: {
+    default: "Median | Vetted Mentorship for African Professionals",
+    template: "%s | Median",
+  },
+  description:
+    "Median connects ambitious African professionals with vetted mentors for focused 1-on-1 sessions, group calls, and practical career guidance.",
+  applicationName: "Median",
+  keywords: [
+    "Median",
+    "mentorship",
+    "African professionals",
+    "career mentorship",
+    "business mentors",
+    "technology mentors",
+    "finance mentors",
+    "consulting mentors",
+  ],
+  authors: [{ name: "MedianHQ" }],
+  creator: "MedianHQ",
+  publisher: "MedianHQ",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "Median",
+    title: "Median | Vetted Mentorship for African Professionals",
+    description:
+      "Meet vetted mentors for real advice, structured sessions, and career guidance built for ambitious African professionals.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Median | Vetted Mentorship for African Professionals",
+    description:
+      "Meet vetted mentors for real advice, structured sessions, and career guidance built for ambitious African professionals.",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon_io/favicon.ico" },
+      {
+        url: "/favicon_io/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+      {
+        url: "/favicon_io/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/favicon_io/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({

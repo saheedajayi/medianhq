@@ -312,7 +312,7 @@ export function WaitlistForm() {
         id="waitlist-form"
         noValidate
         onSubmit={handleSubmit}
-        className="mt-8 grid min-w-0 gap-5 rounded-lg border border-text-200 bg-white p-6 text-left shadow-xs sm:p-8"
+        className="mt-8 grid scroll-mt-8 min-w-0 gap-5 rounded-lg border border-text-200 bg-white p-6 text-left shadow-xs sm:scroll-mt-12 sm:p-8"
         style={{ width: "100%", maxWidth: "min(700px, calc(100vw - 40px))" }}
       >
         <div className="grid gap-5 sm:grid-cols-2">

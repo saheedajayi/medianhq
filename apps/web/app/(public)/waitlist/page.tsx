@@ -9,8 +9,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/base/accordion";
-import { Button } from "@/components/ui/base/button";
 import { Card, CardContent } from "@/components/ui/base/card";
+import { ScrollToWaitlistButton } from "./scroll-to-waitlist-button";
 import { WaitlistForm } from "./waitlist-form";
 
 const poppins = Poppins({
@@ -19,9 +19,26 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Join the Median Waitlist",
+  title: "Join the Waitlist",
   description:
-    "Join Median's waitlist for vetted mentorship built for ambitious African professionals.",
+    "Join Median's waitlist for vetted mentorship, 1-on-1 sessions, group calls, and practical career guidance built for ambitious African professionals.",
+  alternates: {
+    canonical: "/waitlist",
+  },
+  openGraph: {
+    title: "Join the Median Waitlist",
+    description:
+      "Get early access to Median, the mentorship platform connecting ambitious professionals with vetted mentors.",
+    url: "/waitlist",
+    siteName: "Median",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Join the Median Waitlist",
+    description:
+      "Get early access to Median, the mentorship platform connecting ambitious professionals with vetted mentors.",
+  },
 };
 
 const featureCards = [
@@ -74,37 +91,37 @@ const faqs = [
   {
     question: "What's the difference between 1-on-1 sessions and group calls?",
     answer:
-      "One-on-one sessions are private conversations between you and your chosen mentor. Group calls are small, curated sessions where a mentor guides multiple mentees at once.",
+      "1-on-1 sessions are private conversations between you and your chosen mentor, fully tailored to your personal goals and situation. Group calls are small, curated sessions where a mentor guides multiple mentees at once around a shared theme or challenge. Both are structured and outcome-focused; it just depends on what you need.",
   },
   {
     question: "How are mentors vetted?",
     answer:
-      "Our team reviews each application based on professional experience, industry credibility, and the ability to guide others.",
+      "Every mentor applies to join the platform. Our team reviews each application based on professional experience, industry credibility, and their ability to guide others. Only approved mentors appear on the platform, no self-serve onboarding.",
   },
   {
     question: "What industries does Median cover?",
     answer:
-      "We are starting with finance, technology, consulting, and creative fields, then expanding based on waitlist demand.",
+      "We're starting with a focused set of industries to ensure quality, including finance, technology, consulting, and creative fields. We'll expand based on demand from our early community. If you're in a niche industry, join the waitlist and let us know.",
   },
   {
-    question: "How does the application process work for mentors?",
+    question: "How does the application process work for mentor?",
     answer:
-      "Submit an application with your professional background, industry, and areas of expertise. We review it manually, then guide approved mentors through onboarding.",
+      "You submit an application with your professional background, industry, and areas of expertise. Our team reviews it manually, we look for credibility, experience, and genuine willingness to guide others. You'll hear back within 5 business days.",
   },
   {
     question: "How do mentors earn on Median?",
     answer:
-      "Mentors set their own session rates for one-on-one bookings and group calls. Median takes a small platform commission.",
+      "You set your own session rates for 1-on-1 bookings and group calls. Median takes a small platform commission, we'll be fully transparent about the split before you go live. You keep the majority of what you earn.",
   },
   {
     question: "Can mentors choose how much time to commit?",
     answer:
-      "Completely. You control your calendar and availability, accept as many or as few bookings as fit your schedule, and manage commitment around your life.",
+      "Completely. You control your calendar and availability. Accept as many or as few bookings as fits your schedule. There's no minimum commitment, Median works around your life, not the other way around.",
   },
   {
     question: "When will Median launch?",
     answer:
-      "We are actively building and testing. Waitlist members will get early access before the public launch.",
+      "We're actively building and testing. Waitlist members will get early access before the public launch, along with updates on our progress. You'll be the first to know, and the first to benefit.",
   },
 ];
 
@@ -134,9 +151,9 @@ export default function WaitlistPage() {
         className="flex h-[100px] w-full items-center justify-between px-5 sm:px-8 lg:px-[100px]"
       >
         <Logo />
-        <Button asChild className="hidden h-12 px-5 text-sm font-semibold sm:inline-flex">
-          <a href="#waitlist-form" className="!text-white">Join waitlist</a>
-        </Button>
+        <ScrollToWaitlistButton className="hidden h-12 px-5 text-sm font-semibold text-white sm:inline-flex">
+          Join waitlist
+        </ScrollToWaitlistButton>
       </header>
 
       <section
@@ -293,12 +310,12 @@ export default function WaitlistPage() {
             <AccordionItem
               key={faq.question}
               value={faq.question}
-              className="border-text-100 py-1"
+              className="border-accent-150 py-2"
             >
-              <AccordionTrigger className="text-sm font-bold text-text-900 hover:no-underline [&>svg]:rounded-full [&>svg]:bg-[#4e0703] [&>svg]:p-1 [&>svg]:text-white">
+              <AccordionTrigger className="text-base font-bold text-text-900 hover:no-underline">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="max-w-[700px] text-sm leading-6 text-text-600">
+              <AccordionContent className="max-w-[820px] text-base leading-6 text-text-600">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>
@@ -314,12 +331,10 @@ export default function WaitlistPage() {
           Join thousands of professionals building the careers they actually
           want.
         </p>
-        <Button asChild className="mt-8 h-12 gap-3 px-8 text-sm font-bold text-white">
-          <a href="#waitlist-form">
-            Join the waitlist, it&apos;s free
-            <ArrowRight className="size-4" />
-          </a>
-        </Button>
+        <ScrollToWaitlistButton className="mt-8 h-12 gap-3 px-8 text-sm font-bold text-white">
+          Join the waitlist, it&apos;s free
+          <ArrowRight className="size-4" />
+        </ScrollToWaitlistButton>
       </section>
 
       <footer className="flex flex-col gap-8 bg-[#6d0904] px-5 pb-8 text-white sm:px-8">
