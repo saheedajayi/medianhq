@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { MentorStatus } from '@median/shared';
+import { MentorStatus } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
   approveMentor(mentorProfileId: string) {
     return {
       mentorProfileId,
-      status: MentorStatus.Approved,
+      status: MentorStatus.APPROVED,
     };
   }
 

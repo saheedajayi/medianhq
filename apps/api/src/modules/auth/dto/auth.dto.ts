@@ -1,4 +1,4 @@
-import { UserRole } from '@median/shared';
+import type { UserRole } from '@prisma/client';
 
 export type RegisterDto = {
   email: string;

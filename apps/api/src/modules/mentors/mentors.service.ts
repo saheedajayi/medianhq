@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { MentorStatus } from '@median/shared';
+import { MentorStatus } from '@prisma/client';
 import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
 
 @Injectable()
 export class MentorsService {
   listApproved() {
     return {
-      status: MentorStatus.Approved,
+      status: MentorStatus.APPROVED,
       data: [],
     };
   }
 
   apply(dto: CreateMentorProfileDto) {
     return {
-      status: MentorStatus.PendingReview,
+      status: MentorStatus.PENDING_REVIEW,
       profile: dto,
     };
   }

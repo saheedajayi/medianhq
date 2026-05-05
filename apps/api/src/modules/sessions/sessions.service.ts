@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { BookingStatus } from '@median/shared';
+import { BookingStatus } from '@prisma/client';
 
 @Injectable()
 export class SessionsService {
   complete(bookingId: string) {
     return {
       bookingId,
-      status: BookingStatus.Completed,
+      status: BookingStatus.COMPLETED,
     };
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserRole } from '@median/shared';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
