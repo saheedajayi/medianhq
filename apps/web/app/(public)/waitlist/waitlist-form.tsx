@@ -28,10 +28,10 @@ const waitlistContent: Record<
 > = {
   mentees: {
     benefits: [
-      "2 free sessions/month",
-      "AI-powered mentor matching",
-      "Async Q&A threads",
-      "Community Forums",
+      "Live sessions",
+      "AI powered mentor matching",
+      "Unlimited chat with mentors",
+      "Global community",
     ],
   },
   mentors: {

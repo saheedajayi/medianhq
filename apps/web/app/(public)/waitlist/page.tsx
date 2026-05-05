@@ -86,7 +86,7 @@ const faqs = [
   {
     question: "Is Median free to use?",
     answer:
-      "Joining the waitlist is free. We will share pricing and launch access details before public release.",
+      "Joining the waitlist is completely free. Once we launch, mentees may pay per session depending on the mentor. Some mentors may offer free or subsidised sessions. We'll always be transparent about pricing before you book anything.",
   },
   {
     question: "What's the difference between 1-on-1 sessions and group calls?",
@@ -101,7 +101,7 @@ const faqs = [
   {
     question: "What industries does Median cover?",
     answer:
-      "We're starting with a focused set of industries to ensure quality, including finance, technology, consulting, and creative fields. We'll expand based on demand from our early community. If you're in a niche industry, join the waitlist and let us know.",
+      "We're starting with a focused set of industries to ensure quality, including finance, technology, consulting, and business fields. We'll expand based on demand from our early community. If you're in a niche industry, join the waitlist and let us know.",
   },
   {
     question: "How does the application process work for mentor?",
