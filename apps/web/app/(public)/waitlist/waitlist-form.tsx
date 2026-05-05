@@ -2,7 +2,8 @@
 
 import { type FormEvent, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/base/button";
@@ -208,7 +209,6 @@ function Field({
 export function WaitlistForm() {
   const audience = useWaitlistStore((state) => state.audience);
   const submitState = useWaitlistStore((state) => state.submitState);
-  const message = useWaitlistStore((state) => state.message);
   const errors = useWaitlistStore((state) => state.errors);
   const setAudience = useWaitlistStore((state) => state.setAudience);
   const setSubmitState = useWaitlistStore((state) => state.setSubmitState);
@@ -272,10 +272,16 @@ export function WaitlistForm() {
         setSubmitState("success");
         setErrors({});
         setMessage("You're on the waitlist. We'll be in touch soon.");
+        toast.success("You're on the waitlist", {
+          description: "We'll be in touch soon with early access updates.",
+        });
       },
       onError: () => {
         setSubmitState("error");
         setMessage("We couldn't save your details. Please try again.");
+        toast.error("We couldn't save your details", {
+          description: "Please check your connection and try again.",
+        });
       },
     });
   }
@@ -429,25 +435,9 @@ export function WaitlistForm() {
           {isSubmitting ? "Joining..." : "Join the waitlist"}
           <ArrowRight className="size-5" />
         </Button>
-        {message ? (
-          <p
-            className={
-              submitState === "success"
-                ? "flex items-center justify-center gap-2 text-center text-sm font-semibold text-green-700"
-                : "text-center text-sm font-semibold text-red-600"
-            }
-            role="status"
-          >
-            {submitState === "success" ? (
-              <CheckCircle2 className="size-4" />
-            ) : null}
-            {message}
-          </p>
-        ) : (
-          <p className="text-center text-sm text-text-700">
-            No spam. Unsubscribe anytime. Your data is safe.
-          </p>
-        )}
+        <p className="text-center text-sm text-text-700">
+          No spam. Unsubscribe anytime. Your data is safe.
+        </p>
       </form>
     </>
   );

@@ -32,12 +32,21 @@ export const metadata: Metadata = {
     url: "/waitlist",
     siteName: "Median",
     type: "website",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Join the Median waitlist",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Join the Median Waitlist",
     description:
       "Get early access to Median, the mentorship platform connecting ambitious professionals with vetted mentors.",
+    images: ["/twitter-image"],
   },
 };
 

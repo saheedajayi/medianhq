@@ -47,12 +47,21 @@ export const metadata: Metadata = {
     title: "Median | Vetted Mentorship for African Professionals",
     description:
       "Meet vetted mentors for real advice, structured sessions, and career guidance built for ambitious African professionals.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Median - Vetted mentorship for African professionals",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Median | Vetted Mentorship for African Professionals",
     description:
       "Meet vetted mentors for real advice, structured sessions, and career guidance built for ambitious African professionals.",
+    images: ["/twitter-image"],
   },
   icons: {
     icon: [

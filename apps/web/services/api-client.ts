@@ -3,6 +3,8 @@ import axios, { AxiosError, type AxiosInstance } from "axios";
 const API_TIMEOUT = 15_000;
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
   .replace(/\/$/, "");
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
+const API_BASE_PATH = `/api/${API_VERSION}`;
 
 export interface ApiError {
   status: number;
@@ -32,7 +34,7 @@ const getErrorMessage = (payload: unknown, fallback: string) => {
 };
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL || undefined,
+  baseURL: `${API_BASE_URL}${API_BASE_PATH}`,
   timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
