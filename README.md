@@ -26,14 +26,39 @@ npm run check-types
 npm run db:generate
 ```
 
-`npm run dev` starts the Turborepo dev pipeline. The frontend runs on `http://localhost:3000`; the generated NestJS API runs on its default port until we add the API config module.
+`npm run dev` starts the Turborepo dev pipeline. The frontend runs on `http://localhost:3000`; the NestJS API runs on `http://localhost:4000`.
+
+## Environment
+
+Local runtime config is split by app:
+
+```txt
+apps/api/.env.local
+apps/web/.env.local
+```
+
+The root `.env.local` only keeps `DATABASE_URL` for Prisma workspace commands.
 
 ## Database
 
-Copy `.env.example` to `.env`, set `DATABASE_URL`, then run:
+Set `DATABASE_URL` in the root `.env.local`, then run:
 
 ```bash
 npm run db:generate
 npm run db:migrate
 ```
+
+## Email
+
+Waitlist confirmation emails are sent through Resend from the API. Configure
+these variables in `apps/api/.env.local` before enabling email delivery:
+
+```bash
+RESEND_API_KEY="re_..."
+EMAIL_FROM="Median <hello@medianhq.co>"
+EMAIL_REPLY_TO="hello@medianhq.co"
+```
+
+If `RESEND_API_KEY` or `EMAIL_FROM` is missing, the API saves waitlist entries
+but skips sending the confirmation email.
 # median-platform

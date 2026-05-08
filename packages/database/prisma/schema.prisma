@@ -138,20 +138,20 @@ model Review {
 }
 
 model WaitlistEntry {
-  id          String           @id @default(cuid())
-  email       String
-  firstName   String
-  lastName    String
-  audience    WaitlistAudience
-  location    String?
-  expertise   String?
-  currentRole String
-  company     String?
+  id                String           @id @default(cuid())
+  email             String
+  firstName         String
+  lastName          String
+  audience          WaitlistAudience
+  location          String?
+  expertise         String?
+  currentRole       String
+  company           String?
   levelOfExperience String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  @@unique([email, audience])
+  @@unique([email])
   @@index([audience])
   @@index([createdAt])
 }

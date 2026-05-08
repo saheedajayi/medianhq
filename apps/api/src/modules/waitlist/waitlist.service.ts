@@ -1,45 +1,73 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { Prisma, WaitlistAudience } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service';
+import { EmailService } from '../email/email.service';
 import type { CreateWaitlistEntryDto } from './dto/create-waitlist-entry.dto';
+import { WaitlistRepository } from './waitlist.repository';
 
 @Injectable()
 export class WaitlistService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(WaitlistService.name);
+
+  constructor(
+    private readonly waitlistRepository: WaitlistRepository,
+    private readonly emailService: EmailService,
+  ) {}
+
+  async getStats() {
+    return {
+      totalPeople: await this.waitlistRepository.countDistinctEmails(),
+    };
+  }
 
   async create(dto: CreateWaitlistEntryDto) {
     const data = this.normalize(dto);
+    const existingEntry = await this.waitlistRepository.findByEmail(data.email);
 
-    const entry = await this.prisma.waitlistEntry.upsert({
-      where: {
-        email_audience: {
-          email: data.email,
-          audience: data.audience,
-        },
-      },
-      create: data,
-      update: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        location: data.location,
-        expertise: data.expertise,
-        currentRole: data.currentRole,
-        company: data.company,
-        levelOfExperience: data.levelOfExperience,
-      },
-      select: {
-        id: true,
-        email: true,
-        audience: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    if (existingEntry) {
+      throw new ConflictException('This email is already on the waitlist.');
+    }
+
+    let entry: Awaited<ReturnType<WaitlistRepository['create']>>;
+
+    try {
+      entry = await this.waitlistRepository.create(data);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('This email is already on the waitlist.');
+      }
+
+      throw error;
+    }
+
+    void this.sendConfirmationEmail(data);
 
     return {
       status: 'ok',
       entry,
     };
+  }
+
+  private async sendConfirmationEmail(data: Prisma.WaitlistEntryCreateInput) {
+    try {
+      await this.emailService.sendWaitlistConfirmation({
+        email: data.email,
+        firstName: data.firstName,
+        audience: data.audience,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to send waitlist confirmation email to ${data.email}.`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   private normalize(

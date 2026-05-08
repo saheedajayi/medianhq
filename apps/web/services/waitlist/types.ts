@@ -26,3 +26,7 @@ export type WaitlistResponse = {
     audience: WaitlistAudience;
   };
 };
+
+export type WaitlistStatsResponse = {
+  totalPeople: number;
+};

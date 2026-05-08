@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { useWaitlistStore } from "@/features/waitlist/store";
+import { waitlistQueryKeys } from "@/services/waitlist/queries/query-keys";
 import { useCreateWaitlistEntry } from "@/services/waitlist/queries/waitlist.queries";
 import type { WaitlistAudienceTab } from "@/services/waitlist";
 import { AudienceSwitch } from "./audience-switch";
@@ -56,7 +58,10 @@ const waitlistSchema = z
     audience: z.enum(["MENTEE", "MENTOR"], {
       message: "Choose whether you're joining as a mentor or mentee.",
     }),
-    location: z.preprocess(emptyStringToUndefined, z.string().trim().optional()),
+    location: z.preprocess(
+      emptyStringToUndefined,
+      z.string().trim().optional(),
+    ),
     expertise: z.preprocess(
       emptyStringToUndefined,
       z.string().trim().optional(),
@@ -216,6 +221,7 @@ export function WaitlistForm() {
   const setErrors = useWaitlistStore((state) => state.setErrors);
   const resetFeedback = useWaitlistStore((state) => state.resetFeedback);
   const resetFormState = useWaitlistStore((state) => state.resetFormState);
+  const queryClient = useQueryClient();
   const waitlistMutation = useCreateWaitlistEntry();
   const createWaitlistEntry = waitlistMutation.mutate;
   const content = waitlistContent[audience];
@@ -223,7 +229,10 @@ export function WaitlistForm() {
 
   function handleAudienceChange(nextAudience: WaitlistAudienceTab) {
     setAudience(nextAudience);
-    resetFormState();
+
+    if (submitState !== "success") {
+      resetFormState();
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -268,6 +277,9 @@ export function WaitlistForm() {
 
     createWaitlistEntry(result.data, {
       onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: waitlistQueryKeys.stats(),
+        });
         form.reset();
         setSubmitState("success");
         setErrors({});
@@ -276,8 +288,20 @@ export function WaitlistForm() {
           description: "We'll be in touch soon with early access updates.",
         });
       },
-      onError: () => {
+      onError: (error) => {
         setSubmitState("error");
+
+        if (error.status === 409) {
+          setErrors({
+            email: error.message,
+          });
+          setMessage(error.message);
+          toast.error("Email already registered", {
+            description: error.message,
+          });
+          return;
+        }
+
         setMessage("We couldn't save your details. Please try again.");
         toast.error("We couldn't save your details", {
           description: "Please check your connection and try again.",
@@ -286,7 +310,8 @@ export function WaitlistForm() {
     });
   }
 
-  const isSubmitting = submitState === "submitting" || waitlistMutation.isPending;
+  const isSubmitting =
+    submitState === "submitting" || waitlistMutation.isPending;
 
   return (
     <>
@@ -314,131 +339,152 @@ export function WaitlistForm() {
         </motion.div>
       </AnimatePresence>
 
-      <form
-        id="waitlist-form"
-        noValidate
-        onSubmit={handleSubmit}
-        className="mt-8 grid scroll-mt-8 min-w-0 gap-5 rounded-lg border border-text-200 bg-white p-6 text-left shadow-xs sm:scroll-mt-12 sm:p-8"
-        style={{ width: "100%", maxWidth: "min(700px, calc(100vw - 40px))" }}
-      >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field id="firstName" label="First name *" error={errors.firstName}>
-            <Input
-              id="firstName"
-              name="firstName"
-              aria-describedby={
-                errors.firstName ? "firstName-error" : undefined
-              }
-              aria-invalid={Boolean(errors.firstName)}
-              placeholder="Amara"
-              required
-              className="h-11 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15"
-            />
-          </Field>
-          <Field id="lastName" label="Last name *" error={errors.lastName}>
-            <Input
-              id="lastName"
-              name="lastName"
-              aria-describedby={errors.lastName ? "lastName-error" : undefined}
-              aria-invalid={Boolean(errors.lastName)}
-              placeholder="Okafor"
-              required
-              className="h-11 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15"
-            />
-          </Field>
-        </div>
-        <Field id="email" label="Email *" error={errors.email}>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            aria-describedby={errors.email ? "email-error" : undefined}
-            aria-invalid={Boolean(errors.email)}
-            placeholder="you@gmail.com"
-            required
-            className="h-11 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15"
-          />
-        </Field>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={`fields-${audience}`}
-            className="grid gap-5"
-            layout
-            {...contentMotion}
-          >
-            <OptionalStringSelectField
-              id="location"
-              name="location"
-              label="Location"
-              placeholder="Select location..."
-              error={errors.location}
-              options={locationOptions}
-            />
-            {isMentor ? (
-              <OptionalStringSelectField
-                id="expertise"
-                name="expertise"
-                label="Area of expertise *"
-                placeholder="Select area..."
-                error={errors.expertise}
-                required
-                options={expertiseOptions}
-              />
-            ) : null}
-            <Field id="role" label="Current role *" error={errors.currentRole}>
+      {submitState === "success" ? (
+        <motion.div
+          id="waitlist-form"
+          className="mt-8 grid scroll-mt-8 place-items-center rounded-lg border border-text-200 bg-white px-6 py-8 text-center shadow-xs sm:scroll-mt-12 sm:px-10"
+          style={{ width: "100%", maxWidth: "min(360px, calc(100vw - 40px))" }}
+          {...contentMotion}
+        >
+          <p className="max-w-64 text-lg font-semibold leading-8 text-text-700">
+            You&apos;re in! once we go live, you&apos;ll be the first to know.
+          </p>
+        </motion.div>
+      ) : (
+        <form
+          id="waitlist-form"
+          noValidate
+          onSubmit={handleSubmit}
+          className="mt-8 grid scroll-mt-8 min-w-0 gap-5 rounded-lg border border-text-200 bg-white p-6 text-left shadow-xs sm:scroll-mt-12 sm:p-8"
+          style={{ width: "100%", maxWidth: "min(700px, calc(100vw - 40px))" }}
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field id="firstName" label="First name *" error={errors.firstName}>
               <Input
-                id="role"
-                name="role"
+                id="firstName"
+                name="firstName"
                 aria-describedby={
-                  errors.currentRole ? "role-error" : undefined
+                  errors.firstName ? "firstName-error" : undefined
                 }
-                aria-invalid={Boolean(errors.currentRole)}
-                placeholder="Product manager"
+                aria-invalid={Boolean(errors.firstName)}
+                placeholder="Amara"
                 required
-                className={inputClassName}
+                className="h-11 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15"
               />
             </Field>
-            {isMentor ? (
+            <Field id="lastName" label="Last name *" error={errors.lastName}>
+              <Input
+                id="lastName"
+                name="lastName"
+                aria-describedby={
+                  errors.lastName ? "lastName-error" : undefined
+                }
+                aria-invalid={Boolean(errors.lastName)}
+                placeholder="Okafor"
+                required
+                className="h-11 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15"
+              />
+            </Field>
+          </div>
+          <Field id="email" label="Email *" error={errors.email}>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              aria-describedby={errors.email ? "email-error" : undefined}
+              aria-invalid={Boolean(errors.email)}
+              placeholder="you@gmail.com"
+              required
+              className="h-11 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15"
+            />
+          </Field>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={`fields-${audience}`}
+              className="grid gap-5"
+              layout
+              {...contentMotion}
+            >
+              <OptionalStringSelectField
+                id="location"
+                name="location"
+                label="Location"
+                placeholder="Select location..."
+                error={errors.location}
+                options={locationOptions}
+              />
+              {isMentor ? (
+                <OptionalStringSelectField
+                  id="expertise"
+                  name="expertise"
+                  label="Area of expertise *"
+                  placeholder="Select area..."
+                  error={errors.expertise}
+                  required
+                  options={expertiseOptions}
+                />
+              ) : null}
               <Field
-                id="company"
-                label="Company you work at *"
-                error={errors.company}
+                id="role"
+                label="Current role *"
+                error={errors.currentRole}
               >
                 <Input
-                  id="company"
-                  name="company"
-                  aria-describedby={errors.company ? "company-error" : undefined}
-                  aria-invalid={Boolean(errors.company)}
-                  placeholder="Company name"
+                  id="role"
+                  name="role"
+                  aria-describedby={
+                    errors.currentRole ? "role-error" : undefined
+                  }
+                  aria-invalid={Boolean(errors.currentRole)}
+                  placeholder="Product manager"
                   required
                   className={inputClassName}
                 />
               </Field>
-            ) : (
-              <OptionalStringSelectField
-                id="levelOfExperience"
-                name="levelOfExperience"
-                label="Level of experience *"
-                placeholder="Select level..."
-                error={errors.levelOfExperience}
-                required
-                options={levelOfExperienceOptions}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="mt-2 h-12 gap-3 px-5 text-base font-bold text-white"
-        >
-          {isSubmitting ? "Joining..." : "Join the waitlist"}
-          <ArrowRight className="size-5" />
-        </Button>
-        <p className="text-center text-sm text-text-700">
-          No spam. Unsubscribe anytime. Your data is safe.
-        </p>
-      </form>
+              {isMentor ? (
+                <Field
+                  id="company"
+                  label="Company you work at *"
+                  error={errors.company}
+                >
+                  <Input
+                    id="company"
+                    name="company"
+                    aria-describedby={
+                      errors.company ? "company-error" : undefined
+                    }
+                    aria-invalid={Boolean(errors.company)}
+                    placeholder="Company name"
+                    required
+                    className={inputClassName}
+                  />
+                </Field>
+              ) : (
+                <OptionalStringSelectField
+                  id="levelOfExperience"
+                  name="levelOfExperience"
+                  label="Level of experience *"
+                  placeholder="Select level..."
+                  error={errors.levelOfExperience}
+                  required
+                  options={levelOfExperienceOptions}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-2 h-12 gap-3 px-5 text-base font-bold text-white"
+          >
+            {isSubmitting ? "Joining..." : "Join the waitlist"}
+            <ArrowRight className="size-5" />
+          </Button>
+          <p className="text-center text-sm text-text-700">
+            No spam. Unsubscribe anytime. Your data is safe.
+          </p>
+        </form>
+      )}
     </>
   );
 }
