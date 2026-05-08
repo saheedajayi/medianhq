@@ -1,22 +1,9 @@
-export type WaitlistConfirmationTemplateInput = {
-  firstName: string;
-  audienceLabel: string;
-  waitlistUrl: string;
-  unsubscribeUrl: string;
-  instagramUrl: string;
-  twitterUrl: string;
-  linkedinUrl: string;
-  sentYear: number;
-  siteUrl: string;
-};
+import type {
+  WaitlistConfirmationTemplate,
+  WaitlistConfirmationTemplateInput,
+} from './waitlist-confirmation.template';
 
-export type WaitlistConfirmationTemplate = {
-  subject: string;
-  html: string;
-  text: string;
-};
-
-export function buildWaitlistConfirmationTemplate(
+export function buildMentorWaitlistConfirmationTemplate(
   input: WaitlistConfirmationTemplateInput,
 ): WaitlistConfirmationTemplate {
   const htmlInput = {
@@ -33,7 +20,8 @@ export function buildWaitlistConfirmationTemplate(
   const footerLogoUrl = `${htmlInput.siteUrl}/median-logo-light.png`;
 
   return {
-    subject: "You're on the list - Welcome to Median!",
+    subject:
+      "You're on the list - Thank you for showing interest to join Median as a mentor",
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,14 +51,14 @@ export function buildWaitlistConfirmationTemplate(
     * { line-height: inherit; }
     a[x-apple-data-detectors=true] { color: inherit !important; text-decoration: none !important; }
     table, td { color: #000000; }
-    .email-bg { background-color: #FAD9B8 !important; }
+    .email-bg { background-color: #FFD9A8 !important; }
     .email-card { background-color: #ffffff !important; }
     .email-footer { background-color: #4E0703 !important; }
     .email-text, .email-text td { color: #1A1A1A !important; }
   </style>
 </head>
-<body class="email-bg" bgcolor="#FAD9B8" style="margin:0;padding:0;-webkit-text-size-adjust:100%;background-color:#FAD9B8 !important;color:#000000;">
-  <table class="email-bg" role="presentation" bgcolor="#FAD9B8" style="border-collapse:collapse;table-layout:fixed;border-spacing:0;vertical-align:top;min-width:320px;margin:0 auto;background-color:#FAD9B8 !important;width:100%" cellpadding="0" cellspacing="0">
+<body class="email-bg" bgcolor="#FFD9A8" style="margin:0;padding:0;-webkit-text-size-adjust:100%;background-color:#FFD9A8 !important;color:#000000;">
+  <table class="email-bg" role="presentation" bgcolor="#FFD9A8" style="border-collapse:collapse;table-layout:fixed;border-spacing:0;vertical-align:top;min-width:320px;margin:0 auto;background-color:#FFD9A8 !important;width:100%" cellpadding="0" cellspacing="0">
     <tbody>
       <tr style="vertical-align:top">
         <td style="word-break:break-word;border-collapse:collapse !important;vertical-align:top;">
@@ -81,7 +69,7 @@ export function buildWaitlistConfirmationTemplate(
                   <div class="email-card" style="background-color:#ffffff !important;height:100%;width:100% !important;">
                     <div style="box-sizing:border-box;height:100%;padding:0;">
                       <table style="font-family:arial,helvetica,sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                        <tbody><tr><td style="padding:32px 36px 20px;font-family:arial,helvetica,sans-serif;" align="left">
+                        <tbody><tr><td style="padding:32px 36px 22px;font-family:arial,helvetica,sans-serif;" align="left">
                           <img src="${logoUrl}" width="224" height="40" alt="Median" style="display:block;border:0;outline:none;text-decoration:none;height:auto;">
                         </td></tr></tbody>
                       </table>
@@ -90,35 +78,28 @@ export function buildWaitlistConfirmationTemplate(
                           <div class="email-text" style="font-size:15px;line-height:1.75;color:#1A1A1A !important;word-wrap:break-word;">
                             <p>Hi <strong>${htmlInput.firstName}</strong>,</p>
                             <br>
-                            <p>Welcome to Median, we're so glad you're here!</p>
+                            <p>Welcome to Median - and thank you for showing interest in joining us as a mentor.</p>
                             <br>
-                            <p>You've just taken a really meaningful step. Whether you're looking to grow in your career, navigate a big decision, or simply learn from someone who's been in your shoes, Median is being built exactly for you.</p>
+                            <p>We're building Median for people who want practical, honest guidance from professionals who have been there before. Your experience could help someone make a better career decision, build confidence, and move with more clarity.</p>
                             <br>
                             <p>Here's what happens next:</p>
                             <br>
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-                              <tr><td style="font-size:15px;color:#1A1A1A;padding:4px 0;vertical-align:top;width:16px;">&bull;</td><td style="font-size:15px;color:#1A1A1A;padding:4px 0;line-height:1.75;">You're officially on our waitlist. We're onboarding mentees in waves, so hang tight - your spot is secured.</td></tr>
-                              <tr><td style="font-size:15px;color:#1A1A1A;padding:4px 0;vertical-align:top;width:16px;">&bull;</td><td style="font-size:15px;color:#1A1A1A;padding:4px 0;line-height:1.75;">When we're ready for you, you'll be among the first to know.</td></tr>
-                              <tr><td style="font-size:15px;color:#1A1A1A;padding:4px 0;vertical-align:top;width:16px;">&bull;</td><td style="font-size:15px;color:#1A1A1A;padding:4px 0;line-height:1.75;">In the meantime, keep an eye on your inbox - we'll share tips, stories, and updates to help you get the most out of Median when you're in.</td></tr>
+                              <tr><td style="font-size:15px;color:#1A1A1A;padding:4px 0;vertical-align:top;width:16px;">&bull;</td><td style="font-size:15px;color:#1A1A1A;padding:4px 0;line-height:1.75;">You're officially on our mentor waitlist.</td></tr>
+                              <tr><td style="font-size:15px;color:#1A1A1A;padding:4px 0;vertical-align:top;width:16px;">&bull;</td><td style="font-size:15px;color:#1A1A1A;padding:4px 0;line-height:1.75;">We'll review mentor profiles in waves as we prepare for launch.</td></tr>
+                              <tr><td style="font-size:15px;color:#1A1A1A;padding:4px 0;vertical-align:top;width:16px;">&bull;</td><td style="font-size:15px;color:#1A1A1A;padding:4px 0;line-height:1.75;">When we're ready for mentors in your area of expertise, you'll be among the first to know.</td></tr>
                             </table>
                             <br>
-                            <p>While you wait, come hang out with us on our social media pages. We share behind-the-scenes updates, mentorship insights, and community stories you won't want to miss.</p>
+                            <p>In the meantime, follow us for product updates, mentorship insights, and community stories as we build toward launch.</p>
                           </div>
                         </td></tr></tbody>
                       </table>
                       ${buildSocialButtons(htmlInput)}
                       <table style="font-family:arial,helvetica,sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
-                        <tbody><tr><td style="padding:0 36px 24px;font-family:arial,helvetica,sans-serif;" align="left">
-                          <div class="email-text" style="font-size:15px;line-height:1.75;color:#1A1A1A !important;word-wrap:break-word;">
-                            <p>We can't wait to help you find the right mentor, someone who genuinely gets where you're coming from and can help you get to where you want to go.</p>
-                          </div>
-                        </td></tr></tbody>
-                      </table>
-                      <table style="font-family:arial,helvetica,sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
                         <tbody><tr><td style="padding:0 36px 28px;font-family:arial,helvetica,sans-serif;" align="left">
                           <div style="background-color:#FFFAF5;border-radius:8px;border:1px solid #E5E5E5;padding:16px 20px;box-sizing:border-box;">
                             <div style="font-family:arial,helvetica,sans-serif;font-size:14px;color:#1A1A1A;line-height:1.7;">
-                              P.S. Know someone else who could use a great mentor? Share the love &nbsp;<a href="${htmlInput.waitlistUrl}" style="color:#E8522A;text-decoration:underline;">link to waitlist</a>
+                              P.S. Know another experienced professional who would make a great mentor? Share the waitlist &nbsp;<a href="${htmlInput.waitlistUrl}" style="color:#E8522A;text-decoration:underline;">link to waitlist</a>
                             </div>
                           </div>
                         </td></tr></tbody>
@@ -148,11 +129,11 @@ export function buildWaitlistConfirmationTemplate(
     text: [
       `Hi ${input.firstName},`,
       '',
-      "Welcome to Median, we're so glad you're here!",
+      'Welcome to Median - and thank you for showing interest in joining us as a mentor.',
       '',
-      `You're officially on our waitlist as a ${input.audienceLabel}. We're onboarding in waves, so hang tight - your spot is secured.`,
+      "You're officially on our mentor waitlist. We'll review mentor profiles in waves as we prepare for launch.",
       '',
-      "When we're ready for you, you'll be among the first to know. In the meantime, keep an eye on your inbox for tips, stories, and updates.",
+      "When we're ready for mentors in your area of expertise, you'll be among the first to know.",
       '',
       `Share the waitlist: ${input.waitlistUrl}`,
       '',

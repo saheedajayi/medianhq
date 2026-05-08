@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { WaitlistAudience } from '@prisma/client';
+import { buildMentorWaitlistConfirmationTemplate } from './templates/mentor-waitlist-confirmation.template';
 import { buildWaitlistConfirmationTemplate } from './templates/waitlist-confirmation.template';
 
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
@@ -72,7 +73,7 @@ export class EmailService {
     const instagramUrl = process.env.INSTAGRAM_URL ?? DEFAULT_INSTAGRAM_URL;
     const twitterUrl = process.env.TWITTER_URL ?? DEFAULT_TWITTER_URL;
     const linkedinUrl = process.env.LINKEDIN_URL ?? DEFAULT_LINKEDIN_URL;
-    const template = buildWaitlistConfirmationTemplate({
+    const templateInput = {
       firstName: input.firstName,
       audienceLabel,
       waitlistUrl,
@@ -82,7 +83,11 @@ export class EmailService {
       linkedinUrl,
       sentYear: new Date().getFullYear(),
       siteUrl,
-    });
+    };
+    const template =
+      input.audience === WaitlistAudience.MENTOR
+        ? buildMentorWaitlistConfirmationTemplate(templateInput)
+        : buildWaitlistConfirmationTemplate(templateInput);
 
     return {
       from,

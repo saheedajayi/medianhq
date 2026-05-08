@@ -1,6 +1,6 @@
 import { Poppins } from "next/font/google";
 import Image from "next/image";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, Mail, X } from "lucide-react";
 
 import {
   Accordion,
@@ -58,6 +58,13 @@ const featureCards = [
 ];
 
 const industries = ["Finance", "Technology", "Business", "Consulting"];
+
+const socialLinks = {
+  instagram: "https://www.instagram.com/median_hq",
+  twitter: "https://x.com/Median_HQ",
+  linkedin: "https://www.linkedin.com/company/median-hq/",
+  email: "mailto:hello@medianhq.co",
+};
 
 const faqs = [
   {
@@ -332,21 +339,38 @@ export function WaitlistPageContent() {
           </p>
           <div className="flex items-center gap-5 text-white/80">
             <a
-              href="#"
+              href={socialLinks.linkedin}
               aria-label="LinkedIn"
               className="text-sm font-bold hover:text-white"
+              target="_blank"
+              rel="noreferrer"
             >
               in
             </a>
             <a
-              href="#"
+              href={socialLinks.instagram}
               aria-label="Instagram"
               className="text-sm font-bold hover:text-white"
+              target="_blank"
+              rel="noreferrer"
             >
               ig
             </a>
-            <a href="#" aria-label="X" className="hover:text-white">
+            <a
+              href={socialLinks.twitter}
+              aria-label="X"
+              className="hover:text-white"
+              target="_blank"
+              rel="noreferrer"
+            >
               <X className="size-5" />
+            </a>
+            <a
+              href={socialLinks.email}
+              aria-label="Email"
+              className="hover:text-white"
+            >
+              <Mail className="size-5" />
             </a>
           </div>
         </div>
