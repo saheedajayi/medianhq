@@ -242,9 +242,9 @@ export function WaitlistPageContent() {
           A note from the founder
         </h2>
         <div className="mt-10 text-base leading-7 font-semibold text-text-900 md:text-lg">
-          <div className="absolute flex translate-y-14 -translate-x-6 gap-0 text-[12rem] text-accent-150">
+          <div className="absolute flex translate-y-14 -translate-x-7 gap-0 text-[12rem] text-accent-150">
             <span>❛</span>
-            <span className="-ml-10">❛</span>
+            <span className="-ml-5">❛</span>
           </div>
           <p className="relative z-10">
             Early in my career, finding someone to guide me felt almost
