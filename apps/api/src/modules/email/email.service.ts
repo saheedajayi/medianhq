@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { WaitlistAudience } from '@prisma/client';
+import { buildMenteeWaitlistConfirmationTemplate } from './templates/mentee-waitlist-confirmation.template';
 import { buildMentorWaitlistConfirmationTemplate } from './templates/mentor-waitlist-confirmation.template';
-import { buildWaitlistConfirmationTemplate } from './templates/waitlist-confirmation.template';
 
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -70,6 +70,7 @@ export class EmailService {
     const siteUrl = this.getSiteUrl();
     const waitlistUrl = process.env.WAITLIST_URL ?? `${siteUrl}/waitlist`;
     const unsubscribeUrl = process.env.EMAIL_UNSUBSCRIBE_URL ?? waitlistUrl;
+    const assetUrl = this.getEmailAssetUrl(siteUrl);
     const instagramUrl = process.env.INSTAGRAM_URL ?? DEFAULT_INSTAGRAM_URL;
     const twitterUrl = process.env.TWITTER_URL ?? DEFAULT_TWITTER_URL;
     const linkedinUrl = process.env.LINKEDIN_URL ?? DEFAULT_LINKEDIN_URL;
@@ -83,11 +84,12 @@ export class EmailService {
       linkedinUrl,
       sentYear: new Date().getFullYear(),
       siteUrl,
+      assetUrl,
     };
     const template =
       input.audience === WaitlistAudience.MENTOR
         ? buildMentorWaitlistConfirmationTemplate(templateInput)
-        : buildWaitlistConfirmationTemplate(templateInput);
+        : buildMenteeWaitlistConfirmationTemplate(templateInput);
 
     return {
       from,
@@ -104,5 +106,15 @@ export class EmailService {
       /\/+$/,
       '',
     );
+  }
+
+  private getEmailAssetUrl(siteUrl: string) {
+    const assetOrigin = process.env.EMAIL_ASSET_ORIGIN ?? siteUrl;
+
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(assetOrigin)) {
+      return 'https://www.medianhq.co';
+    }
+
+    return assetOrigin.replace(/\/+$/, '');
   }
 }

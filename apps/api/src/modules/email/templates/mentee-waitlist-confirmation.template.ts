@@ -8,6 +8,7 @@ export type WaitlistConfirmationTemplateInput = {
   linkedinUrl: string;
   sentYear: number;
   siteUrl: string;
+  assetUrl: string;
 };
 
 export type WaitlistConfirmationTemplate = {
@@ -16,7 +17,7 @@ export type WaitlistConfirmationTemplate = {
   text: string;
 };
 
-export function buildWaitlistConfirmationTemplate(
+export function buildMenteeWaitlistConfirmationTemplate(
   input: WaitlistConfirmationTemplateInput,
 ): WaitlistConfirmationTemplate {
   const htmlInput = {
@@ -28,9 +29,10 @@ export function buildWaitlistConfirmationTemplate(
     twitterUrl: escapeHtml(input.twitterUrl),
     linkedinUrl: escapeHtml(input.linkedinUrl),
     siteUrl: escapeHtml(input.siteUrl),
+    assetUrl: escapeHtml(input.assetUrl),
   };
-  const logoUrl = `${htmlInput.siteUrl}/median-logo.png`;
-  const footerLogoUrl = `${htmlInput.siteUrl}/median-logo-light.png`;
+  const logoUrl = `${htmlInput.assetUrl}/median-logo.png`;
+  const footerLogoUrl = `${htmlInput.assetUrl}/median-logo-light.png`;
 
   return {
     subject: "You're on the list - Welcome to Median!",
@@ -187,6 +189,7 @@ function buildFooter(
     twitterUrl: string;
     linkedinUrl: string;
     sentYear: number;
+    assetUrl: string;
   },
   footerLogoUrl: string,
 ) {
@@ -217,9 +220,9 @@ function buildFooter(
                 <tbody><tr><td style="padding:0 36px 36px;font-family:arial,helvetica,sans-serif;" align="center">
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
                     <tr>
-                      <td style="padding:0 12px;"><a href="${input.linkedinUrl}" style="text-decoration:none;display:inline-block;">${linkedinIcon('#ffffff', 18)}</a></td>
-                      <td style="padding:0 12px;"><a href="${input.instagramUrl}" style="text-decoration:none;display:inline-block;">${instagramIcon('#ffffff', 18)}</a></td>
-                      <td style="padding:0 12px;"><a href="${input.twitterUrl}" style="text-decoration:none;display:inline-block;">${xIcon('#ffffff', 18)}</a></td>
+                      <td style="padding:0 12px;"><a href="${input.linkedinUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email-linkedin-white.png" width="18" height="18" alt="LinkedIn" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
+                      <td style="padding:0 12px;"><a href="${input.instagramUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email-instagram-white.png" width="18" height="18" alt="Instagram" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
+                      <td style="padding:0 12px;"><a href="${input.twitterUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email-x-white.png" width="18" height="18" alt="X" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
                     </tr>
                   </table>
                 </td></tr></tbody>

@@ -1,6 +1,6 @@
 import { Poppins } from "next/font/google";
 import Image from "next/image";
-import { ArrowRight, Mail, X } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 
 import {
   Accordion,
@@ -341,29 +341,47 @@ export function WaitlistPageContent() {
             <a
               href={socialLinks.linkedin}
               aria-label="LinkedIn"
-              className="text-sm font-bold hover:text-white"
+              className="opacity-80 transition-opacity hover:opacity-100"
               target="_blank"
               rel="noreferrer"
             >
-              in
+              <Image
+                src="/email-linkedin-white.png"
+                alt=""
+                width={18}
+                height={18}
+                className="size-[18px]"
+              />
             </a>
             <a
               href={socialLinks.instagram}
               aria-label="Instagram"
-              className="text-sm font-bold hover:text-white"
+              className="opacity-80 transition-opacity hover:opacity-100"
               target="_blank"
               rel="noreferrer"
             >
-              ig
+              <Image
+                src="/email-instagram-white.png"
+                alt=""
+                width={18}
+                height={18}
+                className="size-[18px]"
+              />
             </a>
             <a
               href={socialLinks.twitter}
               aria-label="X"
-              className="hover:text-white"
+              className="opacity-80 transition-opacity hover:opacity-100"
               target="_blank"
               rel="noreferrer"
             >
-              <X className="size-5" />
+              <Image
+                src="/email-x-white.png"
+                alt=""
+                width={18}
+                height={18}
+                className="size-[18px]"
+              />
             </a>
             <a
               href={socialLinks.email}
