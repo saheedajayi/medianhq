@@ -50,8 +50,10 @@ export class WaitlistService {
     void this.sendConfirmationEmail(data);
 
     return {
-      status: 'ok',
-      entry,
+      message: "You're on the waitlist. We'll be in touch soon.",
+      data: {
+        entry,
+      },
     };
   }
 

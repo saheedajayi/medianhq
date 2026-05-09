@@ -12,6 +12,37 @@ export interface ApiError {
   details?: unknown;
 }
 
+type ApiEnvelope<T = unknown> = {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: unknown;
+};
+
+const isApiEnvelope = (payload: unknown): payload is ApiEnvelope => {
+  return (
+    !!payload &&
+    typeof payload === "object" &&
+    "success" in payload &&
+    typeof (payload as { success?: unknown }).success === "boolean"
+  );
+};
+
+const unwrapApiEnvelope = (payload: ApiEnvelope) => {
+  if (
+    payload.data &&
+    typeof payload.data === "object" &&
+    !Array.isArray(payload.data)
+  ) {
+    return {
+      ...payload.data,
+      ...(payload.message ? { message: payload.message } : {}),
+    };
+  }
+
+  return payload.data;
+};
+
 const getErrorMessage = (payload: unknown, fallback: string) => {
   if (!payload || typeof payload !== "object") {
     return fallback;
@@ -43,7 +74,13 @@ export const apiClient: AxiosInstance = axios.create({
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (isApiEnvelope(response.data) && response.data.success) {
+      response.data = unwrapApiEnvelope(response.data);
+    }
+
+    return response;
+  },
   (error: AxiosError) => {
     const apiError: ApiError = {
       status: error.response?.status ?? 0,

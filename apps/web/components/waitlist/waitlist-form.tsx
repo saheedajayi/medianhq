@@ -276,16 +276,19 @@ export function WaitlistForm() {
     setSubmitState("submitting");
 
     createWaitlistEntry(result.data, {
-      onSuccess: () => {
+      onSuccess: (response) => {
         void queryClient.invalidateQueries({
           queryKey: waitlistQueryKeys.stats(),
         });
+        const successMessage =
+          response.message ?? "You're on the waitlist. We'll be in touch soon.";
+
         form.reset();
         setSubmitState("success");
         setErrors({});
-        setMessage("You're on the waitlist. We'll be in touch soon.");
+        setMessage(successMessage);
         toast.success("You're on the waitlist", {
-          description: "We'll be in touch soon with early access updates.",
+          description: successMessage,
         });
       },
       onError: (error) => {

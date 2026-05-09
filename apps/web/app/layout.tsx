@@ -5,11 +5,51 @@ import "./globals.css";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
-  variable: "--font-sans",
+  variable: "--font-geist-sans",
 });
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-mono",
+  variable: "--font-geist-mono",
+});
+const generalSans = localFont({
+  src: [
+    {
+      path: "./fonts/GeneralSans-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GeneralSans-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GeneralSans-Semibold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "./fonts/GeneralSans-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-general-sans",
+});
+const neco = localFont({
+  src: [
+    {
+      path: "./fonts/Neco-Variable.woff2",
+      weight: "400 900",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Neco-VariableItalic.woff2",
+      weight: "400 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-neco",
 });
 
 export const metadata: Metadata = {
@@ -100,8 +140,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${generalSans.variable} ${neco.variable} antialiased`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

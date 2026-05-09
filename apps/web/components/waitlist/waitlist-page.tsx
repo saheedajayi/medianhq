@@ -1,4 +1,3 @@
-import { Poppins } from "next/font/google";
 import Image from "next/image";
 import { ArrowRight, Mail } from "lucide-react";
 
@@ -12,11 +11,6 @@ import { Card, CardContent } from "@/components/ui/base/card";
 import { ScrollToWaitlistButton } from "./scroll-to-waitlist-button";
 import { WaitlistCountBadge } from "./waitlist-count-badge";
 import { WaitlistForm } from "./waitlist-form";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
 
 const featureCards = [
   {
@@ -121,8 +115,8 @@ function Logo({ inverse = false }: { inverse?: boolean }) {
       priority
       className={
         inverse
-          ? "h-[30px] w-[168px] brightness-0 invert"
-          : "h-[30px] w-[168px]"
+          ? "h-6 w-[134px] brightness-0 invert sm:h-7 sm:w-[157px]"
+          : "h-6 w-[134px] sm:h-7 sm:w-[157px]"
       }
     />
   );
@@ -130,7 +124,7 @@ function Logo({ inverse = false }: { inverse?: boolean }) {
 
 export function WaitlistPageContent() {
   return (
-    <main className={`${poppins.className} min-h-svh bg-[#fcfcfd] text-text-900`}>
+    <main className="min-h-svh bg-[#fcfcfd] text-text-900">
       <header
         className="flex h-[100px] w-full items-center justify-between px-5 sm:px-8 lg:px-[100px]"
       >
@@ -247,10 +241,10 @@ export function WaitlistPageContent() {
         <h2 className="text-center font-serif text-4xl font-black text-primary">
           A note from the founder
         </h2>
-        <div className="mt-10 text-lg leading-7 font-semibold text-text-900">
-          <div className="absolute translate-y-14 -translate-x-6 text-[12rem] text-accent-150">
+        <div className="mt-10 text-base leading-7 font-semibold text-text-900 md:text-lg">
+          <div className="absolute flex translate-y-14 -translate-x-6 gap-0 text-[12rem] text-accent-150">
             <span>❛</span>
-            <span>❛</span>
+            <span className="-ml-10">❛</span>
           </div>
           <p className="relative z-10">
             Early in my career, finding someone to guide me felt almost

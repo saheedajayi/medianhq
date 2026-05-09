@@ -19,7 +19,7 @@ export type WaitlistFieldErrors = Partial<
 >;
 
 export type WaitlistResponse = {
-  status: "ok";
+  message?: string;
   entry: {
     id: string;
     email: string;
