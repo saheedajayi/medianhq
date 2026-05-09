@@ -168,14 +168,15 @@ function buildSocialButtons(input: {
   instagramUrl: string;
   twitterUrl: string;
   linkedinUrl: string;
+  assetUrl: string;
 }) {
   return `<table style="font-family:arial,helvetica,sans-serif;" role="presentation" cellpadding="0" cellspacing="0" width="100%" border="0">
     <tbody><tr><td style="padding:0 36px 28px;font-family:arial,helvetica,sans-serif;" align="left">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td style="padding-right:10px;"><a class="social-btn" href="${input.instagramUrl}" style="display:inline-block;font-family:arial,helvetica,sans-serif;font-size:13px;font-weight:600;color:#1A1A1A;border:1.5px solid #D0D0D0;border-radius:6px;padding:8px 14px;text-decoration:none;"><span style="display:inline-block;vertical-align:middle;margin-right:6px;">${instagramIcon('#1A1A1A', 15)}</span>Instagram</a></td>
-          <td style="padding-right:10px;"><a class="social-btn" href="${input.twitterUrl}" style="display:inline-block;font-family:arial,helvetica,sans-serif;font-size:13px;font-weight:600;color:#1A1A1A;border:1.5px solid #D0D0D0;border-radius:6px;padding:8px 14px;text-decoration:none;"><span style="display:inline-block;vertical-align:middle;margin-right:6px;">${xIcon('#1A1A1A', 15)}</span>Twitter/X</a></td>
-          <td><a class="social-btn" href="${input.linkedinUrl}" style="display:inline-block;font-family:arial,helvetica,sans-serif;font-size:13px;font-weight:600;color:#1A1A1A;border:1.5px solid #D0D0D0;border-radius:6px;padding:8px 14px;text-decoration:none;"><span style="display:inline-block;vertical-align:middle;margin-right:6px;">${linkedinIcon('#1A1A1A', 15)}</span>LinkedIn</a></td>
+          <td style="padding-right:10px;"><a class="social-btn" href="${input.instagramUrl}" style="display:inline-block;font-family:arial,helvetica,sans-serif;font-size:13px;font-weight:600;color:#1A1A1A;border:1.5px solid #D0D0D0;border-radius:6px;padding:8px 14px;text-decoration:none;"><img src="${input.assetUrl}/email-instagram-dark.png" width="15" height="15" alt="" style="display:inline-block;border:0;outline:none;text-decoration:none;height:auto;vertical-align:middle;margin-right:6px;">Instagram</a></td>
+          <td style="padding-right:10px;"><a class="social-btn" href="${input.twitterUrl}" style="display:inline-block;font-family:arial,helvetica,sans-serif;font-size:13px;font-weight:600;color:#1A1A1A;border:1.5px solid #D0D0D0;border-radius:6px;padding:8px 14px;text-decoration:none;"><img src="${input.assetUrl}/email-x-dark.png" width="15" height="15" alt="" style="display:inline-block;border:0;outline:none;text-decoration:none;height:auto;vertical-align:middle;margin-right:6px;">Twitter/X</a></td>
+          <td><a class="social-btn" href="${input.linkedinUrl}" style="display:inline-block;font-family:arial,helvetica,sans-serif;font-size:13px;font-weight:600;color:#1A1A1A;border:1.5px solid #D0D0D0;border-radius:6px;padding:8px 14px;text-decoration:none;"><img src="${input.assetUrl}/email-linkedin-dark.png" width="15" height="15" alt="" style="display:inline-block;border:0;outline:none;text-decoration:none;height:auto;vertical-align:middle;margin-right:6px;">LinkedIn</a></td>
         </tr>
       </table>
     </td></tr></tbody>

@@ -16,9 +16,10 @@ export const waitlistMetadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/social-preview.png",
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: "Join the Median waitlist",
       },
     ],
@@ -28,6 +29,11 @@ export const waitlistMetadata: Metadata = {
     title: "Join the Median Waitlist",
     description:
       "Get early access to Median, the mentorship platform connecting ambitious professionals with vetted mentors.",
-    images: ["/twitter-image"],
+    images: [
+      {
+        url: "/social-preview.png",
+        alt: "Join the Median waitlist",
+      },
+    ],
   },
 };
