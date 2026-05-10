@@ -62,7 +62,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
 
     if (response && typeof response === 'object') {
-      return response as ErrorBody;
+      return response;
     }
 
     return undefined;
@@ -79,9 +79,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
       return message;
     }
 
-    return statusCode === HttpStatus.INTERNAL_SERVER_ERROR
-      ? 'Internal server error.'
-      : 'Request failed.';
+    return statusCode === 500 ? 'Internal server error.' : 'Request failed.';
   }
 
   private getCode(

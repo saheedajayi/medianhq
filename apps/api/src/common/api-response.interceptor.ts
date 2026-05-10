@@ -37,7 +37,7 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<T> {
     ) as Observable<T>;
   }
 
-  private getPayload(data: T): ApiResponsePayload<T | unknown> {
+  private getPayload(data: T): ApiResponsePayload<unknown> {
     if (this.isCustomPayload(data)) {
       return {
         message: data.message?.trim() || 'Request successful.',
