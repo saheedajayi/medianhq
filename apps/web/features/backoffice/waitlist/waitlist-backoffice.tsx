@@ -122,6 +122,12 @@ const formatShortDate = (value: string) =>
     year: "numeric",
   }).format(new Date(value));
 
+const formatTime = (value: string) =>
+  new Intl.DateTimeFormat("en", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+
 const getAudienceLabel = (audience: WaitlistAudience) =>
   audience === "MENTOR" ? "Mentor" : "Mentee";
 
@@ -295,7 +301,12 @@ function MobileEntryCard({ entry }: { entry: WaitlistEntry }) {
         </div>
         <div className="min-w-0">
           <dt className="font-semibold text-text-500">Joined</dt>
-          <dd className="mt-1 text-text-800">{formatShortDate(entry.createdAt)}</dd>
+          <dd className="mt-1 text-text-800">
+            {formatShortDate(entry.createdAt)}
+            <span className="block text-text-500">
+              {formatTime(entry.createdAt)}
+            </span>
+          </dd>
         </div>
       </dl>
     </article>
@@ -542,18 +553,18 @@ export default function BackofficePage() {
         />
       </section>
 
-      <section className="grid items-start gap-4 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
+      <section className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)]">
         <Card className="border-text-200 bg-white shadow-none lg:sticky lg:top-6 lg:self-start">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-xl">Audience split</CardTitle>
+          <CardHeader className="p-4">
+            <CardTitle className="text-lg">Audience split</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5 px-4 pt-0 pb-4 sm:px-6 sm:pb-6">
+          <CardContent className="space-y-4 px-4 pt-0 pb-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-text-700">Mentees</span>
                 <span className="text-text-500">{menteeShare}%</span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-text-100">
+              <div className="h-2 overflow-hidden rounded-full bg-text-100">
                 <div
                   className="h-full rounded-full bg-[#2563eb]"
                   style={{ width: `${menteeShare}%` }}
@@ -565,7 +576,7 @@ export default function BackofficePage() {
                 <span className="font-semibold text-text-700">Mentors</span>
                 <span className="text-text-500">{mentorShare}%</span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-text-100">
+              <div className="h-2 overflow-hidden rounded-full bg-text-100">
                 <div
                   className="h-full rounded-full bg-primary"
                   style={{ width: `${mentorShare}%` }}
@@ -657,6 +668,9 @@ export default function BackofficePage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-text-500">
                           {formatShortDate(entry.createdAt)}
+                          <span className="block">
+                            {formatTime(entry.createdAt)}
+                          </span>
                         </td>
                       </tr>
                     ))
