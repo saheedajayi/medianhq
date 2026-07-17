@@ -1,15 +1,27 @@
 "use client";
 
-import { type FormEvent, type ReactNode } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, ChevronsUpDown, Search } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/base/popover";
 import {
   Select,
   SelectContent,
@@ -149,6 +161,124 @@ function OptionalStringSelectField({
           ))}
         </SelectContent>
       </Select>
+    </Field>
+  );
+}
+
+function SearchableLocationField({ error }: { error?: string }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const selectedOption = locationOptions.find((option) => option.value === value);
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+
+    if (!normalizedQuery) return locationOptions;
+
+    return locationOptions.filter((option) =>
+      option.label.toLocaleLowerCase().includes(normalizedQuery),
+    );
+  }, [query]);
+
+  useEffect(() => {
+    const form = wrapperRef.current?.closest("form");
+    const handleReset = () => {
+      setValue("");
+      setQuery("");
+      setOpen(false);
+    };
+
+    form?.addEventListener("reset", handleReset);
+    return () => form?.removeEventListener("reset", handleReset);
+  }, []);
+
+  return (
+    <Field id="location" label="Location" error={error}>
+      <div ref={wrapperRef}>
+        <input type="hidden" name="location" value={value} />
+        <Popover
+          open={open}
+          onOpenChange={(nextOpen) => {
+            setOpen(nextOpen);
+            if (!nextOpen) setQuery("");
+          }}
+        >
+          <PopoverTrigger asChild>
+            <button
+              id="location"
+              type="button"
+              role="combobox"
+              aria-expanded={open}
+              aria-controls="location-options"
+              aria-describedby={error ? "location-error" : undefined}
+              aria-invalid={Boolean(error)}
+              className={`${selectClassName} flex w-full items-center justify-between rounded-lg border text-left text-sm shadow-xs outline-none transition-[color,box-shadow] ${
+                selectedOption ? "text-text-500" : "text-text-400"
+              }`}
+            >
+              <span className="truncate">
+                {selectedOption?.label ?? "Search for a location..."}
+              </span>
+              <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            className="w-[var(--radix-popover-trigger-width)] p-0"
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              inputRef.current?.focus();
+            }}
+          >
+            <div className="flex items-center gap-2 border-b border-text-200 px-3">
+              <Search className="size-4 shrink-0 text-text-400" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search countries..."
+                aria-label="Search countries"
+                className="h-11 min-w-0 flex-1 bg-transparent text-sm text-text-900 outline-none placeholder:text-text-400"
+              />
+            </div>
+            <div
+              id="location-options"
+              role="listbox"
+              className="max-h-64 overflow-y-auto p-1"
+            >
+              {filteredOptions.length ? (
+                filteredOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="option"
+                    aria-selected={value === option.value}
+                    className="flex w-full items-center rounded-md px-2 py-2 text-left text-sm text-text-700 outline-none hover:bg-accent-100 focus-visible:bg-accent-100"
+                    onClick={() => {
+                      setValue(option.value);
+                      setOpen(false);
+                      setQuery("");
+                    }}
+                  >
+                    <Check
+                      className={`mr-2 size-4 text-primary ${
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    {option.label}
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-6 text-center text-sm text-text-400">
+                  No location found.
+                </p>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </Field>
   );
 }
@@ -408,14 +538,7 @@ export function WaitlistForm() {
               layout
               {...contentMotion}
             >
-              <OptionalStringSelectField
-                id="location"
-                name="location"
-                label="Location"
-                placeholder="Select location..."
-                error={errors.location}
-                options={locationOptions}
-              />
+              <SearchableLocationField error={errors.location} />
               {isMentor ? (
                 <OptionalStringSelectField
                   id="expertise"
