@@ -62,7 +62,7 @@ export function EmailVerificationPage({ email }: { email: string }) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-12 rounded-full bg-[#FF5514] text-base font-medium text-white hover:bg-[#e84d12]"
+          className="h-12 rounded-full bg-primary text-base font-medium text-white hover:bg-primary/90"
         >
           {isSubmitting ? "Checking code..." : "Continue"}
         </Button>
@@ -70,7 +70,7 @@ export function EmailVerificationPage({ email }: { email: string }) {
         <button
           type="button"
           onClick={handleResend}
-          className="justify-self-center text-base font-medium text-[#FF5514] hover:underline"
+          className="justify-self-center text-base font-medium text-primary hover:underline"
         >
           Resend Code
         </button>

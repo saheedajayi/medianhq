@@ -87,7 +87,7 @@ export function AnimatedAuthCopy() {
           >
             {current.benefits.map((benefit) => (
               <li key={benefit} className="flex items-center gap-3">
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/90 text-[#FF5514]">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/90 text-primary">
                   <Check className="size-4" strokeWidth={3} aria-hidden="true" />
                 </span>
                 {benefit}

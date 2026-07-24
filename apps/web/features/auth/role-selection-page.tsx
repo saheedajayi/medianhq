@@ -45,7 +45,7 @@ export function RoleSelectionPage() {
       description: "Your selected account type will be saved once the API is connected.",
     });
 
-    router.push(role === "MENTEE" ? "/mentee-onboarding" : "/mentor/profile");
+    router.push(role === "MENTEE" ? "/mentee-onboarding" : "/mentor-onboarding");
   }
 
   return (
@@ -89,12 +89,12 @@ export function RoleSelectionPage() {
                     aria-hidden="true"
                     className={`mb-5 grid size-5 place-items-center rounded-full border-2 ${
                       isSelected
-                        ? "border-[#FF5514]"
+                        ? "border-primary"
                         : "border-[#141c2e]"
                     }`}
                   >
                     {isSelected && (
-                      <span className="size-2.5 rounded-full bg-[#FF5514]" />
+                      <span className="size-2.5 rounded-full bg-primary" />
                     )}
                   </span>
 
@@ -120,7 +120,7 @@ export function RoleSelectionPage() {
 
         <Button
           type="submit"
-          className="mt-8 h-12 w-full rounded-full bg-[#FF5514] text-base font-medium text-white hover:bg-[#e84d12]"
+          className="mt-8 h-12 w-full rounded-full bg-primary text-base font-medium text-white hover:bg-primary/90"
         >
           Continue
         </Button>

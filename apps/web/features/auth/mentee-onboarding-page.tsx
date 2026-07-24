@@ -61,7 +61,7 @@ export function MenteeOnboardingPage() {
       description: "Your mentee profile preferences have been saved.",
     });
 
-    router.push("/mentee/profile");
+    router.push("/mentor-matches");
   }
 
   return (
@@ -159,7 +159,7 @@ export function MenteeOnboardingPage() {
 
         <Button
           type="submit"
-          className="mt-6 h-[48px] w-full rounded-full bg-[#FF5514] text-[15px] font-medium text-white hover:bg-[#e84d12]"
+          className="mt-6 h-[48px] w-full rounded-full bg-primary text-[15px] font-medium text-white hover:bg-primary/90"
         >
           Continue
         </Button>
