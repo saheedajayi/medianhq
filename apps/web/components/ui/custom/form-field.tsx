@@ -10,15 +10,17 @@ export function FormField({
   children,
   action,
   compact = true,
+  error,
 }: {
   id: string;
   label: string;
   children: ReactNode;
   action?: ReactNode;
   compact?: boolean;
+  error?: string;
 }) {
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 content-start">
       <div className="flex items-center justify-between">
         <Label
           htmlFor={id}
@@ -30,9 +32,10 @@ export function FormField({
         >
           {label}
         </Label>
+        {action && <div className="text-right">{action}</div>}
       </div>
       {children}
-      {action && <div className="text-right">{action}</div>}
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
 }

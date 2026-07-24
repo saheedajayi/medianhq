@@ -3,10 +3,24 @@
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { authService } from "@/services/auth";
+import type { ApiError } from "@/services/api-client";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  const apiError = error as Partial<ApiError>;
+  return typeof apiError.message === "string" && apiError.message.trim()
+    ? apiError.message
+    : fallback;
+}
 
 import { Button } from "@/components/ui/base/button";
-import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/base/input-otp";
 
 export function EmailVerificationPage({ email }: { email: string }) {
   const router = useRouter();
@@ -16,13 +30,28 @@ export function EmailVerificationPage({ email }: { email: string }) {
     event.preventDefault();
     setIsSubmitting(true);
 
-    setIsSubmitting(false);
-    router.push("/role-selection");
+    const formData = new FormData(event.currentTarget);
+    const code = String(formData.get("verificationCode"));
+
+    authService
+      .verifyEmail({ email, code })
+      .then(() => {
+        toast.success("Email verified successfully");
+        router.push("/role-selection");
+      })
+      .catch((error) => {
+        toast.error("Verification failed", {
+          description: getErrorMessage(error, "Invalid or expired code."),
+        });
+      })
+      .finally(() => setIsSubmitting(false));
   }
 
   function handleResend() {
-    toast.info("Resend is not connected yet", {
-      description: "The verification-code API still needs to be implemented.",
+    toast.promise(authService.resendVerification({ email }), {
+      loading: "Sending new code...",
+      success: "A new verification code has been sent.",
+      error: (error) => getErrorMessage(error, "Failed to send code."),
     });
   }
 
@@ -46,17 +75,16 @@ export function EmailVerificationPage({ email }: { email: string }) {
           >
             Code
           </Label>
-          <Input
-            id="verificationCode"
-            name="verificationCode"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            required
-            placeholder="Enter code here"
-            className="h-12 rounded-lg border-[#cbd5e1] bg-white px-4 text-base text-[#141c2e] placeholder:text-[#98a2b3] focus-visible:border-primary focus-visible:ring-primary/15"
-          />
+          <InputOTP maxLength={6} name="verificationCode" id="verificationCode" containerClassName="mt-2 w-full flex justify-between">
+            <InputOTPGroup className="flex w-full justify-between gap-3">
+              <InputOTPSlot index={0} />
+              <InputOTPSlot index={1} />
+              <InputOTPSlot index={2} />
+              <InputOTPSlot index={3} />
+              <InputOTPSlot index={4} />
+              <InputOTPSlot index={5} />
+            </InputOTPGroup>
+          </InputOTP>
         </div>
 
         <Button

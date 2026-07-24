@@ -4,6 +4,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { usersService } from "@/services/users";
+import type { ApiError } from "@/services/api-client";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  const apiError = error as Partial<ApiError>;
+  return typeof apiError.message === "string" && apiError.message.trim()
+    ? apiError.message
+    : fallback;
+}
 
 import { Button } from "@/components/ui/base/button";
 
@@ -38,14 +47,23 @@ export function RoleSelectionPage() {
   const router = useRouter();
   const [role, setRole] = useState<Role>("MENTEE");
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsSubmitting(true);
 
-    toast.info("Role selection is not connected yet", {
-      description: "Your selected account type will be saved once the API is connected.",
-    });
-
-    router.push(role === "MENTEE" ? "/mentee-onboarding" : "/mentor-onboarding");
+    usersService
+      .updateRole({ role })
+      .then(() => {
+        router.push(role === "MENTEE" ? "/mentee-onboarding" : "/mentor-onboarding");
+      })
+      .catch((error) => {
+        toast.error("Unable to update role", {
+          description: getErrorMessage(error, "Please try again later."),
+        });
+      })
+      .finally(() => setIsSubmitting(false));
   }
 
   return (
@@ -120,9 +138,10 @@ export function RoleSelectionPage() {
 
         <Button
           type="submit"
+          disabled={isSubmitting}
           className="mt-8 h-12 w-full rounded-full bg-primary text-base font-medium text-white hover:bg-primary/90"
         >
-          Continue
+          {isSubmitting ? "Saving..." : "Continue"}
         </Button>
       </form>
     </>

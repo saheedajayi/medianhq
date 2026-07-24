@@ -7,10 +7,14 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "db:generate": "npm run db:generate -w @median/database",
-    "db:migrate": "npm run db:migrate -w @median/database",
-    "db:migrate:deploy": "npm run db:migrate:deploy -w @median/database",
-    "db:studio": "npm run db:studio -w @median/database"
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:generate": "set -a && . ./.env.local && set +a && npm run db:generate -w @median/database",
+    "db:migrate": "set -a && . ./.env.local && set +a && npm run db:migrate -w @median/database",
+    "db:migrate:deploy": "set -a && . ./.env.local && set +a && npm run db:migrate:deploy -w @median/database",
+    "db:seed": "set -a && . ./.env.local && set +a && npm run db:seed -w @median/database",
+    "db:studio": "set -a && . ./.env.local && set +a && npm run db:studio -w @median/database"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

@@ -26,3 +26,21 @@ export type LoginPayload = {
   email: string;
   password: string;
 };
+
+export type VerifyEmailPayload = {
+  email: string;
+  code: string;
+};
+
+export type ResendVerificationPayload = {
+  email: string;
+};
+
+export type ForgotPasswordPayload = {
+  email: string;
+};
+
+export type ResetPasswordPayload = {
+  token: string;
+  password: string;
+};

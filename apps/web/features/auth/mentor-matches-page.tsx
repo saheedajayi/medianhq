@@ -1,37 +1,18 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/base/button";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
-
-const mentors = [
-  {
-    id: 1,
-    name: "Tomi Koyejo",
-    role: "VP Product @ Kuda",
-    sessions: "2 sessions",
-    match: "90%",
-    image: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-  },
-  {
-    id: 2,
-    name: "Tomi Koyejo",
-    role: "VP Product @ Kuda",
-    sessions: "10 sessions",
-    match: "80%",
-    image: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-  },
-  {
-    id: 3,
-    name: "Tomi Koyejo",
-    role: "VP Product @ Kuda",
-    sessions: "4 sessions",
-    match: "70%",
-    image: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-  },
-];
+import { mentorsService } from "@/services/mentors";
 
 export function MentorMatchesPage() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["mentorMatches"],
+    queryFn: () => mentorsService.getMatches(),
+  });
+
+  const mentors = data?.data || [];
   return (
     <>
       <header className="mb-8 text-center">
@@ -42,6 +23,25 @@ export function MentorMatchesPage() {
       </header>
 
       <div className="grid gap-4">
+        {isLoading && (
+          <div className="text-center text-[#64748b] py-8">Finding your best matches...</div>
+        )}
+        {error && (
+          <div className="text-center text-red-500 py-8">Failed to load mentors</div>
+        )}
+        {!isLoading && mentors.length === 0 && !error && (
+          <div className="flex flex-col items-center text-center py-12 px-6 border border-[#f1f5f9] rounded-2xl bg-[#fafafa]">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary mb-6">
+              <Sparkles className="size-8" />
+            </div>
+            <h3 className="text-xl font-semibold text-[#111827] mb-3">
+              We're finding your perfect matches!
+            </h3>
+            <p className="text-[15px] leading-relaxed text-[#64748b]">
+              We are carefully reviewing our network of top-tier mentors to find the best fit for your specific goals. Keep an eye on your inbox—we'll email you as soon as your matches are ready.
+            </p>
+          </div>
+        )}
         {mentors.map((mentor) => (
           <div
             key={mentor.id}

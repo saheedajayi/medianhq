@@ -21,3 +21,21 @@ export type AuthUser = {
   role: UserRole;
   isEmailVerified: boolean;
 };
+
+export type VerifyEmailDto = {
+  email: string;
+  code: string;
+};
+
+export type ResendVerificationDto = {
+  email: string;
+};
+
+export type ForgotPasswordDto = {
+  email: string;
+};
+
+export type ResetPasswordDto = {
+  token: string;
+  password: string;
+};

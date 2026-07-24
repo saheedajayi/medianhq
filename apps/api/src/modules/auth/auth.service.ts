@@ -7,7 +7,8 @@ import {
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { UserRole, type User } from '@prisma/client';
 import { AuthRepository } from './auth.repository';
-import type { AuthUser, LoginDto, RegisterDto } from './dto/auth.dto';
+import { EmailService } from '../email/email.service';
+import type { AuthUser, LoginDto, RegisterDto, VerifyEmailDto, ResendVerificationDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 
 type AuthPayload = {
   sessionToken: string;
@@ -25,7 +26,10 @@ const PASSWORD_MIN_LENGTH = 8;
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly authRepository: AuthRepository) {}
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly emailService: EmailService,
+  ) {}
 
   async register(dto: RegisterDto): Promise<AuthPayload> {
     const input = this.validateRegisterInput(dto);
@@ -43,10 +47,29 @@ export class AuthService {
       role: input.role,
     });
 
+    await this.generateAndSendVerificationEmail(user);
+
     return {
       sessionToken: this.signToken(user),
       user: this.toAuthUser(user),
     };
+  }
+
+  private async generateAndSendVerificationEmail(user: Pick<User, 'email' | 'firstName'>) {
+    const code = randomBytes(3).toString('hex').toUpperCase(); // 6 chars like A1B2C3
+    
+    await this.authRepository.upsertVerificationToken({
+      email: user.email,
+      token: code,
+      type: 'EMAIL_VERIFICATION',
+      expiresAt: new Date(Date.now() + 1000 * 60 * 15), // 15 mins
+    });
+
+    await this.emailService.sendVerificationEmail({
+      email: user.email,
+      firstName: user.firstName,
+      verificationCode: code,
+    });
   }
 
   async login(dto: LoginDto): Promise<AuthPayload> {
@@ -76,6 +99,108 @@ export class AuthService {
     }
 
     return this.toAuthUser(user);
+  }
+
+  async verifyEmail(dto: VerifyEmailDto) {
+    const tokenRecord = await this.authRepository.findVerificationToken(
+      dto.email,
+      'EMAIL_VERIFICATION',
+    );
+
+    if (!tokenRecord || tokenRecord.token !== dto.code) {
+      throw new BadRequestException('Invalid verification code.');
+    }
+
+    if (tokenRecord.expiresAt < new Date()) {
+      throw new BadRequestException('Verification code has expired.');
+    }
+
+    const user = await this.authRepository.findByEmail(dto.email);
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
+
+    await this.authRepository.update(user.id, {
+      emailVerifiedAt: new Date(),
+    });
+
+    await this.authRepository.deleteVerificationToken(tokenRecord.id);
+
+    return { success: true, message: 'Email verified successfully.' };
+  }
+
+  async resendVerification(dto: ResendVerificationDto) {
+    const user = await this.authRepository.findByEmail(dto.email);
+    if (!user) {
+      // Don't leak existence
+      return { success: true, message: 'Verification code sent.' };
+    }
+
+    if (user.emailVerifiedAt) {
+      throw new BadRequestException('Email is already verified.');
+    }
+
+    await this.generateAndSendVerificationEmail(user);
+
+    return { success: true, message: 'Verification code sent.' };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.authRepository.findByEmail(dto.email);
+    if (!user) {
+      // Do not leak user existence
+      return {
+        success: true,
+        message: 'If the email exists, a reset link will be sent.',
+      };
+    }
+
+    const token = randomBytes(32).toString('hex');
+    await this.authRepository.upsertVerificationToken({
+      email: user.email,
+      token,
+      type: 'PASSWORD_RESET',
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hour
+    });
+
+    const resetLink = `${process.env.WEB_ORIGIN || 'http://localhost:3000'}/reset-password/${token}`;
+
+    await this.emailService.sendPasswordResetEmail({
+      email: user.email,
+      firstName: user.firstName,
+      resetLink,
+    });
+
+    return {
+      success: true,
+      message: 'If the email exists, a reset link will be sent.',
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const tokenRecord = await this.authRepository.findVerificationTokenByToken(
+      dto.token,
+      'PASSWORD_RESET',
+    );
+
+    if (!tokenRecord) {
+      throw new BadRequestException('Invalid or expired reset token.');
+    }
+
+    if (tokenRecord.expiresAt < new Date()) {
+      throw new BadRequestException('Reset token has expired.');
+    }
+
+    const user = await this.authRepository.findByEmail(tokenRecord.email);
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
+
+    const passwordHash = this.hashPassword(this.validatePassword(dto.password));
+    await this.authRepository.update(user.id, { passwordHash });
+    await this.authRepository.deleteVerificationToken(tokenRecord.id);
+
+    return { success: true, message: 'Password has been reset.' };
   }
 
   private validateRegisterInput(dto: RegisterDto) {

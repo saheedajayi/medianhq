@@ -14,6 +14,7 @@ const loginSchema = z.object({
 import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
 import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
+import { PasswordInput } from "@/components/ui/custom/password-input";
 import { authService } from "@/services/auth";
 import type { ApiError } from "@/services/api-client";
 
@@ -28,6 +29,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,9 +40,12 @@ export function LoginPage() {
       password: String(formData.get("password") ?? ""),
     });
 
+    setErrors({});
+
     if (!result.success) {
+      setErrors(result.error.flatten().fieldErrors);
       toast.error("Validation error", {
-        description: result.error.errors[0]?.message ?? "Please check your details.",
+        description: "Please check the highlighted fields.",
       });
       return;
     }
@@ -74,8 +79,8 @@ export function LoginPage() {
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <FormField id="loginEmail" label="Email address">
+      <form onSubmit={handleSubmit} noValidate className="grid gap-4">
+        <FormField id="loginEmail" label="Email address" error={errors.email?.[0]}>
           <Input
             id="loginEmail"
             name="email"
@@ -84,12 +89,14 @@ export function LoginPage() {
             required
             className={formInputClassName}
             placeholder="name@gmail.com"
+            aria-invalid={!!errors.email}
           />
         </FormField>
 
         <FormField
           id="loginPassword"
           label="Password"
+          error={errors.password?.[0]}
           action={
             <Link
               href="/reset-password"
@@ -99,14 +106,14 @@ export function LoginPage() {
             </Link>
           }
         >
-          <Input
+          <PasswordInput
             id="loginPassword"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             className={formInputClassName}
             placeholder="Enter password"
+            aria-invalid={!!errors.password}
           />
         </FormField>
 

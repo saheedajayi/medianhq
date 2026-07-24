@@ -14,6 +14,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { UsersModule } from './modules/users/users.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
+import { TaxonomyModule } from './modules/taxonomy/taxonomy.module';
 
 const envFilePath = [
   'apps/api/.env.local',
@@ -37,6 +38,7 @@ const envFilePath = [
     ReviewsModule,
     AdminModule,
     WaitlistModule,
+    TaxonomyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

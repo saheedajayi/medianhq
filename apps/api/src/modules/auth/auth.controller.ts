@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import type { LoginDto, RegisterDto } from './dto/auth.dto';
+import type { LoginDto, RegisterDto, VerifyEmailDto, ResendVerificationDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 
 const AUTH_COOKIE_NAME = 'median_session';
 const COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
@@ -22,14 +22,6 @@ export class AuthController {
     return {
       user: payload.user,
     };
-  }
-
-  @Post('signup')
-  signup(
-    @Body() dto: RegisterDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    return this.register(dto, response);
   }
 
   @Post('login')
@@ -60,6 +52,26 @@ export class AuthController {
     return {
       message: 'Logged out.',
     };
+  }
+
+  @Post('verify-email')
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
+  }
+
+  @Post('resend-verification')
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   private setAuthCookie(response: Response, sessionToken: string) {

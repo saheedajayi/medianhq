@@ -41,12 +41,23 @@ The root `.env.local` only keeps `DATABASE_URL` for Prisma workspace commands.
 
 ## Database
 
-Set `DATABASE_URL` in the root `.env.local`, then run:
+Median uses PostgreSQL through Prisma. For local development, start the included
+PostgreSQL 16 container and apply the migrations:
 
 ```bash
+npm run db:up
 npm run db:generate
-npm run db:migrate
+npm run db:migrate:deploy
+npm run db:seed
 ```
+
+The checked-in `.env.example` matches the local container. Copy it to
+`.env.local` and copy `apps/api/.env.example` to `apps/api/.env.local` if those
+files do not already exist. The API loads `DATABASE_URL` and connects when
+NestJS starts.
+
+To stop PostgreSQL, run `npm run db:down`. The database data is retained in the
+`median_postgres_data` Docker volume.
 
 ## Email
 

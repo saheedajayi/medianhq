@@ -27,6 +27,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function ResetPasswordPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,9 +37,12 @@ export function ResetPasswordPage() {
       email: String(formData.get("email") ?? ""),
     });
 
+    setErrors({});
+
     if (!result.success) {
+      setErrors(result.error.flatten().fieldErrors);
       toast.error("Validation error", {
-        description: result.error.errors[0]?.message ?? "Please check your email.",
+        description: "Please check the highlighted fields.",
       });
       return;
     }
@@ -47,10 +51,8 @@ export function ResetPasswordPage() {
 
     setIsSubmitting(true);
 
-    // Placeholder for reset password API call
-    // authService.resetPassword({ email })
-    // Mocking the API call for now if it doesn't exist
-    new Promise((resolve) => setTimeout(resolve, 1000))
+    authService
+      .forgotPassword({ email })
       .then(() => {
         toast.success("Reset link sent", {
           description: "Check your email for the reset link.",
@@ -79,8 +81,8 @@ export function ResetPasswordPage() {
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="grid gap-4">
-        <FormField id="resetEmail" label="Email address">
+      <form onSubmit={handleSubmit} noValidate className="grid gap-4">
+        <FormField id="resetEmail" label="Email address" error={errors.email?.[0]}>
           <Input
             id="resetEmail"
             name="email"
@@ -89,6 +91,7 @@ export function ResetPasswordPage() {
             required
             className={formInputClassName}
             placeholder="AbduLlahmumuni@medianhq.co"
+            aria-invalid={!!errors.email}
           />
         </FormField>
 

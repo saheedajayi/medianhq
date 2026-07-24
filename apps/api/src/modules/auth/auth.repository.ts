@@ -30,4 +30,50 @@ export class AuthRepository {
       data,
     });
   }
+
+  update(id: string, data: Prisma.UserUpdateInput) {
+    return this.prisma.user.update({
+      where: { id },
+      data,
+    });
+  }
+
+  upsertVerificationToken(data: Prisma.VerificationTokenUncheckedCreateInput) {
+    return this.prisma.verificationToken.upsert({
+      where: {
+        email_type: {
+          email: data.email,
+          type: data.type,
+        },
+      },
+      create: data,
+      update: data,
+    });
+  }
+
+  findVerificationToken(email: string, type: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET') {
+    return this.prisma.verificationToken.findUnique({
+      where: {
+        email_type: {
+          email,
+          type,
+        },
+      },
+    });
+  }
+
+  findVerificationTokenByToken(token: string, type: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET') {
+    return this.prisma.verificationToken.findFirst({
+      where: {
+        token,
+        type,
+      },
+    });
+  }
+
+  deleteVerificationToken(id: string) {
+    return this.prisma.verificationToken.delete({
+      where: { id },
+    });
+  }
 }

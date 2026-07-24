@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
 import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
+import { PasswordInput } from "@/components/ui/custom/password-input";
+import { passwordSchema } from "@/lib/validations";
 import { authService } from "@/services/auth";
 
 import type { ApiError } from "@/services/api-client";
@@ -18,7 +20,7 @@ const signupSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().min(1, "Email is required").email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordSchema,
   confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -36,6 +38,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function SignupPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,9 +52,12 @@ export function SignupPage() {
       confirmPassword: String(formData.get("confirmPassword") ?? ""),
     });
 
+    setErrors({});
+
     if (!result.success) {
+      setErrors(result.error.flatten().fieldErrors);
       toast.error("Validation error", {
-        description: result.error.errors[0]?.message ?? "Please check your details.",
+        description: "Please check the highlighted fields.",
       });
       return;
     }
@@ -99,7 +105,7 @@ export function SignupPage() {
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="grid gap-4">
+      <form onSubmit={handleSubmit} noValidate className="grid gap-4">
         <button
           type="button"
           onClick={() => showSocialNotice("LinkedIn")}
@@ -122,7 +128,7 @@ export function SignupPage() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField id="firstName" label="First name" compact={false}>
+          <FormField id="firstName" label="First name" compact={false} error={errors.firstName?.[0]}>
             <Input
               id="firstName"
               name="firstName"
@@ -130,9 +136,10 @@ export function SignupPage() {
               required
               className={formInputClassName}
               placeholder="Amara"
+              aria-invalid={!!errors.firstName}
             />
           </FormField>
-          <FormField id="lastName" label="Last name" compact={false}>
+          <FormField id="lastName" label="Last name" compact={false} error={errors.lastName?.[0]}>
             <Input
               id="lastName"
               name="lastName"
@@ -140,11 +147,12 @@ export function SignupPage() {
               required
               className={formInputClassName}
               placeholder="Okafor"
+              aria-invalid={!!errors.lastName}
             />
           </FormField>
         </div>
 
-        <FormField id="signupEmail" label="Email address">
+        <FormField id="signupEmail" label="Email address" error={errors.email?.[0]}>
           <Input
             id="signupEmail"
             name="email"
@@ -153,32 +161,31 @@ export function SignupPage() {
             required
             className={formInputClassName}
             placeholder="name@gmail.com"
+            aria-invalid={!!errors.email}
           />
         </FormField>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField id="signupPassword" label="Password">
-            <Input
+          <FormField id="signupPassword" label="Password" error={errors.password?.[0]}>
+            <PasswordInput
               id="signupPassword"
               name="password"
-              type="password"
               autoComplete="new-password"
               required
-              minLength={8}
               className={formInputClassName}
               placeholder="Enter password"
+              aria-invalid={!!errors.password}
             />
           </FormField>
-          <FormField id="confirmPassword" label="Confirm password">
-            <Input
+          <FormField id="confirmPassword" label="Confirm password" error={errors.confirmPassword?.[0]}>
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               autoComplete="new-password"
               required
-              minLength={8}
               className={formInputClassName}
               placeholder="Confirm password"
+              aria-invalid={!!errors.confirmPassword}
             />
           </FormField>
         </div>

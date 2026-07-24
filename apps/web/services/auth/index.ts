@@ -4,6 +4,10 @@ import type {
   AuthUser,
   LoginPayload,
   RegisterPayload,
+  VerifyEmailPayload,
+  ResendVerificationPayload,
+  ForgotPasswordPayload,
+  ResetPasswordPayload,
 } from "./types";
 
 const AUTH_PATH = "/auth";
@@ -24,6 +28,22 @@ export const authService = {
   logout() {
     return apiClient.post<{ message?: string }>(`${AUTH_PATH}/logout`);
   },
+
+  verifyEmail(payload: VerifyEmailPayload) {
+    return apiClient.post<{ message: string }>(`${AUTH_PATH}/verify-email`, payload);
+  },
+
+  resendVerification(payload: ResendVerificationPayload) {
+    return apiClient.post<{ message: string }>(`${AUTH_PATH}/resend-verification`, payload);
+  },
+
+  forgotPassword(payload: ForgotPasswordPayload) {
+    return apiClient.post<{ message: string }>(`${AUTH_PATH}/forgot-password`, payload);
+  },
+
+  resetPassword(payload: ResetPasswordPayload) {
+    return apiClient.post<{ message: string }>(`${AUTH_PATH}/reset-password`, payload);
+  },
 };
 
 export type {
@@ -32,4 +52,8 @@ export type {
   AuthUser,
   LoginPayload,
   RegisterPayload,
+  VerifyEmailPayload,
+  ResendVerificationPayload,
+  ForgotPasswordPayload,
+  ResetPasswordPayload,
 } from "./types";
