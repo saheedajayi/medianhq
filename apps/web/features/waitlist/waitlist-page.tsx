@@ -340,7 +340,7 @@ export function WaitlistPageContent() {
               rel="noreferrer"
             >
               <Image
-                src="/email-linkedin-white@2x.png"
+                src="/email/email-linkedin-white@2x.png"
                 alt=""
                 width={18}
                 height={18}
@@ -355,7 +355,7 @@ export function WaitlistPageContent() {
               rel="noreferrer"
             >
               <Image
-                src="/email-instagram-white@2x.png"
+                src="/email/email-instagram-white@2x.png"
                 alt=""
                 width={18}
                 height={18}
@@ -370,7 +370,7 @@ export function WaitlistPageContent() {
               rel="noreferrer"
             >
               <Image
-                src="/email-x-white@2x.png"
+                src="/email/email-x-white@2x.png"
                 alt=""
                 width={18}
                 height={18}

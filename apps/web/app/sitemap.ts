@@ -1,17 +1,17 @@
 import type { MetadataRoute } from "next";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.medianhq.co";
+import { siteConfig } from "@/lib/site-config";
 
+export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: siteUrl,
+      url: siteConfig.url,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: `${siteUrl}/waitlist`,
+      url: `${siteConfig.url}/waitlist`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
