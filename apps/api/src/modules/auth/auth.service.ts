@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { UserRole, type User } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service';
+import { AuthRepository } from './auth.repository';
 import type { AuthUser, LoginDto, RegisterDto } from './dto/auth.dto';
 
 type AuthPayload = {
@@ -25,27 +25,22 @@ const PASSWORD_MIN_LENGTH = 8;
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly authRepository: AuthRepository) {}
 
   async register(dto: RegisterDto): Promise<AuthPayload> {
     const input = this.validateRegisterInput(dto);
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: input.email },
-      select: { id: true },
-    });
+    const existingUser = await this.authRepository.findIdByEmail(input.email);
 
     if (existingUser) {
       throw new ConflictException('An account already exists for this email.');
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: input.email,
-        passwordHash: this.hashPassword(input.password),
-        firstName: input.firstName,
-        lastName: input.lastName,
-        role: input.role,
-      },
+    const user = await this.authRepository.create({
+      email: input.email,
+      passwordHash: this.hashPassword(input.password),
+      firstName: input.firstName,
+      lastName: input.lastName,
+      role: input.role,
     });
 
     return {
@@ -56,9 +51,7 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<AuthPayload> {
     const input = this.validateLoginInput(dto);
-    const user = await this.prisma.user.findUnique({
-      where: { email: input.email },
-    });
+    const user = await this.authRepository.findByEmail(input.email);
 
     if (!user || !this.verifyPassword(input.password, user.passwordHash)) {
       throw new UnauthorizedException('Invalid email or password.');
@@ -76,9 +69,7 @@ export class AuthService {
     }
 
     const payload = this.verifyToken(sessionToken);
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
+    const user = await this.authRepository.findById(payload.sub);
 
     if (!user) {
       throw new UnauthorizedException('Authentication is required.');

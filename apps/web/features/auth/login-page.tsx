@@ -4,15 +4,18 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
 import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
-import { Label } from "@/components/ui/base/label";
+import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
 import { authService } from "@/services/auth";
 import type { ApiError } from "@/services/api-client";
-
-const inputClassName =
-  "h-12 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15";
 
 function getErrorMessage(error: unknown, fallback: string) {
   const apiError = error as Partial<ApiError>;
@@ -22,28 +25,6 @@ function getErrorMessage(error: unknown, fallback: string) {
     : fallback;
 }
 
-function Field({
-  id,
-  label,
-  children,
-  action,
-}: {
-  id: string;
-  label: string;
-  children: ReactNode;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="grid gap-2">
-      <Label htmlFor={id} className="text-sm font-normal text-[#141c2e]">
-        {label}
-      </Label>
-      {children}
-      {action && <div className="text-right">{action}</div>}
-    </div>
-  );
-}
-
 export function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,16 +32,23 @@ export function LoginPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "");
-    const password = String(formData.get("password") ?? "");
+    
+    const result = loginSchema.safeParse({
+      email: String(formData.get("email") ?? ""),
+      password: String(formData.get("password") ?? ""),
+    });
+
+    if (!result.success) {
+      toast.error("Validation error", {
+        description: result.error.errors[0]?.message ?? "Please check your details.",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
     authService
-      .login({
-        email,
-        password,
-      })
+      .login(result.data)
       .then((response) => {
         toast.success("Logged in", {
           description: `Welcome back.`,
@@ -87,19 +75,19 @@ export function LoginPage() {
       </header>
 
       <form onSubmit={handleSubmit} className="grid gap-4">
-        <Field id="loginEmail" label="Email address">
+        <FormField id="loginEmail" label="Email address">
           <Input
             id="loginEmail"
             name="email"
             type="email"
             autoComplete="email"
             required
-            className={inputClassName}
+            className={formInputClassName}
             placeholder="name@gmail.com"
           />
-        </Field>
+        </FormField>
 
-        <Field
+        <FormField
           id="loginPassword"
           label="Password"
           action={
@@ -117,10 +105,10 @@ export function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            className={inputClassName}
+            className={formInputClassName}
             placeholder="Enter password"
           />
-        </Field>
+        </FormField>
 
         <Button
           type="submit"

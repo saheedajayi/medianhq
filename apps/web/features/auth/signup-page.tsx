@@ -4,17 +4,26 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
+import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
 import { authService } from "@/services/auth";
+
 import type { ApiError } from "@/services/api-client";
 
-const inputClassName =
-  "h-11 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15";
-const signupInputClassName =
-  "h-12 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15";
+const signupSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
 function getErrorMessage(error: unknown, fallback: string) {
   const apiError = error as Partial<ApiError>;
@@ -24,34 +33,6 @@ function getErrorMessage(error: unknown, fallback: string) {
     : fallback;
 }
 
-function Field({
-  id,
-  label,
-  compact = false,
-  children,
-}: {
-  id: string;
-  label: string;
-  compact?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className="grid gap-2">
-      <Label
-        htmlFor={id}
-        className={
-          compact
-            ? "text-sm font-normal text-[#141c2e]"
-            : "text-base font-semibold text-text-700"
-        }
-      >
-        {label}
-      </Label>
-      {children}
-    </div>
-  );
-}
-
 export function SignupPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,23 +40,30 @@ export function SignupPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "");
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    
+    const result = signupSchema.safeParse({
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      password: String(formData.get("password") ?? ""),
+      confirmPassword: String(formData.get("confirmPassword") ?? ""),
+    });
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match", {
-        description: "Please re-enter your password confirmation.",
+    if (!result.success) {
+      toast.error("Validation error", {
+        description: result.error.errors[0]?.message ?? "Please check your details.",
       });
       return;
     }
 
     setIsSubmitting(true);
 
+    const { email, firstName, lastName, password } = result.data;
+
     authService
       .register({
-        firstName: String(formData.get("firstName") ?? ""),
-        lastName: String(formData.get("lastName") ?? ""),
+        firstName,
+        lastName,
         email,
         password,
         role: "MENTEE",
@@ -134,42 +122,42 @@ export function SignupPage() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field id="firstName" label="First name">
+          <FormField id="firstName" label="First name" compact={false}>
             <Input
               id="firstName"
               name="firstName"
               autoComplete="given-name"
               required
-              className={inputClassName}
+              className={formInputClassName}
               placeholder="Amara"
             />
-          </Field>
-          <Field id="lastName" label="Last name">
+          </FormField>
+          <FormField id="lastName" label="Last name" compact={false}>
             <Input
               id="lastName"
               name="lastName"
               autoComplete="family-name"
               required
-              className={inputClassName}
+              className={formInputClassName}
               placeholder="Okafor"
             />
-          </Field>
+          </FormField>
         </div>
 
-        <Field id="signupEmail" label="Email address" compact>
+        <FormField id="signupEmail" label="Email address">
           <Input
             id="signupEmail"
             name="email"
             type="email"
             autoComplete="email"
             required
-            className={signupInputClassName}
+            className={formInputClassName}
             placeholder="name@gmail.com"
           />
-        </Field>
+        </FormField>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field id="signupPassword" label="Password" compact>
+          <FormField id="signupPassword" label="Password">
             <Input
               id="signupPassword"
               name="password"
@@ -177,11 +165,11 @@ export function SignupPage() {
               autoComplete="new-password"
               required
               minLength={8}
-              className={signupInputClassName}
+              className={formInputClassName}
               placeholder="Enter password"
             />
-          </Field>
-          <Field id="confirmPassword" label="Confirm password" compact>
+          </FormField>
+          <FormField id="confirmPassword" label="Confirm password">
             <Input
               id="confirmPassword"
               name="confirmPassword"
@@ -189,10 +177,10 @@ export function SignupPage() {
               autoComplete="new-password"
               required
               minLength={8}
-              className={signupInputClassName}
+              className={formInputClassName}
               placeholder="Confirm password"
             />
-          </Field>
+          </FormField>
         </div>
 
         <Button

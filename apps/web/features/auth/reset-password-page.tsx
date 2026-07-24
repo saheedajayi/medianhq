@@ -3,17 +3,18 @@
 import { type FormEvent, type ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const resetPasswordSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+});
 
 import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
-// Note: Assuming there is a forgotPassword/resetPassword method in authService.
-// If not, this is a placeholder for the actual API call.
+import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
 import { authService } from "@/services/auth";
 import type { ApiError } from "@/services/api-client";
-
-const inputClassName =
-  "h-12 border-text-200 bg-white px-4 text-text-900 placeholder:text-text-400 focus-visible:border-primary focus-visible:ring-primary/15";
 
 function getErrorMessage(error: unknown, fallback: string) {
   const apiError = error as Partial<ApiError>;
@@ -23,25 +24,6 @@ function getErrorMessage(error: unknown, fallback: string) {
     : fallback;
 }
 
-function Field({
-  id,
-  label,
-  children,
-}: {
-  id: string;
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="grid gap-2">
-      <Label htmlFor={id} className="text-sm font-normal text-[#141c2e]">
-        {label}
-      </Label>
-      {children}
-    </div>
-  );
-}
-
 export function ResetPasswordPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +31,19 @@ export function ResetPasswordPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "");
+    
+    const result = resetPasswordSchema.safeParse({
+      email: String(formData.get("email") ?? ""),
+    });
+
+    if (!result.success) {
+      toast.error("Validation error", {
+        description: result.error.errors[0]?.message ?? "Please check your email.",
+      });
+      return;
+    }
+
+    const { email } = result.data;
 
     setIsSubmitting(true);
 
@@ -86,17 +80,17 @@ export function ResetPasswordPage() {
       </header>
 
       <form onSubmit={handleSubmit} className="grid gap-4">
-        <Field id="resetEmail" label="Email address">
+        <FormField id="resetEmail" label="Email address">
           <Input
             id="resetEmail"
             name="email"
             type="email"
             autoComplete="email"
             required
-            className={inputClassName}
+            className={formInputClassName}
             placeholder="AbduLlahmumuni@medianhq.co"
           />
-        </Field>
+        </FormField>
 
         <Button
           type="submit"
