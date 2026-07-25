@@ -5,7 +5,7 @@ export type RegisterDto = {
   password: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role?: UserRole;
 };
 
 export type LoginDto = {
@@ -18,7 +18,7 @@ export type AuthUser = {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role?: UserRole;
   isEmailVerified: boolean;
   hasMenteeProfile: boolean;
   hasMentorProfile: boolean;

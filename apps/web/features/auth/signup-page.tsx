@@ -72,7 +72,6 @@ export function SignupPage() {
         lastName,
         email,
         password,
-        role: "MENTEE",
       })
       .then((response) => {
         toast.success("Account created", {
@@ -90,11 +89,7 @@ export function SignupPage() {
       .finally(() => setIsSubmitting(false));
   }
 
-  function showSocialNotice(provider: string) {
-    toast.info(`${provider} sign up is coming soon`, {
-      description: "Create your account with email for now.",
-    });
-  }
+
 
   return (
     <>
@@ -108,20 +103,18 @@ export function SignupPage() {
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
-        <button
-          type="button"
-          onClick={() => showSocialNotice("LinkedIn")}
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/linkedin`}
           className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
         >
           Continue with LinkedIn
-        </button>
-        <button
-          type="button"
-          onClick={() => showSocialNotice("Google")}
+        </a>
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
           className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
         >
           Continue with Google
-        </button>
+        </a>
 
         <div className="flex items-center gap-3 py-1 text-sm text-[#b5bdcc]">
           <span className="h-px flex-1 bg-[#e1e5eb]" />

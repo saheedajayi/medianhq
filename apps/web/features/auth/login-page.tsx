@@ -89,6 +89,24 @@ export function LoginPage() {
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/linkedin`}
+          className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
+        >
+          Log in with LinkedIn
+        </a>
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
+          className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
+        >
+          Log in with Google
+        </a>
+
+        <div className="flex items-center gap-3 py-1 text-sm text-[#b5bdcc]">
+          <span className="h-px flex-1 bg-[#e1e5eb]" />
+          Or
+          <span className="h-px flex-1 bg-[#e1e5eb]" />
+        </div>
         <FormField id="loginEmail" label="Email address" error={errors.email?.[0]}>
           <Input
             id="loginEmail"

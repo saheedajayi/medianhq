@@ -37,7 +37,8 @@ apps/api/.env.local
 apps/web/.env.local
 ```
 
-The root `.env.local` only keeps `DATABASE_URL` for Prisma workspace commands.
+The root `.env.local` keeps `DATABASE_URL` for Prisma workspace commands and
+the local PostgreSQL container settings.
 
 ## Database
 
@@ -51,10 +52,20 @@ npm run db:migrate:deploy
 npm run db:seed
 ```
 
-The checked-in `.env.example` matches the local container. Copy it to
-`.env.local` and copy `apps/api/.env.example` to `apps/api/.env.local` if those
-files do not already exist. The API loads `DATABASE_URL` and connects when
-NestJS starts.
+Copy `.env.example` to `.env.local`, choose a local-only PostgreSQL password,
+and build `DATABASE_URL` from the same database name, user, and password. Keep
+the values blank in the checked-in example:
+
+```txt
+DATABASE_URL=postgresql://<user>:<password>@localhost:5432/<database>?schema=public
+POSTGRES_DB=<database>
+POSTGRES_USER=<user>
+POSTGRES_PASSWORD=<password>
+```
+
+Copy `apps/api/.env.example` to `apps/api/.env.local` if it does not already
+exist, then set its `DATABASE_URL` to the same value. The API loads that URL and
+connects when NestJS starts.
 
 To stop PostgreSQL, run `npm run db:down`. The database data is retained in the
 `median_postgres_data` Docker volume.

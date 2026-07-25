@@ -26,6 +26,16 @@ export class AuthRepository {
     });
   }
 
+  findByOAuthId(provider: 'google' | 'linkedin', providerId: string) {
+    return this.prisma.user.findUnique({
+      where: provider === 'google' ? { googleId: providerId } : { linkedinId: providerId },
+      include: {
+        menteeProfile: { select: { id: true } },
+        mentorProfile: { select: { id: true, status: true } },
+      },
+    });
+  }
+
   findIdByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },

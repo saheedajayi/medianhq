@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import type { LoginDto, RegisterDto, VerifyEmailDto, ResendVerificationDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
@@ -54,6 +55,44 @@ export class AuthController {
     return {
       message: 'Logged out.',
     };
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Initiates Google OAuth
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: any, @Res() res: Response) {
+    const payload = await this.authService.oauthLogin(req.user);
+    this.setAuthCookie(res, payload.sessionToken);
+
+    const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
+    if (!payload.user.hasMenteeProfile && !payload.user.hasMentorProfile) {
+      return res.redirect(`${baseUrl}/role-selection`);
+    }
+    return res.redirect(`${baseUrl}/dashboard`);
+  }
+
+  @Get('linkedin')
+  @UseGuards(AuthGuard('linkedin'))
+  async linkedinAuth() {
+    // Initiates LinkedIn OAuth
+  }
+
+  @Get('linkedin/callback')
+  @UseGuards(AuthGuard('linkedin'))
+  async linkedinAuthRedirect(@Req() req: any, @Res() res: Response) {
+    const payload = await this.authService.oauthLogin(req.user);
+    this.setAuthCookie(res, payload.sessionToken);
+
+    const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
+    if (!payload.user.hasMenteeProfile && !payload.user.hasMentorProfile) {
+      return res.redirect(`${baseUrl}/role-selection`);
+    }
+    return res.redirect(`${baseUrl}/dashboard`);
   }
 
   @Post('verify-email')

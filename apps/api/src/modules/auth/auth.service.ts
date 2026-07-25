@@ -48,7 +48,7 @@ export class AuthService {
       passwordHash: this.hashPassword(input.password),
       firstName: input.firstName,
       lastName: input.lastName,
-      role: input.role,
+      ...(input.role && { role: input.role }),
     });
 
     let emailSent = true;
@@ -87,7 +87,7 @@ export class AuthService {
     const input = this.validateLoginInput(dto);
     const user = await this.authRepository.findByEmail(input.email);
 
-    if (!user || !this.verifyPassword(input.password, user.passwordHash)) {
+    if (!user || !user.passwordHash || !this.verifyPassword(input.password, user.passwordHash)) {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
@@ -121,6 +121,42 @@ export class AuthService {
     }
 
     return this.toAuthUser(user);
+  }
+
+  async oauthLogin(profile: any): Promise<AuthPayload> {
+    const { providerId, email, firstName, lastName, provider } = profile;
+    
+    // Check if user exists by OAuth ID
+    let user = await this.authRepository.findByOAuthId(provider, providerId);
+    
+    if (!user) {
+      // Check if user exists by email to link account
+      if (email) {
+        user = await this.authRepository.findByEmail(email) as any;
+      }
+      
+      if (user) {
+        // Link OAuth ID to existing user
+        const updateData = provider === 'google' ? { googleId: providerId } : { linkedinId: providerId };
+        user = await this.authRepository.update(user.id, updateData) as any;
+      } else {
+        // Create new user without password and role
+        const createData = {
+          email: email || `${providerId}@${provider}.com`, // Fallback email
+          firstName: firstName || 'User',
+          lastName: lastName || '',
+          emailVerifiedAt: new Date(), // Implicitly verified by OAuth
+          [provider === 'google' ? 'googleId' : 'linkedinId']: providerId,
+        };
+        user = await this.authRepository.create(createData) as any;
+      }
+    }
+
+    return {
+      sessionToken: this.signToken(user!),
+      user: this.toAuthUser(user!),
+      emailSent: true,
+    };
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
@@ -231,7 +267,7 @@ export class AuthService {
     const firstName = this.validateRequiredText(dto.firstName, 'First name');
     const lastName = this.validateRequiredText(dto.lastName, 'Last name');
 
-    if (!Object.values(UserRole).includes(dto.role)) {
+    if (dto.role && !Object.values(UserRole).includes(dto.role as any)) {
       throw new BadRequestException('A valid role is required.');
     }
 
