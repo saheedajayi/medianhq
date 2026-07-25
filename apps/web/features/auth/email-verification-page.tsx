@@ -99,7 +99,7 @@ export function EmailVerificationPage({ email, retryEmail }: { email: string; re
             Code
           </Label>
           <InputOTP maxLength={6} name="verificationCode" id="verificationCode" containerClassName="mt-2 w-full flex justify-between">
-            <InputOTPGroup className="flex w-full justify-between gap-3">
+            <InputOTPGroup className="flex w-full justify-between gap-2 sm:gap-3">
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
               <InputOTPSlot index={2} />

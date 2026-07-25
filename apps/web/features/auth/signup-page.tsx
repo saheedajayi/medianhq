@@ -75,7 +75,7 @@ export function SignupPage() {
       })
       .then((response) => {
         toast.success("Account created", {
-          description: `${firstName}, welcome to Median.`,
+          description: `${response.data.user.firstName}, welcome to Median.`,
         });
 
         const retryParam = response.data.emailSent === false ? "&retryEmail=true" : "";
