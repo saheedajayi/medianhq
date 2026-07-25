@@ -123,6 +123,7 @@ export function MentorOnboardingPage() {
             placeholder="Select a role..."
             emptyText={industry ? "No role found." : "Please select an industry first."}
             disabled={!industry}
+            disabledMessage="Select an industry first"
           />
         </div>
 

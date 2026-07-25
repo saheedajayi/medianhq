@@ -18,6 +18,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/base/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/base/tooltip";
 
 interface CreatableComboboxProps {
   options: string[];
@@ -26,6 +32,7 @@ interface CreatableComboboxProps {
   placeholder?: string;
   emptyText?: string;
   disabled?: boolean;
+  disabledMessage?: string;
   onCreate?: (value: string) => void;
 }
 
@@ -36,17 +43,54 @@ export function CreatableCombobox({
   placeholder = "Select an option...",
   emptyText = "No results found.",
   disabled = false,
+  disabledMessage,
   onCreate,
 }: CreatableComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
+  const [disabledTooltipOpen, setDisabledTooltipOpen] = React.useState(false);
+  const disabledTooltipTimeout =
+    React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (disabledTooltipTimeout.current) {
+        clearTimeout(disabledTooltipTimeout.current);
+      }
+    };
+  }, []);
+
+  function showDisabledMessage(autoDismiss = false) {
+    if (!disabled || !disabledMessage) return;
+
+    setDisabledTooltipOpen(true);
+    if (disabledTooltipTimeout.current) {
+      clearTimeout(disabledTooltipTimeout.current);
+    }
+    if (autoDismiss) {
+      disabledTooltipTimeout.current = setTimeout(
+        () => setDisabledTooltipOpen(false),
+        2500,
+      );
+    }
+  }
+
+  function showDisabledMessageAfterInteraction() {
+    if (disabledTooltipTimeout.current) {
+      clearTimeout(disabledTooltipTimeout.current);
+    }
+    disabledTooltipTimeout.current = setTimeout(
+      () => showDisabledMessage(true),
+      0,
+    );
+  }
 
   // Check if current search value exactly matches an existing option (case insensitive)
   const isExactMatch = options.some(
     (opt) => opt.toLowerCase() === searchValue.toLowerCase().trim()
   );
 
-  return (
+  const combobox = (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
@@ -132,5 +176,41 @@ export function CreatableCombobox({
         </Command>
       </PopoverContent>
     </Popover>
+  );
+
+  if (!disabled || !disabledMessage) {
+    return combobox;
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip
+        open={disabledTooltipOpen}
+        onOpenChange={setDisabledTooltipOpen}
+      >
+        <TooltipTrigger asChild>
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={disabledMessage}
+            className="w-full cursor-not-allowed [&_button]:pointer-events-none"
+            onMouseEnter={() => showDisabledMessage()}
+            onMouseLeave={() => setDisabledTooltipOpen(false)}
+            onFocus={() => showDisabledMessage()}
+            onBlur={() => setDisabledTooltipOpen(false)}
+            onClick={showDisabledMessageAfterInteraction}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                showDisabledMessageAfterInteraction();
+              }
+            }}
+          >
+            {combobox}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top">{disabledMessage}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
