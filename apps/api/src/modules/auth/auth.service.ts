@@ -19,7 +19,7 @@ type AuthPayload = {
 
 type SessionPayload = {
   sub: string;
-  role: UserRole;
+  role?: UserRole;
   exp: number;
 };
 
@@ -178,13 +178,13 @@ export class AuthService {
       throw new BadRequestException('User not found.');
     }
 
-    await this.authRepository.update(user.id, {
+    const updatedUser = await this.authRepository.update(user.id, {
       emailVerifiedAt: new Date(),
-    });
+    }) as any;
 
     await this.authRepository.deleteVerificationToken(tokenRecord.id);
 
-    return { success: true, message: 'Email verified successfully.' };
+    return { success: true, message: 'Email verified successfully.', user: this.toAuthUser(updatedUser) };
   }
 
   async resendVerification(dto: ResendVerificationDto) {
@@ -398,8 +398,7 @@ export class AuthService {
 
     if (
       !decodedPayload.sub ||
-      !decodedPayload.role ||
-      !Object.values(UserRole).includes(decodedPayload.role) ||
+      (decodedPayload.role && !Object.values(UserRole).includes(decodedPayload.role)) ||
       !decodedPayload.exp ||
       decodedPayload.exp < Math.floor(Date.now() / 1000)
     ) {

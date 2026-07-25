@@ -5,7 +5,7 @@ export type AuthUser = {
   email: string;
   firstName: string;
   lastName: string;
-  role: AuthRole;
+  role?: AuthRole;
   isEmailVerified: boolean;
   hasMenteeProfile: boolean;
   hasMentorProfile: boolean;
@@ -23,7 +23,7 @@ export type RegisterPayload = {
   password: string;
   firstName: string;
   lastName: string;
-  role: Exclude<AuthRole, "ADMIN">;
+  role?: Exclude<AuthRole, "ADMIN">;
 };
 
 export type LoginPayload = {
