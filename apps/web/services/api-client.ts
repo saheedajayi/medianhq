@@ -67,6 +67,7 @@ const getErrorMessage = (payload: unknown, fallback: string) => {
 export const apiClient: AxiosInstance = axios.create({
   baseURL: `${API_BASE_URL}${API_BASE_PATH}`,
   timeout: API_TIMEOUT,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { siteConfig } from "@/lib/site-config";
+
 export const waitlistMetadata: Metadata = {
   title: "Join the Waitlist",
   description:
@@ -12,14 +14,11 @@ export const waitlistMetadata: Metadata = {
     description:
       "Get early access to Median, the mentorship platform connecting ambitious professionals with vetted mentors.",
     url: "/waitlist",
-    siteName: "Median",
+    siteName: siteConfig.name,
     type: "website",
     images: [
       {
-        url: "/social-preview.png",
-        width: 1200,
-        height: 630,
-        type: "image/png",
+        ...siteConfig.socialImage,
         alt: "Join the Median waitlist",
       },
     ],
@@ -31,7 +30,7 @@ export const waitlistMetadata: Metadata = {
       "Get early access to Median, the mentorship platform connecting ambitious professionals with vetted mentors.",
     images: [
       {
-        url: "/social-preview.png",
+        ...siteConfig.socialImage,
         alt: "Join the Median waitlist",
       },
     ],

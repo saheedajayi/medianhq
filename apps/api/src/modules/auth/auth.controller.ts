@@ -1,18 +1,146 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import type { LoginDto, RegisterDto } from './dto/auth.dto';
+import type { LoginDto, RegisterDto, VerifyEmailDto, ResendVerificationDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+
+const AUTH_COOKIE_NAME = 'median_session';
+const COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const payload = await this.authService.register(dto);
+
+    this.setAuthCookie(response, payload.sessionToken);
+
+    return {
+      user: payload.user,
+      emailSent: payload.emailSent,
+    };
   }
 
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const payload = await this.authService.login(dto);
+
+    this.setAuthCookie(response, payload.sessionToken);
+
+    return {
+      user: payload.user,
+      emailSent: payload.emailSent,
+    };
+  }
+
+  @Get('me')
+  me(@Req() request: Request) {
+    return this.authService.getCurrentUser(
+      this.getCookieValue(request.headers.cookie, AUTH_COOKIE_NAME),
+    );
+  }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie(AUTH_COOKIE_NAME, this.getCookieOptions());
+
+    return {
+      message: 'Logged out.',
+    };
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Initiates Google OAuth
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: any, @Res() res: Response) {
+    const payload = await this.authService.oauthLogin(req.user);
+    this.setAuthCookie(res, payload.sessionToken);
+
+    const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
+    if (!payload.user.hasMenteeProfile && !payload.user.hasMentorProfile) {
+      return res.redirect(`${baseUrl}/role-selection`);
+    }
+    return res.redirect(`${baseUrl}/dashboard`);
+  }
+
+  @Get('linkedin')
+  @UseGuards(AuthGuard('linkedin'))
+  async linkedinAuth() {
+    // Initiates LinkedIn OAuth
+  }
+
+  @Get('linkedin/callback')
+  @UseGuards(AuthGuard('linkedin'))
+  async linkedinAuthRedirect(@Req() req: any, @Res() res: Response) {
+    const payload = await this.authService.oauthLogin(req.user);
+    this.setAuthCookie(res, payload.sessionToken);
+
+    const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
+    if (!payload.user.hasMenteeProfile && !payload.user.hasMentorProfile) {
+      return res.redirect(`${baseUrl}/role-selection`);
+    }
+    return res.redirect(`${baseUrl}/dashboard`);
+  }
+
+  @Post('verify-email')
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
+  }
+
+  @Post('resend-verification')
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  private setAuthCookie(response: Response, sessionToken: string) {
+    response.cookie(AUTH_COOKIE_NAME, sessionToken, {
+      ...this.getCookieOptions(),
+      maxAge: COOKIE_MAX_AGE_MS,
+    });
+  }
+
+  private getCookieOptions() {
+    return {
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    };
+  }
+
+  private getCookieValue(cookieHeader: string | undefined, name: string) {
+    if (!cookieHeader) {
+      return undefined;
+    }
+
+    return cookieHeader
+      .split(';')
+      .map((cookie) => cookie.trim())
+      .find((cookie) => cookie.startsWith(`${name}=`))
+      ?.slice(name.length + 1)
+      .trim();
   }
 }

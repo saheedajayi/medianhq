@@ -42,10 +42,11 @@ enum WaitlistAudience {
 model User {
   id             String         @id @default(cuid())
   email          String         @unique
-  passwordHash   String
+  passwordHash   String?
   firstName      String
   lastName       String
-  role           UserRole
+  role           UserRole?
+  emailVerifiedAt DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   mentorProfile  MentorProfile?
@@ -53,20 +54,24 @@ model User {
   mentorBookings Booking[]      @relation("MentorBookings")
   menteeBookings Booking[]      @relation("MenteeBookings")
   reviewsGiven   Review[]       @relation("ReviewsGiven")
+
+  googleId       String?        @unique
+  linkedinId     String?        @unique
 }
 
 model MentorProfile {
   id                String       @id @default(cuid())
   userId            String       @unique
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  headline          String
-  bio               String
+  headline          String?
+  bio               String?
   industry          String
-  yearsOfExperience Int
+  experience        String
   company           String?
   jobTitle          String?
+  location          String?
   linkedinUrl       String?
-  pricePerSession   Int
+  pricePerSession   Int          @default(0)
   currency          String       @default("NGN")
   status            MentorStatus @default(DRAFT)
   createdAt         DateTime     @default(now())
@@ -74,13 +79,17 @@ model MentorProfile {
 }
 
 model MenteeProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  careerStage String?
-  goals       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careerStage     String?
+  goals           String[]
+  goalDescription String?
+  currentRole     String?
+  industry        String?
+  timeframe       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Booking {
@@ -154,4 +163,40 @@ model WaitlistEntry {
   @@unique([email])
   @@index([audience])
   @@index([createdAt])
+}
+
+model Industry {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  roles     Role[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id         String   @id @default(cuid())
+  name       String
+  industryId String
+  industry   Industry @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([name, industryId])
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String
+  type      TokenType
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@unique([email, type])
+  @@index([token])
 }

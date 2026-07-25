@@ -1,13 +1,17 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import type { CreateMenteeProfileDto } from './dto/create-mentee-profile.dto';
 import { MenteesService } from './mentees.service';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/dto/auth.dto';
 
 @Controller('mentees')
 export class MenteesController {
   constructor(private readonly menteesService: MenteesService) {}
 
+  @UseGuards(AuthGuard)
   @Post('profile')
-  createProfile(@Body() dto: CreateMenteeProfileDto) {
-    return this.menteesService.createProfile(dto);
+  createProfile(@CurrentUser() user: AuthUser, @Body() dto: CreateMenteeProfileDto) {
+    return this.menteesService.createProfile(user.id, dto);
   }
 }

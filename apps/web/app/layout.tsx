@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+
+import { siteConfig } from "@/lib/site-config";
+
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -53,16 +56,13 @@ const neco = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.medianhq.co",
-  ),
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: "Median | Vetted Mentorship for African Professionals",
-    template: "%s | Median",
+    default: siteConfig.title,
+    template: `%s | ${siteConfig.name}`,
   },
-  description:
-    "Median connects ambitious African professionals with vetted mentors for focused 1-on-1 sessions, group calls, and practical career guidance.",
-  applicationName: "Median",
+  description: siteConfig.description,
+  applicationName: siteConfig.name,
   keywords: [
     "Median",
     "mentorship",
@@ -83,31 +83,16 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    siteName: "Median",
-    title: "Median | Vetted Mentorship for African Professionals",
-    description:
-      "Meet vetted mentors for real advice, structured sessions, and career guidance built for ambitious African professionals.",
-    images: [
-       {
-        url: "/social-preview.png",
-        width: 1200,
-        height: 630,
-        type: "image/png",
-        alt: "Median - Vetted mentorship for African professionals",
-      },
-    ],
+    siteName: siteConfig.name,
+    title: siteConfig.title,
+    description: siteConfig.socialDescription,
+    images: [siteConfig.socialImage],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Median | Vetted Mentorship for African Professionals",
-    description:
-      "Meet vetted mentors for real advice, structured sessions, and career guidance built for ambitious African professionals.",
-    images: [
-      {
-        url: "/social-preview.png",
-        alt: "Median - Vetted mentorship for African professionals",
-      },
-    ],
+    title: siteConfig.title,
+    description: siteConfig.socialDescription,
+    images: [siteConfig.socialImage],
   },
   icons: {
     icon: [

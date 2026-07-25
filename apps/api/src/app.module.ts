@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { existsSync } from 'node:fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AdminModule } from './modules/admin/admin.module';
@@ -13,12 +14,18 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { UsersModule } from './modules/users/users.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
+import { TaxonomyModule } from './modules/taxonomy/taxonomy.module';
+
+const envFilePath = [
+  'apps/api/.env.local',
+  '.env.local',
+].filter((path) => existsSync(path));
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env.local',
+      envFilePath,
     }),
     DatabaseModule,
     AuthModule,
@@ -31,6 +38,7 @@ import { WaitlistModule } from './modules/waitlist/waitlist.module';
     ReviewsModule,
     AdminModule,
     WaitlistModule,
+    TaxonomyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,10 +1,7 @@
 export type CreateMentorProfileDto = {
-  headline: string;
-  bio: string;
-  industry: string;
-  yearsOfExperience: number;
+  currentRole?: string;
   company?: string;
-  jobTitle?: string;
-  linkedinUrl?: string;
-  pricePerSession: number;
+  industry: string;
+  experience: string;
+  location: string;
 };
