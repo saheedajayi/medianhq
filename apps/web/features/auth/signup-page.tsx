@@ -200,11 +200,12 @@ export function SignupPage() {
           {isSubmitting ? "Creating account..." : "Create Account"}
         </Button>
 
-        <p className="text-center text-base text-[#141c2e]">
+        <p className="text-center text-sm text-[#141c2e]">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-[#ff5514] hover:underline"
+            className="font-medium hover:underline"
+            style={{ color: '#ff5514' }}
           >
             Log in
           </Link>

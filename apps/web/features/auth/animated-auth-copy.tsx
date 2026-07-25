@@ -32,7 +32,7 @@ const content = [
       </>
     ),
     description:
-      "Share your expertise with future leaders. Shape careers and give back to the community on your own terms.",
+      "Inspire the next generation of professionals. Shape careers and give back to the community on your own terms.",
     benefits: [
       "Impact-Driven 1-on-1 Mentorship",
       "Set Your Own Availability",
