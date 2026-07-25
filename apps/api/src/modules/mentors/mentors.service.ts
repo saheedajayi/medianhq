@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { MentorStatus } from '@prisma/client';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import { MentorStatus, UserRole } from '@prisma/client';
 import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
 import { PrismaService } from '../../database/prisma.service';
 
@@ -56,18 +56,25 @@ export class MentorsService {
   }
 
   async apply(userId: string, dto: CreateMentorProfileDto) {
-    const profile = await this.prisma.mentorProfile.upsert({
-      where: { userId },
-      create: {
-        userId,
-        industry: dto.industry,
-        experience: dto.experience,
-        company: dto.company,
-        jobTitle: dto.currentRole,
-        location: dto.location,
-        status: MentorStatus.PENDING_REVIEW,
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+        mentorProfile: { select: { id: true } },
       },
-      update: {
+    });
+
+    if (user?.role !== UserRole.MENTOR) {
+      throw new ForbiddenException('A mentor role is required to create this profile.');
+    }
+
+    if (user.mentorProfile) {
+      throw new ConflictException('Your mentor onboarding has already been completed.');
+    }
+
+    const profile = await this.prisma.mentorProfile.create({
+      data: {
+        userId,
         industry: dto.industry,
         experience: dto.experience,
         company: dto.company,
