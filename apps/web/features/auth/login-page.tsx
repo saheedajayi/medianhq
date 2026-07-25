@@ -138,7 +138,7 @@ export function LoginPage() {
           Don't have an account?{" "}
           <Link
             href="/signup"
-            className="text-primary hover:underline"
+            className="text-[#ff5514] hover:underline"
           >
             Create account
           </Link>
