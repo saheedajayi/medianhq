@@ -28,20 +28,7 @@ const isApiEnvelope = (payload: unknown): payload is ApiEnvelope => {
   );
 };
 
-const unwrapApiEnvelope = (payload: ApiEnvelope) => {
-  if (
-    payload.data &&
-    typeof payload.data === "object" &&
-    !Array.isArray(payload.data)
-  ) {
-    return {
-      ...payload.data,
-      ...(payload.message ? { message: payload.message } : {}),
-    };
-  }
-
-  return payload.data;
-};
+const unwrapApiEnvelope = (payload: ApiEnvelope) => payload.data;
 
 const getErrorMessage = (payload: unknown, fallback: string) => {
   if (!payload || typeof payload !== "object") {

@@ -196,7 +196,7 @@ export function SignupPage() {
         <p className="text-center text-sm text-[#141c2e]">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href="/signin"
             className="font-medium hover:underline"
             style={{ color: '#ff5514' }}
           >
