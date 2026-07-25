@@ -9,12 +9,20 @@ export class AuthRepository {
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+      include: {
+        menteeProfile: { select: { id: true } },
+        mentorProfile: { select: { id: true, status: true } },
+      },
     });
   }
 
   findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
+      include: {
+        menteeProfile: { select: { id: true } },
+        mentorProfile: { select: { id: true, status: true } },
+      },
     });
   }
 
@@ -28,6 +36,10 @@ export class AuthRepository {
   create(data: Prisma.UserCreateInput) {
     return this.prisma.user.create({
       data,
+      include: {
+        menteeProfile: { select: { id: true } },
+        mentorProfile: { select: { id: true, status: true } },
+      },
     });
   }
 

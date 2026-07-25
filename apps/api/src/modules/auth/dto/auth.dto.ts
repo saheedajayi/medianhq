@@ -20,6 +20,9 @@ export type AuthUser = {
   lastName: string;
   role: UserRole;
   isEmailVerified: boolean;
+  hasMenteeProfile: boolean;
+  hasMentorProfile: boolean;
+  mentorStatus?: string;
 };
 
 export type VerifyEmailDto = {

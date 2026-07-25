@@ -7,10 +7,14 @@ export type AuthUser = {
   lastName: string;
   role: AuthRole;
   isEmailVerified: boolean;
+  hasMenteeProfile: boolean;
+  hasMentorProfile: boolean;
+  mentorStatus?: string;
 };
 
 export type AuthResponse = {
   user: AuthUser;
+  emailSent?: boolean;
   message?: string;
 };
 

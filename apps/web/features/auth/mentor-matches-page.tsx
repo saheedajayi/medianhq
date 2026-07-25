@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/base/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, UserSearch } from "lucide-react";
 import Link from "next/link";
 import { mentorsService } from "@/services/mentors";
 
@@ -13,6 +13,34 @@ export function MentorMatchesPage() {
   });
 
   const mentors = data?.data || [];
+
+  if (!isLoading && mentors.length === 0 && !error) {
+    return (
+      <div className="flex flex-col items-center text-center">
+        <div className="mb-8 flex size-16 items-center justify-center rounded-full border border-[#e2e8f0] bg-white">
+          <div className="flex size-8 items-center justify-center rounded-full border-[2px] border-[#111827]">
+            <UserSearch className="size-4 text-[#111827]" strokeWidth={2.5} />
+          </div>
+        </div>
+
+        <h1 className="mb-4 text-[28px] font-bold tracking-[-0.02em] text-[#4b100d]">
+          We're finding your perfect matches!
+        </h1>
+
+        <p className="mb-10 max-w-[440px] text-[15px] text-[#64748b] leading-relaxed">
+          We are carefully reviewing our network of top-tier mentors to find the best fit for your specific goals. Keep an eye on your inbox—we'll email you as soon as your matches are ready.
+        </p>
+
+        <Button
+          asChild
+          className="h-14 w-full rounded-full bg-primary text-base font-medium text-white shadow-none hover:bg-primary/90 sm:w-[320px]"
+        >
+          <Link href="/dashboard">Go to Dashboard</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
       <header className="mb-8 text-center">
@@ -28,19 +56,6 @@ export function MentorMatchesPage() {
         )}
         {error && (
           <div className="text-center text-red-500 py-8">Failed to load mentors</div>
-        )}
-        {!isLoading && mentors.length === 0 && !error && (
-          <div className="flex flex-col items-center text-center py-12 px-6 border border-[#f1f5f9] rounded-2xl bg-[#fafafa]">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary mb-6">
-              <Sparkles className="size-8" />
-            </div>
-            <h3 className="text-xl font-semibold text-[#111827] mb-3">
-              We're finding your perfect matches!
-            </h3>
-            <p className="text-[15px] leading-relaxed text-[#64748b]">
-              We are carefully reviewing our network of top-tier mentors to find the best fit for your specific goals. Keep an eye on your inbox—we'll email you as soon as your matches are ready.
-            </p>
-          </div>
         )}
         {mentors.map((mentor) => (
           <div

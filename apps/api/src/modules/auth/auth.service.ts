@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { UserRole, type User } from '@prisma/client';
@@ -13,6 +14,7 @@ import type { AuthUser, LoginDto, RegisterDto, VerifyEmailDto, ResendVerificatio
 type AuthPayload = {
   sessionToken: string;
   user: AuthUser;
+  emailSent: boolean;
 };
 
 type SessionPayload = {
@@ -26,6 +28,8 @@ const PASSWORD_MIN_LENGTH = 8;
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly emailService: EmailService,
@@ -47,11 +51,18 @@ export class AuthService {
       role: input.role,
     });
 
-    await this.generateAndSendVerificationEmail(user);
+    let emailSent = true;
+    try {
+      await this.generateAndSendVerificationEmail(user);
+    } catch (error) {
+      emailSent = false;
+      this.logger.error(`Failed to send verification email during registration for ${user.email}`, error instanceof Error ? error.stack : error);
+    }
 
     return {
       sessionToken: this.signToken(user),
       user: this.toAuthUser(user),
+      emailSent,
     };
   }
 
@@ -80,9 +91,20 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
+    let emailSent = true;
+    if (!user.emailVerifiedAt) {
+      try {
+        await this.generateAndSendVerificationEmail(user);
+      } catch (error) {
+        emailSent = false;
+        this.logger.error(`Failed to send verification email during login for ${user.email}`, error instanceof Error ? error.stack : error);
+      }
+    }
+
     return {
       sessionToken: this.signToken(user),
       user: this.toAuthUser(user),
+      emailSent,
     };
   }
 
@@ -359,7 +381,7 @@ export class AuthService {
     return process.env.AUTH_TOKEN_SECRET ?? 'median-dev-auth-token-secret';
   }
 
-  private toAuthUser(user: User): AuthUser {
+  private toAuthUser(user: any): AuthUser {
     return {
       id: user.id,
       email: user.email,
@@ -367,6 +389,9 @@ export class AuthService {
       lastName: user.lastName,
       role: user.role,
       isEmailVerified: Boolean(user.emailVerifiedAt),
+      hasMenteeProfile: Boolean(user.menteeProfile),
+      hasMentorProfile: Boolean(user.mentorProfile),
+      mentorStatus: user.mentorProfile?.status,
     };
   }
 }

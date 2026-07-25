@@ -21,6 +21,7 @@ export class AuthController {
 
     return {
       user: payload.user,
+      emailSent: payload.emailSent,
     };
   }
 
@@ -35,6 +36,7 @@ export class AuthController {
 
     return {
       user: payload.user,
+      emailSent: payload.emailSent,
     };
   }
 

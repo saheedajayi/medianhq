@@ -30,7 +30,7 @@ export const authService = {
   },
 
   verifyEmail(payload: VerifyEmailPayload) {
-    return apiClient.post<{ message: string }>(`${AUTH_PATH}/verify-email`, payload);
+    return apiClient.post<AuthResponse>(`${AUTH_PATH}/verify-email`, payload);
   },
 
   resendVerification(payload: ResendVerificationPayload) {

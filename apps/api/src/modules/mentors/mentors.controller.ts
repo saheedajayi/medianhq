@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
 import { MentorsService } from './mentors.service';
-import { AuthGuard } from '../auth/auth.guard';
-import { CurrentUser } from '../auth/current-user.decorator';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/dto/auth.dto';
 
 @Controller('mentors')

@@ -43,7 +43,7 @@ export function SignupPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    
+
     const result = signupSchema.safeParse({
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
@@ -78,7 +78,9 @@ export function SignupPage() {
         toast.success("Account created", {
           description: `${response.data.user.firstName}, welcome to Median.`,
         });
-        router.push(`/email-verification?email=${encodeURIComponent(email)}`);
+
+        const retryParam = response.data.emailSent === false ? "&retryEmail=true" : "";
+        router.push(`/email-verification?email=${encodeURIComponent(email)}${retryParam}`);
       })
       .catch((error) => {
         toast.error("Unable to create account", {

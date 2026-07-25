@@ -34,7 +34,7 @@ export function LoginPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    
+
     const result = loginSchema.safeParse({
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
@@ -58,7 +58,16 @@ export function LoginPage() {
         toast.success("Logged in", {
           description: `Welcome back.`,
         });
-        router.push("/dashboard");
+        if (!response.data.user.isEmailVerified) {
+          const retryParam = response.data.emailSent === false ? "&retryEmail=true" : "";
+          router.push(`/email-verification?email=${encodeURIComponent(result.data.email)}${retryParam}`);
+        } else if (!response.data.user.hasMenteeProfile && !response.data.user.hasMentorProfile) {
+          router.push("/role-selection");
+        } else if (response.data.user.hasMentorProfile && response.data.user.mentorStatus !== "APPROVED") {
+          router.push("/mentor-submitted");
+        } else {
+          router.push("/dashboard");
+        }
       })
       .catch((error) => {
         toast.error("Unable to log in", {

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authService } from "@/services/auth";
@@ -22,9 +22,26 @@ import {
   InputOTPSlot,
 } from "@/components/ui/base/input-otp";
 
-export function EmailVerificationPage({ email }: { email: string }) {
+export function EmailVerificationPage({ email, retryEmail }: { email: string; retryEmail?: boolean }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasRetried = useRef(false);
+
+  useEffect(() => {
+    if (retryEmail && !hasRetried.current) {
+      hasRetried.current = true;
+      authService.resendVerification({ email })
+        .then(() => {
+          // Silent success for seamless UX
+        })
+        .catch(() => {
+          toast.error("We hit a snag sending your code.", {
+            description: "Once your internet connection is stable, click 'Resend Code' to try again.",
+            duration: 8000,
+          });
+        });
+    }
+  }, [retryEmail, email]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,9 +52,15 @@ export function EmailVerificationPage({ email }: { email: string }) {
 
     authService
       .verifyEmail({ email, code })
-      .then(() => {
+      .then((response) => {
         toast.success("Email verified successfully");
-        router.push("/role-selection");
+        if (!response.data.user.hasMenteeProfile && !response.data.user.hasMentorProfile) {
+          router.push("/role-selection");
+        } else if (response.data.user.hasMentorProfile && response.data.user.mentorStatus !== "APPROVED") {
+          router.push("/mentor-submitted");
+        } else {
+          router.push("/dashboard");
+        }
       })
       .catch((error) => {
         toast.error("Verification failed", {
