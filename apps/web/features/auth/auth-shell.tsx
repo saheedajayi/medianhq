@@ -1,9 +1,95 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useState } from "react";
+import { authService, type AuthUser } from "@/services/auth";
 import { AnimatedAuthCopy } from "./animated-auth-copy";
 
+const GUARDED_PATHS = new Set([
+  "/role-selection",
+  "/mentee-onboarding",
+  "/mentor-onboarding",
+]);
+
+function getCompletedStepDestination(pathname: string, user: AuthUser) {
+  if (pathname === "/role-selection" && user.role === "MENTEE") {
+    return user.hasMenteeProfile ? "/mentor-matches" : "/mentee-onboarding";
+  }
+
+  if (pathname === "/role-selection" && user.role === "MENTOR") {
+    return user.hasMentorProfile
+      ? user.mentorStatus === "APPROVED"
+        ? "/dashboard"
+        : "/mentor-submitted"
+      : "/mentor-onboarding";
+  }
+
+  if (pathname === "/mentee-onboarding") {
+    if (user.role !== "MENTEE") {
+      return user.role === "MENTOR" ? "/mentor-onboarding" : "/role-selection";
+    }
+
+    return user.hasMenteeProfile ? "/mentor-matches" : null;
+  }
+
+  if (pathname === "/mentor-onboarding") {
+    if (user.role !== "MENTOR") {
+      return user.role === "MENTEE" ? "/mentee-onboarding" : "/role-selection";
+    }
+
+    return user.hasMentorProfile
+      ? user.mentorStatus === "APPROVED"
+        ? "/dashboard"
+        : "/mentor-submitted"
+      : null;
+  }
+
+  return null;
+}
+
 export function AuthShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isGuardedPath = GUARDED_PATHS.has(pathname);
+  const [checkedPath, setCheckedPath] = useState<string | null>(null);
+  const isCheckingAccess = isGuardedPath && checkedPath !== pathname;
+
+  useEffect(() => {
+    if (!isGuardedPath) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    authService
+      .me()
+      .then((response) => {
+        if (isCancelled) {
+          return;
+        }
+
+        const destination = getCompletedStepDestination(pathname, response.data);
+
+        if (destination) {
+          router.replace(destination);
+          return;
+        }
+
+        setCheckedPath(pathname);
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          router.replace("/signin");
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isGuardedPath, pathname, router]);
+
   return (
     <main className="grid h-svh min-h-0 overflow-hidden bg-white text-[#141c2e] lg:grid-cols-[40%_60%]">
       <aside className="relative hidden h-svh min-h-0 overflow-hidden bg-primary px-10 py-14 text-white lg:flex lg:flex-col xl:px-20 xl:pt-[120px] xl:pb-20">
@@ -61,7 +147,15 @@ export function AuthShell({ children }: { children: ReactNode }) {
                   />
                 </Link>
               </div>
-              <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-sm">{children}</div>
+              <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-sm">
+                {isCheckingAccess ? (
+                  <p className="py-10 text-center text-sm text-[#667085]">
+                    Checking your account…
+                  </p>
+                ) : (
+                  children
+                )}
+              </div>
             </div>
           </div>
         </div>
