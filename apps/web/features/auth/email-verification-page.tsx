@@ -3,6 +3,7 @@
 import { type FormEvent, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { getAuthDestination } from "@/lib/auth-routing";
 import { authService } from "@/services/auth";
 import type { ApiError } from "@/services/api-client";
 
@@ -22,7 +23,13 @@ import {
   InputOTPSlot,
 } from "@/components/ui/base/input-otp";
 
-export function EmailVerificationPage({ email, retryEmail }: { email: string; retryEmail?: boolean }) {
+export function EmailVerificationPage({
+  email,
+  retryEmail,
+}: {
+  email: string;
+  retryEmail?: boolean;
+}) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const hasRetried = useRef(false);
@@ -30,13 +37,15 @@ export function EmailVerificationPage({ email, retryEmail }: { email: string; re
   useEffect(() => {
     if (retryEmail && !hasRetried.current) {
       hasRetried.current = true;
-      authService.resendVerification({ email })
+      authService
+        .resendVerification({ email })
         .then(() => {
           // Silent success for seamless UX
         })
         .catch(() => {
           toast.error("We hit a snag sending your code.", {
-            description: "Once your internet connection is stable, click 'Resend Code' to try again.",
+            description:
+              "Once your internet connection is stable, click 'Resend Code' to try again.",
             duration: 8000,
           });
         });
@@ -54,13 +63,7 @@ export function EmailVerificationPage({ email, retryEmail }: { email: string; re
       .verifyEmail({ email, code })
       .then((response) => {
         toast.success("Email verified successfully");
-        if (!response.data.user.hasMenteeProfile && !response.data.user.hasMentorProfile) {
-          router.push("/role-selection");
-        } else if (response.data.user.hasMentorProfile && response.data.user.mentorStatus !== "APPROVED") {
-          router.push("/mentor-submitted");
-        } else {
-          router.push("/dashboard");
-        }
+        router.replace(getAuthDestination(response.data.user));
       })
       .catch((error) => {
         toast.error("Verification failed", {
@@ -98,7 +101,12 @@ export function EmailVerificationPage({ email, retryEmail }: { email: string; re
           >
             Code
           </Label>
-          <InputOTP maxLength={6} name="verificationCode" id="verificationCode" containerClassName="mt-2 w-full flex justify-between">
+          <InputOTP
+            maxLength={6}
+            name="verificationCode"
+            id="verificationCode"
+            containerClassName="mt-2 w-full flex justify-between"
+          >
             <InputOTPGroup className="flex w-full justify-between gap-2 sm:gap-3">
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />

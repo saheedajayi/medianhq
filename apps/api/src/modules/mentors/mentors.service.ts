@@ -1,4 +1,8 @@
-import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
 import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
 import { PrismaService } from '../../database/prisma.service';
@@ -59,17 +63,28 @@ export class MentorsService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
+        emailVerifiedAt: true,
         role: true,
         mentorProfile: { select: { id: true } },
       },
     });
 
+    if (!user?.emailVerifiedAt) {
+      throw new ForbiddenException(
+        'Verify your email before starting onboarding.',
+      );
+    }
+
     if (user?.role !== UserRole.MENTOR) {
-      throw new ForbiddenException('A mentor role is required to create this profile.');
+      throw new ForbiddenException(
+        'A mentor role is required to create this profile.',
+      );
     }
 
     if (user.mentorProfile) {
-      throw new ConflictException('Your mentor onboarding has already been completed.');
+      throw new ConflictException(
+        'Your mentor onboarding has already been completed.',
+      );
     }
 
     const profile = await this.prisma.mentorProfile.create({

@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
-import { authService, type AuthUser } from "@/services/auth";
+import { getAuthDestination, getAuthDestinationPath } from "@/lib/auth-routing";
+import { authService } from "@/services/auth";
 import { AnimatedAuthCopy } from "./animated-auth-copy";
 
 const GUARDED_PATHS = new Set([
@@ -12,42 +13,6 @@ const GUARDED_PATHS = new Set([
   "/mentee-onboarding",
   "/mentor-onboarding",
 ]);
-
-function getCompletedStepDestination(pathname: string, user: AuthUser) {
-  if (pathname === "/role-selection" && user.role === "MENTEE") {
-    return user.hasMenteeProfile ? "/mentor-matches" : "/mentee-onboarding";
-  }
-
-  if (pathname === "/role-selection" && user.role === "MENTOR") {
-    return user.hasMentorProfile
-      ? user.mentorStatus === "APPROVED"
-        ? "/dashboard"
-        : "/mentor-submitted"
-      : "/mentor-onboarding";
-  }
-
-  if (pathname === "/mentee-onboarding") {
-    if (user.role !== "MENTEE") {
-      return user.role === "MENTOR" ? "/mentor-onboarding" : "/role-selection";
-    }
-
-    return user.hasMenteeProfile ? "/mentor-matches" : null;
-  }
-
-  if (pathname === "/mentor-onboarding") {
-    if (user.role !== "MENTOR") {
-      return user.role === "MENTEE" ? "/mentee-onboarding" : "/role-selection";
-    }
-
-    return user.hasMentorProfile
-      ? user.mentorStatus === "APPROVED"
-        ? "/dashboard"
-        : "/mentor-submitted"
-      : null;
-  }
-
-  return null;
-}
 
 export function AuthShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -70,9 +35,9 @@ export function AuthShell({ children }: { children: ReactNode }) {
           return;
         }
 
-        const destination = getCompletedStepDestination(pathname, response.data);
+        const destination = getAuthDestination(response.data);
 
-        if (destination) {
+        if (getAuthDestinationPath(response.data) !== pathname) {
           router.replace(destination);
           return;
         }

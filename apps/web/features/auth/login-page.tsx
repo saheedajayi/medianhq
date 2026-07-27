@@ -13,8 +13,12 @@ const loginSchema = z.object({
 
 import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
-import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
+import {
+  FormField,
+  formInputClassName,
+} from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
+import { getAuthDestination } from "@/lib/auth-routing";
 import { authService } from "@/services/auth";
 import type { ApiError } from "@/services/api-client";
 
@@ -29,7 +33,9 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
+  const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
+    {},
+  );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,16 +64,11 @@ export function LoginPage() {
         toast.success("Logged in", {
           description: `Welcome back.`,
         });
-        if (!response.data.user.isEmailVerified) {
-          const retryParam = response.data.emailSent === false ? "&retryEmail=true" : "";
-          router.push(`/email-verification?email=${encodeURIComponent(result.data.email)}${retryParam}`);
-        } else if (!response.data.user.hasMenteeProfile && !response.data.user.hasMentorProfile) {
-          router.push("/role-selection");
-        } else if (response.data.user.hasMentorProfile && response.data.user.mentorStatus !== "APPROVED") {
-          router.push("/mentor-submitted");
-        } else {
-          router.push("/dashboard");
-        }
+        router.replace(
+          getAuthDestination(response.data.user, {
+            retryEmail: response.data.emailSent === false,
+          }),
+        );
       })
       .catch((error) => {
         toast.error("Unable to log in", {
@@ -83,20 +84,18 @@ export function LoginPage() {
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#4b100d]">
           Welcome Back
         </h1>
-        <p className="mt-2 text-base text-[#344054]">
-          Log in to Median
-        </p>
+        <p className="mt-2 text-base text-[#344054]">Log in to Median</p>
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
         <a
-          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/linkedin`}
+          href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1"}/auth/linkedin`}
           className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
         >
           Log in with LinkedIn
         </a>
         <a
-          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
+          href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1"}/auth/google`}
           className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
         >
           Log in with Google
@@ -107,7 +106,11 @@ export function LoginPage() {
           Or
           <span className="h-px flex-1 bg-[#e1e5eb]" />
         </div>
-        <FormField id="loginEmail" label="Email address" error={errors.email?.[0]}>
+        <FormField
+          id="loginEmail"
+          label="Email address"
+          error={errors.email?.[0]}
+        >
           <Input
             id="loginEmail"
             name="email"
@@ -157,7 +160,7 @@ export function LoginPage() {
           <Link
             href="/signup"
             className="hover:underline"
-            style={{ color: '#ff5514' }}
+            style={{ color: "#ff5514" }}
           >
             Create account
           </Link>
