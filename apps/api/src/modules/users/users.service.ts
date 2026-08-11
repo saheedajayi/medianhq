@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { MentorStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
@@ -22,7 +22,12 @@ export class UsersService {
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { emailVerifiedAt: true, role: true },
+      select: {
+        emailVerifiedAt: true,
+        role: true,
+        menteeProfile: true,
+        mentorProfile: { select: { status: true } },
+      },
     });
 
     if (!user?.emailVerifiedAt) {
@@ -31,22 +36,27 @@ export class UsersService {
       );
     }
 
-    if (user.role) {
+    if (user.role === role) {
+      return {
+        success: true,
+        message: 'Role updated successfully',
+        role,
+      };
+    }
+
+    if (
+      user.menteeProfile ||
+      user.mentorProfile?.status === MentorStatus.APPROVED
+    ) {
       throw new ConflictException(
-        'Your account role has already been selected.',
+        'Your account role has already been finalized.',
       );
     }
 
-    const result = await this.prisma.user.updateMany({
-      where: { id: userId, role: null, emailVerifiedAt: { not: null } },
+    await this.prisma.user.update({
+      where: { id: userId },
       data: { role },
     });
-
-    if (result.count === 0) {
-      throw new ConflictException(
-        'Your account role has already been selected.',
-      );
-    }
 
     return {
       success: true,

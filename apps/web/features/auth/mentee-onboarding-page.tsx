@@ -25,6 +25,9 @@ import {
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { taxonomyService } from "@/services/taxonomy";
+import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries";
+
+const ALLOWED_INDUSTRIES = ["Finance", "Technology", "Business", "Consulting"];
 
 const goals = [
   "Career switch",
@@ -65,8 +68,11 @@ export function MenteeOnboardingPage() {
     }
   });
 
-  const INDUSTRIES = taxonomyData ? Object.keys(taxonomyData) : [];
-  const INDUSTRY_ROLES: Record<string, string[]> = taxonomyData || {};
+  const INDUSTRIES = ALLOWED_INDUSTRIES;
+  const INDUSTRY_ROLES: Record<string, string[]> = {
+    ...DEFAULT_INDUSTRY_ROLES,
+    ...(taxonomyData || {}),
+  };
 
   function toggleGoal(goal: string) {
     setSelectedGoals((prev) =>
@@ -89,7 +95,7 @@ export function MenteeOnboardingPage() {
         timeframe,
       })
       .then(() => {
-        toast.success("Onboarding complete", {
+        toast.success("Welcome to Median!", {
           description: "Your mentee profile preferences have been saved.",
         });
         router.push("/mentor-matches");

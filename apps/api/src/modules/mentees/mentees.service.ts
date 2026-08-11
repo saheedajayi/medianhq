@@ -1,25 +1,17 @@
 import {
-  ConflictException,
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import type { CreateMenteeProfileDto } from './dto/create-mentee-profile.dto';
-import { PrismaService } from '../../database/prisma.service';
+import { MenteesRepository } from './mentees.repository';
 
 @Injectable()
 export class MenteesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly menteesRepository: MenteesRepository) {}
 
   async createProfile(userId: string, dto: CreateMenteeProfileDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        emailVerifiedAt: true,
-        role: true,
-        menteeProfile: { select: { id: true } },
-      },
-    });
+    const user = await this.menteesRepository.findUserForOnboarding(userId);
 
     if (!user?.emailVerifiedAt) {
       throw new ForbiddenException(
@@ -34,20 +26,28 @@ export class MenteesService {
     }
 
     if (user.menteeProfile) {
-      throw new ConflictException(
-        'Your mentee onboarding has already been completed.',
-      );
-    }
-
-    const profile = await this.prisma.menteeProfile.create({
-      data: {
-        userId,
+      const profile = await this.menteesRepository.updateProfileByUserId(userId, {
         goals: dto.goals,
         goalDescription: dto.goalDescription,
         currentRole: dto.currentRole,
         industry: dto.industry,
         timeframe: dto.timeframe,
-      },
+      });
+
+      return {
+        success: true,
+        message: 'Mentee profile updated successfully',
+        profile,
+      };
+    }
+
+    const profile = await this.menteesRepository.createProfile({
+      user: { connect: { id: userId } },
+      goals: dto.goals,
+      goalDescription: dto.goalDescription,
+      currentRole: dto.currentRole,
+      industry: dto.industry,
+      timeframe: dto.timeframe,
     });
 
     return {

@@ -1,6 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { TaxonomyRepository } from './taxonomy.repository';
 
+const ALLOWED_INDUSTRIES = new Set(['Finance', 'Technology', 'Business', 'Consulting']);
+
+const DEFAULT_BUSINESS_ROLES = [
+  'Business Analyst',
+  'Business Development Manager',
+  'Entrepreneur / Founder',
+  'Product Manager',
+  'Operations Manager',
+  'Strategy Associate',
+  'General Manager',
+  'CEO',
+];
+
 @Injectable()
 export class TaxonomyService {
   constructor(private readonly taxonomyRepository: TaxonomyRepository) {}
@@ -8,10 +21,19 @@ export class TaxonomyService {
   async getIndustries() {
     const industries = await this.taxonomyRepository.findAllIndustriesWithRoles();
     
-    // Transform to a dictionary for the frontend { "Technology": ["Role1", "Role2"] }
-    const result: Record<string, string[]> = {};
+    // Filter dictionary to only include Finance, Technology, Business, Consulting
+    const result: Record<string, string[]> = {
+      Finance: [],
+      Technology: [],
+      Business: DEFAULT_BUSINESS_ROLES,
+      Consulting: [],
+    };
+
     for (const ind of industries) {
-      result[ind.name] = ind.roles.map(r => r.name).sort();
+      if (ALLOWED_INDUSTRIES.has(ind.name)) {
+        const roles = ind.roles.map((r: { name: string }) => r.name).sort();
+        result[ind.name] = roles.length > 0 ? roles : (result[ind.name] || []);
+      }
     }
     
     return { data: result };

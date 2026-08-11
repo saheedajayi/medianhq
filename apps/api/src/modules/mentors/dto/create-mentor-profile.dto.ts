@@ -4,4 +4,6 @@ export type CreateMentorProfileDto = {
   industry: string;
   experience: string;
   location: string;
+  bio?: string;
+  cvUrl?: string;
 };

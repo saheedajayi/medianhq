@@ -2,46 +2,28 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
 import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
-import { PrismaService } from '../../database/prisma.service';
+import { MentorsRepository } from './mentors.repository';
 
 @Injectable()
 export class MentorsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(MentorsService.name);
+
+  constructor(private readonly mentorsRepository: MentorsRepository) {}
 
   async getMatches(userId: string) {
-    const menteeProfile = await this.prisma.menteeProfile.findUnique({
-      where: { userId },
-    });
+    const menteeProfile = await this.mentorsRepository.findMenteeProfileByUserId(userId);
 
     const menteeIndustry = menteeProfile?.industry ?? '';
     const menteeRole = menteeProfile?.currentRole ?? '';
 
-    // Raw SQL to sort mentors by exact match score
-    const matches = await this.prisma.$queryRaw<
-      Array<{
-        id: string;
-        userId: string;
-        headline: string | null;
-        company: string | null;
-        jobTitle: string | null;
-        industry: string;
-        firstName: string;
-        lastName: string;
-        score: number;
-      }>
-    >`
-      SELECT m.id, m."userId", m.headline, m.company, m."jobTitle", m.industry, u."firstName", u."lastName",
-        (CASE WHEN m.industry = ${menteeIndustry} THEN 50 ELSE 0 END) +
-        (CASE WHEN m."jobTitle" = ${menteeRole} THEN 30 ELSE 0 END) AS score
-      FROM "MentorProfile" m
-      JOIN "User" u ON m."userId" = u.id
-      WHERE m.status = 'APPROVED'
-      ORDER BY score DESC
-      LIMIT 5
-    `;
+    const matches = await this.mentorsRepository.findApprovedMatches(
+      menteeIndustry,
+      menteeRole,
+    );
 
     if (!matches || matches.length === 0) {
       return { data: [] };
@@ -52,22 +34,15 @@ export class MentorsService {
         id: m.id,
         name: `${m.firstName} ${m.lastName}`,
         role: `${m.jobTitle ?? m.headline} @ ${m.company ?? 'Company'}`,
-        sessions: '0 sessions', // placeholder
-        match: `${m.score > 0 ? m.score : 50}%`, // Ensure it shows a percentage, base 50 if no match for placeholder
+        sessions: '0 sessions',
+        match: `${m.score > 0 ? m.score : 50}%`,
         image: 'https://i.pravatar.cc/150?u=' + m.id,
       })),
     };
   }
 
   async apply(userId: string, dto: CreateMentorProfileDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        emailVerifiedAt: true,
-        role: true,
-        mentorProfile: { select: { id: true } },
-      },
-    });
+    const user = await this.mentorsRepository.findUserForOnboarding(userId);
 
     if (!user?.emailVerifiedAt) {
       throw new ForbiddenException(
@@ -75,34 +50,32 @@ export class MentorsService {
       );
     }
 
-    if (user?.role !== UserRole.MENTOR) {
+    if (user.menteeProfile) {
       throw new ForbiddenException(
-        'A mentor role is required to create this profile.',
+        'Your account is currently registered as a Mentee.',
       );
     }
 
-    if (user.mentorProfile) {
+    if (user.mentorProfile && user.mentorProfile.status === MentorStatus.APPROVED) {
       throw new ConflictException(
-        'Your mentor onboarding has already been completed.',
+        'Your mentor application has already been approved.',
       );
     }
 
-    const profile = await this.prisma.mentorProfile.create({
-      data: {
+    try {
+      const profile = await this.mentorsRepository.upsertProfileByUserId(
         userId,
-        industry: dto.industry,
-        experience: dto.experience,
-        company: dto.company,
-        jobTitle: dto.currentRole,
-        location: dto.location,
-        status: MentorStatus.PENDING_REVIEW,
-      },
-    });
+        dto,
+      );
 
-    return {
-      success: true,
-      message: 'Application submitted successfully',
-      profile,
-    };
+      return {
+        success: true,
+        message: 'Application submitted successfully',
+        profile,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to apply for mentor profile (userId: ${userId})`, error);
+      throw error;
+    }
   }
 }

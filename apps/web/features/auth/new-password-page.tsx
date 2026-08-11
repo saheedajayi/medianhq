@@ -89,6 +89,7 @@ export function NewPasswordPage({ token }: { token: string }) {
             name="password"
             autoComplete="new-password"
             required
+            showCriteriaTooltip
             className={formInputClassName}
             placeholder="Min 8 characters"
             aria-invalid={!!errors.password}

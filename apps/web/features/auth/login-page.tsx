@@ -70,9 +70,28 @@ export function LoginPage() {
           }),
         );
       })
-      .catch((error) => {
+      .catch(() => {
+        const submittedEmail = result.data.email;
+        const emailQuery = submittedEmail
+          ? `?email=${encodeURIComponent(submittedEmail)}`
+          : "";
+
         toast.error("Unable to log in", {
-          description: getErrorMessage(error, "Please check your details."),
+          description: (
+            <span className="block leading-snug">
+              <span>Invalid email or password.</span>
+              <span className="mt-1 block">
+                New to Median?{" "}
+                <Link
+                  href={`/signup${emailQuery}`}
+                  className="font-medium underline hover:opacity-80"
+                  style={{ color: "#ff5514" }}
+                >
+                  Create account
+                </Link>
+              </span>
+            </span>
+          ),
         });
       })
       .finally(() => setIsSubmitting(false));

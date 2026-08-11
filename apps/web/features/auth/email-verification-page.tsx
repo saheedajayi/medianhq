@@ -62,8 +62,15 @@ export function EmailVerificationPage({
     authService
       .verifyEmail({ email, code })
       .then((response) => {
-        toast.success("Email verified successfully");
-        router.replace(getAuthDestination(response.data.user));
+        const dest = getAuthDestination(response.data.user);
+        if (response.data.user.accountStage === "READY") {
+          toast.success("Welcome to Median!", {
+            description: "Email verified successfully.",
+          });
+        } else {
+          toast.success("Email verified successfully");
+        }
+        router.replace(dest);
       })
       .catch((error) => {
         toast.error("Verification failed", {
