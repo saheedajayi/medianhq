@@ -14,9 +14,22 @@ type ApiResponsePayload<T> = {
 @Injectable()
 export class ApiResponseInterceptor<T> implements NestInterceptor<T> {
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<T> {
-    const request = context.switchToHttp().getRequest<{ url?: string }>();
+    const http = context.switchToHttp();
+    const request = http.getRequest<{ url?: string }>();
+    const response = http.getResponse<{
+      getHeader?: (name: string) => unknown;
+    }>();
+    const contentType = String(
+      response.getHeader?.('content-type') ??
+        response.getHeader?.('Content-Type') ??
+        '',
+    );
 
-    if (request.url === '/health') {
+    if (
+      request.url === '/health' ||
+      request.url?.includes('/export') ||
+      contentType.includes('text/csv')
+    ) {
       return next.handle();
     }
 
