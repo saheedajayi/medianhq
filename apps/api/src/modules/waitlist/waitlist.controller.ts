@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Header, Post, Query } from '@nestjs/common';
 import type { CreateWaitlistEntryDto } from './dto/create-waitlist-entry.dto';
 import { WaitlistService } from './waitlist.service';
 
@@ -9,6 +9,13 @@ export class WaitlistController {
   @Get('stats')
   getStats() {
     return this.waitlistService.getStats();
+  }
+
+  @Get('export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="waitlist-entries.csv"')
+  exportCsv() {
+    return this.waitlistService.exportCsv();
   }
 
   @Get('entries')

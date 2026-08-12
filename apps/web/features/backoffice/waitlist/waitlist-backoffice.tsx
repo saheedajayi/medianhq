@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Download,
   Mail,
   MapPin,
   Users,
@@ -167,7 +168,13 @@ function StatCard({
   );
 }
 
-function BackofficeHeader() {
+function BackofficeHeader({
+  onExportCsv,
+  isExporting,
+}: {
+  onExportCsv?: () => void;
+  isExporting?: boolean;
+}) {
   return (
     <header className="flex flex-col justify-between gap-5 border-b border-text-200 pb-5 lg:flex-row lg:items-end lg:pb-6">
       <div className="min-w-0">
@@ -182,22 +189,43 @@ function BackofficeHeader() {
           ordered by the newest registrations.
         </p>
       </div>
-      <a
-        href="/waitlist"
-        className="inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-text-200 bg-white px-4 text-sm font-semibold text-text-700 transition-colors hover:bg-text-50 sm:w-auto"
-      >
-        View waitlist page
-        <ArrowUpRight className="size-4" />
-      </a>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {onExportCsv ? (
+          <button
+            type="button"
+            onClick={onExportCsv}
+            disabled={isExporting}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            <Download className="size-4" />
+            {isExporting ? "Exporting..." : "Export CSV"}
+          </button>
+        ) : null}
+        <a
+          href="/waitlist"
+          className="inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-text-200 bg-white px-4 text-sm font-semibold text-text-700 transition-colors hover:bg-text-50 sm:w-auto"
+        >
+          View waitlist page
+          <ArrowUpRight className="size-4" />
+        </a>
+      </div>
     </header>
   );
 }
 
-function BackofficeShell({ children }: { children: ReactNode }) {
+function BackofficeShell({
+  children,
+  onExportCsv,
+  isExporting,
+}: {
+  children: ReactNode;
+  onExportCsv?: () => void;
+  isExporting?: boolean;
+}) {
   return (
     <main className="min-h-svh bg-[#f6f7f9] px-4 py-5 text-text-900 sm:px-6 sm:py-8 lg:px-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 sm:gap-8">
-        <BackofficeHeader />
+        <BackofficeHeader onExportCsv={onExportCsv} isExporting={isExporting} />
         {children}
       </div>
     </main>
@@ -377,6 +405,7 @@ export default function BackofficePage() {
   const [page, setPage] = useState(1);
   const [dashboard, setDashboard] = useState<WaitlistDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const entriesCardRef = useRef<HTMLDivElement>(null);
   const entriesScrollRef = useRef<HTMLDivElement>(null);
@@ -469,6 +498,38 @@ export default function BackofficePage() {
     setPage(nextPage);
   }
 
+  async function handleExportCsv() {
+    setIsExporting(true);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/${API_VERSION}/waitlist/export`,
+        {
+          cache: "no-store",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Unable to export waitlist CSV.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `waitlist-entries-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export waitlist CSV:", error);
+      alert("Unable to export waitlist data as CSV. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   if (!isAccessGranted) {
     return (
       <AccessKeyGate
@@ -521,7 +582,7 @@ export default function BackofficePage() {
       : 0;
 
   return (
-    <BackofficeShell>
+    <BackofficeShell onExportCsv={handleExportCsv} isExporting={isExporting}>
       <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total signups"
