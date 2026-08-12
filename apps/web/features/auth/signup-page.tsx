@@ -2,7 +2,7 @@
 
 import { type FormEvent, type ReactNode, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -37,6 +37,9 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultEmail = searchParams.get("email") ?? "";
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
 
@@ -75,7 +78,7 @@ export function SignupPage() {
       })
       .then((response) => {
         toast.success("Account created", {
-          description: `${response.data.user.firstName}, welcome to Median.`,
+          description: "Please check your email to verify your account.",
         });
 
         const retryParam = response.data.emailSent === false ? "&retryEmail=true" : "";
@@ -154,6 +157,7 @@ export function SignupPage() {
             type="email"
             autoComplete="email"
             required
+            defaultValue={defaultEmail}
             className={formInputClassName}
             placeholder="name@gmail.com"
             aria-invalid={!!errors.email}
@@ -167,6 +171,7 @@ export function SignupPage() {
               name="password"
               autoComplete="new-password"
               required
+              showCriteriaTooltip
               className={formInputClassName}
               placeholder="Enter password"
               aria-invalid={!!errors.password}

@@ -1,8 +1,24 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import type { LoginDto, RegisterDto, VerifyEmailDto, ResendVerificationDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import type {
+  AuthUser,
+  LoginDto,
+  RegisterDto,
+  VerifyEmailDto,
+  ResendVerificationDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 
 const AUTH_COOKIE_NAME = 'median_session';
 const COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
@@ -70,10 +86,7 @@ export class AuthController {
     this.setAuthCookie(res, payload.sessionToken);
 
     const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
-    if (!payload.user.hasMenteeProfile && !payload.user.hasMentorProfile) {
-      return res.redirect(`${baseUrl}/role-selection`);
-    }
-    return res.redirect(`${baseUrl}/dashboard`);
+    return res.redirect(`${baseUrl}${this.getDestination(payload.user)}`);
   }
 
   @Get('linkedin')
@@ -89,15 +102,18 @@ export class AuthController {
     this.setAuthCookie(res, payload.sessionToken);
 
     const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
-    if (!payload.user.hasMenteeProfile && !payload.user.hasMentorProfile) {
-      return res.redirect(`${baseUrl}/role-selection`);
-    }
-    return res.redirect(`${baseUrl}/dashboard`);
+    return res.redirect(`${baseUrl}${this.getDestination(payload.user)}`);
   }
 
   @Post('verify-email')
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.authService.verifyEmail(dto);
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const payload = await this.authService.verifyEmail(dto);
+    this.setAuthCookie(response, payload.sessionToken);
+
+    return { user: payload.user };
   }
 
   @Post('resend-verification')
@@ -144,5 +160,22 @@ export class AuthController {
       .find((cookie) => cookie.startsWith(`${name}=`))
       ?.slice(name.length + 1)
       .trim();
+  }
+
+  private getDestination(user: AuthUser) {
+    switch (user.accountStage) {
+      case 'EMAIL_VERIFICATION':
+        return `/email-verification?email=${encodeURIComponent(user.email)}`;
+      case 'ROLE_SELECTION':
+        return '/role-selection';
+      case 'MENTEE_ONBOARDING':
+        return '/mentee-onboarding';
+      case 'MENTOR_ONBOARDING':
+        return '/mentor-onboarding';
+      case 'MENTOR_PENDING':
+        return '/mentor-submitted';
+      case 'READY':
+        return '/dashboard';
+    }
   }
 }

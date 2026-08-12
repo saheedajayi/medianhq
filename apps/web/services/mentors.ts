@@ -8,6 +8,8 @@ export type CreateMentorProfilePayload = {
   industry: string;
   experience: string;
   location: string;
+  bio?: string;
+  cvUrl?: string;
 };
 
 export type MentorMatch = {

@@ -9,7 +9,16 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { UserRole, type User } from '@prisma/client';
 import { AuthRepository } from './auth.repository';
 import { EmailService } from '../email/email.service';
-import type { AuthUser, LoginDto, RegisterDto, VerifyEmailDto, ResendVerificationDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import { getAccountStage } from './account-stage';
+import type {
+  AuthUser,
+  LoginDto,
+  RegisterDto,
+  VerifyEmailDto,
+  ResendVerificationDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 
 type AuthPayload = {
   sessionToken: string;
@@ -56,7 +65,10 @@ export class AuthService {
       await this.generateAndSendVerificationEmail(user);
     } catch (error) {
       emailSent = false;
-      this.logger.error(`Failed to send verification email during registration for ${user.email}`, error instanceof Error ? error.stack : error);
+      this.logger.error(
+        `Failed to send verification email during registration for ${user.email}`,
+        error instanceof Error ? error.stack : error,
+      );
     }
 
     return {
@@ -66,9 +78,11 @@ export class AuthService {
     };
   }
 
-  private async generateAndSendVerificationEmail(user: Pick<User, 'email' | 'firstName'>) {
+  private async generateAndSendVerificationEmail(
+    user: Pick<User, 'email' | 'firstName'>,
+  ) {
     const code = randomBytes(3).toString('hex').toUpperCase(); // 6 chars like A1B2C3
-    
+
     await this.authRepository.upsertVerificationToken({
       email: user.email,
       token: code,
@@ -87,7 +101,11 @@ export class AuthService {
     const input = this.validateLoginInput(dto);
     const user = await this.authRepository.findByEmail(input.email);
 
-    if (!user || !user.passwordHash || !this.verifyPassword(input.password, user.passwordHash)) {
+    if (
+      !user ||
+      !user.passwordHash ||
+      !this.verifyPassword(input.password, user.passwordHash)
+    ) {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
@@ -97,7 +115,10 @@ export class AuthService {
         await this.generateAndSendVerificationEmail(user);
       } catch (error) {
         emailSent = false;
-        this.logger.error(`Failed to send verification email during login for ${user.email}`, error instanceof Error ? error.stack : error);
+        this.logger.error(
+          `Failed to send verification email during login for ${user.email}`,
+          error instanceof Error ? error.stack : error,
+        );
       }
     }
 
@@ -125,20 +146,24 @@ export class AuthService {
 
   async oauthLogin(profile: any): Promise<AuthPayload> {
     const { providerId, email, firstName, lastName, provider } = profile;
-    
+
     // Check if user exists by OAuth ID
     let user = await this.authRepository.findByOAuthId(provider, providerId);
-    
+
     if (!user) {
       // Check if user exists by email to link account
       if (email) {
-        user = await this.authRepository.findByEmail(email) as any;
+        user = (await this.authRepository.findByEmail(email)) as any;
       }
-      
+
       if (user) {
         // Link OAuth ID to existing user
-        const updateData = provider === 'google' ? { googleId: providerId } : { linkedinId: providerId };
-        user = await this.authRepository.update(user.id, updateData) as any;
+        const updateData =
+          provider === 'google'
+            ? { googleId: providerId }
+            : { linkedinId: providerId };
+        await this.authRepository.update(user.id, updateData);
+        user = await this.authRepository.findById(user.id);
       } else {
         // Create new user without password and role
         const createData = {
@@ -148,7 +173,7 @@ export class AuthService {
           emailVerifiedAt: new Date(), // Implicitly verified by OAuth
           [provider === 'google' ? 'googleId' : 'linkedinId']: providerId,
         };
-        user = await this.authRepository.create(createData) as any;
+        user = (await this.authRepository.create(createData)) as any;
       }
     }
 
@@ -178,13 +203,21 @@ export class AuthService {
       throw new BadRequestException('User not found.');
     }
 
-    const updatedUser = await this.authRepository.update(user.id, {
+    await this.authRepository.update(user.id, {
       emailVerifiedAt: new Date(),
-    }) as any;
+    });
 
     await this.authRepository.deleteVerificationToken(tokenRecord.id);
 
-    return { success: true, message: 'Email verified successfully.', user: this.toAuthUser(updatedUser) };
+    const updatedUser = await this.authRepository.findById(user.id);
+    if (!updatedUser) {
+      throw new BadRequestException('User not found.');
+    }
+
+    return {
+      sessionToken: this.signToken(updatedUser),
+      user: this.toAuthUser(updatedUser),
+    };
   }
 
   async resendVerification(dto: ResendVerificationDto) {
@@ -398,7 +431,8 @@ export class AuthService {
 
     if (
       !decodedPayload.sub ||
-      (decodedPayload.role && !Object.values(UserRole).includes(decodedPayload.role)) ||
+      (decodedPayload.role &&
+        !Object.values(UserRole).includes(decodedPayload.role)) ||
       !decodedPayload.exp ||
       decodedPayload.exp < Math.floor(Date.now() / 1000)
     ) {
@@ -427,6 +461,7 @@ export class AuthService {
       hasMenteeProfile: Boolean(user.menteeProfile),
       hasMentorProfile: Boolean(user.mentorProfile),
       mentorStatus: user.mentorProfile?.status,
+      accountStage: getAccountStage(user),
     };
   }
 }

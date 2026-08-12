@@ -65,6 +65,7 @@ model MentorProfile {
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   headline          String?
   bio               String?
+  cvUrl             String?
   industry          String
   experience        String
   company           String?

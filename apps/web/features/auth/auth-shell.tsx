@@ -2,10 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
-import { authService, type AuthUser } from "@/services/auth";
+import { ArrowLeft } from "lucide-react";
+import { getAuthDestination, getAuthDestinationPath } from "@/lib/auth-routing";
+import { authService } from "@/services/auth";
 import { AnimatedAuthCopy } from "./animated-auth-copy";
+import { OnboardingProvider, useOnboarding } from "./onboarding-context";
+import { OnboardingSidebar } from "./onboarding-sidebar";
 
 const GUARDED_PATHS = new Set([
   "/role-selection",
@@ -13,46 +17,44 @@ const GUARDED_PATHS = new Set([
   "/mentor-onboarding",
 ]);
 
-function getCompletedStepDestination(pathname: string, user: AuthUser) {
-  if (pathname === "/role-selection" && user.role === "MENTEE") {
-    return user.hasMenteeProfile ? "/mentor-matches" : "/mentee-onboarding";
-  }
+const ONBOARDING_PATHS = new Set([
+  "/role-selection",
+  "/mentee-onboarding",
+  "/mentor-onboarding",
+  "/mentor-matches",
+  "/mentor-submitted",
+]);
 
-  if (pathname === "/role-selection" && user.role === "MENTOR") {
-    return user.hasMentorProfile
-      ? user.mentorStatus === "APPROVED"
-        ? "/dashboard"
-        : "/mentor-submitted"
-      : "/mentor-onboarding";
-  }
+const STEP_PREVIOUS_ROUTE: Record<string, string> = {
+  "/mentee-onboarding": "/role-selection",
+  "/mentor-onboarding": "/role-selection",
+  "/mentor-matches": "/mentee-onboarding",
+  "/mentor-submitted": "/mentor-onboarding",
+};
 
-  if (pathname === "/mentee-onboarding") {
-    if (user.role !== "MENTEE") {
-      return user.role === "MENTOR" ? "/mentor-onboarding" : "/role-selection";
-    }
+const ONBOARDING_STAGES = new Set([
+  "ROLE_SELECTION",
+  "MENTEE_ONBOARDING",
+  "MENTOR_ONBOARDING",
+  "MENTOR_PENDING",
+]);
 
-    return user.hasMenteeProfile ? "/mentor-matches" : null;
-  }
-
-  if (pathname === "/mentor-onboarding") {
-    if (user.role !== "MENTOR") {
-      return user.role === "MENTEE" ? "/mentee-onboarding" : "/role-selection";
-    }
-
-    return user.hasMentorProfile
-      ? user.mentorStatus === "APPROVED"
-        ? "/dashboard"
-        : "/mentor-submitted"
-      : null;
-  }
-
-  return null;
-}
-
-export function AuthShell({ children }: { children: ReactNode }) {
+function AuthShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const stepParam = searchParams.get("step");
   const router = useRouter();
+  const { setRole } = useOnboarding();
   const isGuardedPath = GUARDED_PATHS.has(pathname);
+  const isOnboardingPath = ONBOARDING_PATHS.has(pathname);
+  
+  let previousRoute = STEP_PREVIOUS_ROUTE[pathname];
+  if (pathname === "/mentor-onboarding" && stepParam === "2") {
+    previousRoute = "/mentor-onboarding";
+  } else if (pathname === "/mentor-submitted") {
+    previousRoute = "/mentor-onboarding?step=2";
+  }
+
   const [checkedPath, setCheckedPath] = useState<string | null>(null);
   const isCheckingAccess = isGuardedPath && checkedPath !== pathname;
 
@@ -70,9 +72,18 @@ export function AuthShell({ children }: { children: ReactNode }) {
           return;
         }
 
-        const destination = getCompletedStepDestination(pathname, response.data);
+        if (response.data.role === "MENTEE" || response.data.role === "MENTOR") {
+          setRole(response.data.role);
+        }
 
-        if (destination) {
+        const destination = getAuthDestination(response.data);
+        const destinationPath = getAuthDestinationPath(response.data);
+
+        const isAllowedOnboardingNavigation =
+          ONBOARDING_PATHS.has(pathname) &&
+          ONBOARDING_STAGES.has(response.data.accountStage);
+
+        if (destinationPath !== pathname && !isAllowedOnboardingNavigation) {
           router.replace(destination);
           return;
         }
@@ -112,7 +123,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
           className="pointer-events-none absolute bottom-0 left-[6.6%] z-0 h-auto w-[93.4%] max-w-none select-none opacity-[0.15]"
         />
 
-        <AnimatedAuthCopy />
+        {isOnboardingPath ? <OnboardingSidebar /> : <AnimatedAuthCopy />}
       </aside>
 
       <section className="relative flex h-svh min-h-0 flex-col overflow-hidden bg-[#FFFAF5]">
@@ -133,8 +144,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
         />
 
         <div className="relative z-10 flex h-full flex-col overflow-y-auto overscroll-contain">
-          <div className="flex min-h-full flex-1 px-5 py-10 sm:px-10">
-            <div className="m-auto w-full max-w-[552px]">
+          <div className="flex min-h-full flex-1 px-4 py-8 sm:px-10">
+            <div className="m-auto w-full max-w-[552px] min-w-0 overflow-hidden">
               <div className="mb-8 flex w-full justify-center lg:hidden">
                 <Link href="/" aria-label="Median home">
                   <Image
@@ -147,7 +158,17 @@ export function AuthShell({ children }: { children: ReactNode }) {
                   />
                 </Link>
               </div>
-              <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-sm">
+              {previousRoute && (
+                <button
+                  type="button"
+                  onClick={() => router.push(previousRoute)}
+                  className="mb-4 inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-[#344054] transition-colors hover:text-[#111827]"
+                >
+                  <ArrowLeft className="size-4" />
+                  Back
+                </button>
+              )}
+              <div className="rounded-3xl bg-white p-4 sm:p-8 shadow-sm w-full max-w-full min-w-0 overflow-hidden">
                 {isCheckingAccess ? (
                   <p className="py-10 text-center text-sm text-[#667085]">
                     Checking your account…
@@ -161,5 +182,13 @@ export function AuthShell({ children }: { children: ReactNode }) {
         </div>
       </section>
     </main>
+  );
+}
+
+export function AuthShell({ children }: { children: ReactNode }) {
+  return (
+    <OnboardingProvider>
+      <AuthShellInner>{children}</AuthShellInner>
+    </OnboardingProvider>
   );
 }

@@ -1,15 +1,24 @@
 export type AuthRole = "MENTEE" | "MENTOR" | "ADMIN";
 
+export type AccountStage =
+  | "EMAIL_VERIFICATION"
+  | "ROLE_SELECTION"
+  | "MENTEE_ONBOARDING"
+  | "MENTOR_ONBOARDING"
+  | "MENTOR_PENDING"
+  | "READY";
+
 export type AuthUser = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role?: AuthRole;
+  role: AuthRole | null;
   isEmailVerified: boolean;
   hasMenteeProfile: boolean;
   hasMentorProfile: boolean;
   mentorStatus?: string;
+  accountStage: AccountStage;
 };
 
 export type AuthResponse = {

@@ -1,4 +1,5 @@
-import type { UserRole } from '@prisma/client';
+import type { MentorStatus, UserRole } from '@prisma/client';
+import type { AccountStage } from '../account-stage';
 
 export type RegisterDto = {
   email: string;
@@ -18,11 +19,12 @@ export type AuthUser = {
   email: string;
   firstName: string;
   lastName: string;
-  role?: UserRole;
+  role: UserRole | null;
   isEmailVerified: boolean;
   hasMenteeProfile: boolean;
   hasMentorProfile: boolean;
-  mentorStatus?: string;
+  mentorStatus?: MentorStatus;
+  accountStage: AccountStage;
 };
 
 export type VerifyEmailDto = {

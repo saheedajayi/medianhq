@@ -15,12 +15,13 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 import { Button } from "@/components/ui/base/button";
+import { useOnboarding, type OnboardingRole } from "./onboarding-context";
 
-type Role = "MENTEE" | "MENTOR";
+type Role = OnboardingRole;
 
 const roles = [
   {
-    value: "MENTEE",
+    value: "MENTEE" as Role,
     title: "Find a Mentor",
     description:
       "Get 1:1 guidance, career advice, and expert feedback from vetted professionals.",
@@ -28,7 +29,7 @@ const roles = [
     imageAlt: "Orange geometric pattern",
   },
   {
-    value: "MENTOR",
+    value: "MENTOR" as Role,
     title: "Share my Expertise",
     description:
       "Give career advice and guidance to the next generation of experts.",
@@ -45,7 +46,7 @@ const roles = [
 
 export function RoleSelectionPage() {
   const router = useRouter();
-  const [role, setRole] = useState<Role>("MENTEE");
+  const { role, setRole } = useOnboarding();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

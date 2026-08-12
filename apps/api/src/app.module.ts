@@ -15,6 +15,7 @@ import { SessionsModule } from './modules/sessions/sessions.module';
 import { UsersModule } from './modules/users/users.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { TaxonomyModule } from './modules/taxonomy/taxonomy.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 const envFilePath = [
   'apps/api/.env.local',
@@ -39,6 +40,7 @@ const envFilePath = [
     AdminModule,
     WaitlistModule,
     TaxonomyModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
