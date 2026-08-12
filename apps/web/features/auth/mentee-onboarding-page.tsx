@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState, useRef } from "react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { menteesService } from "@/services/mentees";
 import type { ApiError } from "@/services/api-client";
 
@@ -50,6 +51,7 @@ export function MenteeOnboardingPage() {
   const router = useRouter();
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [otherGoalText, setOtherGoalText] = useState("");
+  const [isEditingOther, setIsEditingOther] = useState(false);
   const [goalDescription, setGoalDescription] = useState("");
   const [currentRole, setCurrentRole] = useState("");
   const [industry, setIndustry] = useState("");
@@ -75,22 +77,44 @@ export function MenteeOnboardingPage() {
   };
 
   function toggleGoal(goal: string) {
-    setSelectedGoals((prev) => {
-      const exists = prev.includes(goal);
-      if (exists) {
-        if (goal === "Others") {
-          setOtherGoalText("");
-        }
-        return prev.filter((g) => g !== goal);
+    setSelectedGoals((prev) =>
+      prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
+    );
+  }
+
+  function handleOthersClick() {
+    const isSelected = selectedGoals.includes("Others");
+    if (!isSelected) {
+      setSelectedGoals((prev) => [...prev, "Others"]);
+      setIsEditingOther(true);
+      setTimeout(() => otherInputRef.current?.focus(), 60);
+    } else {
+      if (!isEditingOther) {
+        setIsEditingOther(true);
+        setTimeout(() => otherInputRef.current?.focus(), 60);
       } else {
-        if (goal === "Others") {
-          setTimeout(() => {
-            otherInputRef.current?.focus();
-          }, 50);
-        }
-        return [...prev, goal];
+        setSelectedGoals((prev) => prev.filter((g) => g !== "Others"));
+        setOtherGoalText("");
+        setIsEditingOther(false);
       }
-    });
+    }
+  }
+
+  function handleOtherInputBlur() {
+    if (!otherGoalText.trim()) {
+      setSelectedGoals((prev) => prev.filter((g) => g !== "Others"));
+      setOtherGoalText("");
+      setIsEditingOther(false);
+    } else {
+      setIsEditingOther(false);
+    }
+  }
+
+  function handleOtherInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleOtherInputBlur();
+    }
   }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,33 +166,84 @@ export function MenteeOnboardingPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center gap-2.5">
           {goals.map((goal) => {
-            const isSelected = selectedGoals.includes(goal);
-            const isOthers = goal === "Others";
+            if (goal === "Others") {
+              const isOthersSelected = selectedGoals.includes("Others");
+              const hasCustomText = otherGoalText.trim().length > 0;
 
+              return (
+                <div key="Others" className="inline-flex items-center gap-2.5">
+                  <AnimatePresence mode="wait">
+                    {isOthersSelected && isEditingOther ? (
+                      <motion.div
+                        key="other-input-container"
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: "auto", opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <input
+                          ref={otherInputRef}
+                          type="text"
+                          value={otherGoalText}
+                          onChange={(e) => setOtherGoalText(e.target.value)}
+                          onBlur={handleOtherInputBlur}
+                          onKeyDown={handleOtherInputKeyDown}
+                          placeholder="Specify other goal..."
+                          style={{
+                            width: `${Math.max(150, Math.min(260, otherGoalText.length * 9 + 48))}px`,
+                          }}
+                          className="h-[37px] rounded-full border border-[#4b100d] bg-white px-4 text-[14px] text-[#141c2e] outline-none placeholder:text-[#94a3b8] focus:ring-2 focus:ring-[#4b100d]/20 transition-[width] duration-200"
+                        />
+                      </motion.div>
+                    ) : isOthersSelected && hasCustomText ? (
+                      <motion.button
+                        key="other-text-pill"
+                        type="button"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        onClick={() => {
+                          setIsEditingOther(true);
+                          setTimeout(() => otherInputRef.current?.focus(), 60);
+                        }}
+                        className="rounded-full border border-[#4b100d] bg-[#4b100d] px-4 py-1.5 text-[15px] text-white hover:bg-[#4b100d]/90 transition-colors"
+                      >
+                        {otherGoalText.trim()}
+                      </motion.button>
+                    ) : null}
+                  </AnimatePresence>
+
+                  <button
+                    type="button"
+                    onClick={handleOthersClick}
+                    className={`rounded-full border px-4 py-1.5 text-[15px] transition-colors ${
+                      isOthersSelected
+                        ? "border-[#4b100d] bg-[#4b100d] text-white"
+                        : "border-[#e2e8f0] bg-white text-[#344054] hover:border-[#ff8e62]"
+                    }`}
+                  >
+                    Others
+                  </button>
+                </div>
+              );
+            }
+
+            const isSelected = selectedGoals.includes(goal);
             return (
-              <div key={goal} className="inline-flex items-center gap-2.5">
-                {isOthers && isSelected && (
-                  <input
-                    ref={otherInputRef}
-                    type="text"
-                    value={otherGoalText}
-                    onChange={(e) => setOtherGoalText(e.target.value)}
-                    placeholder="Specify other goal..."
-                    className="h-[37px] w-[160px] sm:w-[200px] rounded-full border border-[#4b100d] bg-white px-4 text-[14px] text-[#141c2e] outline-none placeholder:text-[#94a3b8] focus:ring-2 focus:ring-[#4b100d]/20 transition-all"
-                  />
-                )}
-                <button
-                  type="button"
-                  onClick={() => toggleGoal(goal)}
-                  className={`rounded-full border px-4 py-1.5 text-[15px] transition-colors ${
-                    isSelected
-                      ? "border-[#4b100d] bg-[#4b100d] text-white"
-                      : "border-[#e2e8f0] bg-white text-[#344054] hover:border-[#ff8e62]"
-                  }`}
-                >
-                  {goal}
-                </button>
-              </div>
+              <button
+                key={goal}
+                type="button"
+                onClick={() => toggleGoal(goal)}
+                className={`rounded-full border px-4 py-1.5 text-[15px] transition-colors ${
+                  isSelected
+                    ? "border-[#4b100d] bg-[#4b100d] text-white"
+                    : "border-[#e2e8f0] bg-white text-[#344054] hover:border-[#ff8e62]"
+                }`}
+              >
+                {goal}
+              </button>
             );
           })}
         </div>
