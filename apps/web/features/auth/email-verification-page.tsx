@@ -21,6 +21,8 @@ import {
   InputOTPSlot,
 } from "@/components/ui/base/input-otp";
 
+const COOLDOWN_INITIAL_SECONDS = 60;
+
 export function EmailVerificationPage({
   email,
   retryEmail,
@@ -30,23 +32,32 @@ export function EmailVerificationPage({
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isResending, setIsResending] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(COOLDOWN_INITIAL_SECONDS);
   const hasRetried = useRef(false);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setCooldownSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
 
   useEffect(() => {
     if (retryEmail && !hasRetried.current) {
       hasRetried.current = true;
-      setIsResending(true);
       authService
         .resendVerification({ email })
+        .then(() => {
+          setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);
+        })
         .catch(() => {
           toast.error("We hit a snag sending your code.", {
             description:
               "Once your internet connection is stable, click 'Resend Code' to try again.",
             duration: 8000,
           });
-        })
-        .finally(() => setIsResending(false));
+        });
     }
   }, [retryEmail, email]);
 
@@ -79,20 +90,23 @@ export function EmailVerificationPage({
   }
 
   function handleResend() {
-    if (isResending) return;
-    setIsResending(true);
+    if (cooldownSeconds > 0) return;
 
-    toast.promise(
-      authService.resendVerification({ email }).finally(() => {
-        setIsResending(false);
-      }),
-      {
-        loading: "Sending new code...",
-        success: "A new verification code has been sent.",
-        error: (error) => getErrorMessage(error, "Failed to send code."),
-      }
-    );
+    toast.promise(authService.resendVerification({ email }), {
+      loading: "Sending new code...",
+      success: () => {
+        setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);
+        return "A new verification code has been sent.";
+      },
+      error: (error) => getErrorMessage(error, "Failed to send code."),
+    });
   }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
     <>
@@ -137,22 +151,23 @@ export function EmailVerificationPage({
         </Button>
 
         <div className="flex flex-col items-center gap-1.5 justify-self-center text-center">
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={isResending}
-            className={`text-base font-semibold transition-colors ${
-              isResending
-                ? "text-[#94a3b8] cursor-not-allowed select-none"
-                : "text-primary hover:underline cursor-pointer"
-            }`}
-          >
-            {isResending ? "Sending new code..." : "Resend Code"}
-          </button>
-          {!isResending && (
-            <span className="text-xs text-[#94a3b8]">
-              Didn&apos;t receive the code? Click above to send a new one.
+          {cooldownSeconds > 0 ? (
+            <span className="text-sm font-medium text-[#94a3b8] cursor-not-allowed select-none">
+              Resend Code in {formatTime(cooldownSeconds)}
             </span>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleResend}
+                className="text-base font-semibold text-primary hover:underline cursor-pointer transition-colors"
+              >
+                Resend Code
+              </button>
+              <span className="text-xs text-[#94a3b8]">
+                Didn&apos;t receive the code? Click above to send a new one.
+              </span>
+            </>
           )}
         </div>
       </form>
