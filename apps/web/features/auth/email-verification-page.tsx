@@ -15,7 +15,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 import { Button } from "@/components/ui/base/button";
-import { Label } from "@/components/ui/base/label";
 import {
   InputOTP,
   InputOTPGroup,
@@ -117,26 +116,20 @@ export function EmailVerificationPage({
         </h1>
         <p className="mt-2 text-base leading-6 text-[#344054]">
           Enter the verification code we sent to
-          <strong className="block font-semibold text-[#141c2e]">{email}</strong>
+          <strong className="block font-semibold text-[#141c2e] mt-0.5">{email}</strong>
         </p>
-        <p className="mt-2 text-xs font-normal text-[#667085]">
+        <p className="mt-5 text-xs font-normal text-[#667085]">
           Code expires in <span className="font-semibold text-[#344054]">15 minutes</span>.
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="mt-10 grid gap-8">
+      <form onSubmit={handleSubmit} className="mt-8 grid gap-8">
         <div className="grid gap-2">
-          <Label
-            htmlFor="verificationCode"
-            className="text-sm font-normal text-[#141c2e]"
-          >
-            Code
-          </Label>
           <InputOTP
             maxLength={6}
             name="verificationCode"
             id="verificationCode"
-            containerClassName="mt-2 w-full flex justify-between"
+            containerClassName="w-full flex justify-between"
           >
             <InputOTPGroup className="flex w-full justify-between gap-2 sm:gap-3">
               <InputOTPSlot index={0} />
@@ -157,25 +150,24 @@ export function EmailVerificationPage({
           {isSubmitting ? "Checking code..." : "Continue"}
         </Button>
 
-        <div className="flex flex-col items-center gap-1 justify-self-center text-center">
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={cooldownSeconds > 0}
-            className={`text-base font-medium transition-colors ${
-              cooldownSeconds > 0
-                ? "text-[#94a3b8] cursor-not-allowed"
-                : "text-primary hover:underline cursor-pointer"
-            }`}
-          >
-            {cooldownSeconds > 0
-              ? `Resend Code in ${formatTime(cooldownSeconds)}`
-              : "Resend Code"}
-          </button>
-          {cooldownSeconds === 0 && (
-            <span className="text-xs text-[#94a3b8]">
-              Didn&apos;t receive the code? Click above to send a new one.
-            </span>
+        <div className="flex flex-col items-center gap-1.5 justify-self-center text-center">
+          {cooldownSeconds > 0 ? (
+            <div className="inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-1.5 text-xs font-medium text-[#94a3b8] cursor-not-allowed select-none">
+              Resend Code in {formatTime(cooldownSeconds)}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleResend}
+                className="text-base font-semibold text-primary hover:underline cursor-pointer transition-colors"
+              >
+                Resend Code
+              </button>
+              <span className="text-xs text-[#94a3b8]">
+                Didn&apos;t receive the code? Click above to send a new one.
+              </span>
+            </>
           )}
         </div>
       </form>
