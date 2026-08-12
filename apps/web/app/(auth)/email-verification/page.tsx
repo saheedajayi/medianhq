@@ -1,4 +1,7 @@
+import { Suspense } from "react";
 import { EmailVerificationPage } from "@/features/auth/email-verification-page";
+
+export const dynamic = "force-dynamic";
 
 export default async function EmailVerificationRoute({
   searchParams,
@@ -8,9 +11,11 @@ export default async function EmailVerificationRoute({
   const { email, retryEmail } = await searchParams;
 
   return (
-    <EmailVerificationPage 
-      email={email?.trim() ?? ""} 
-      retryEmail={retryEmail === "true"}
-    />
+    <Suspense fallback={<div className="p-8 text-center text-sm text-[#64748b]">Loading verification...</div>}>
+      <EmailVerificationPage 
+        email={email?.trim() ?? ""} 
+        retryEmail={retryEmail === "true"}
+      />
+    </Suspense>
   );
 }
