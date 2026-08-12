@@ -179,7 +179,7 @@ export function MenteeOnboardingPage() {
                         initial={{ width: 0, opacity: 0 }}
                         animate={{ width: "auto", opacity: 1 }}
                         exit={{ width: 0, opacity: 0 }}
-                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                         className="overflow-hidden"
                       >
                         <input
@@ -193,7 +193,7 @@ export function MenteeOnboardingPage() {
                           style={{
                             width: `${Math.max(150, Math.min(260, otherGoalText.length * 9 + 48))}px`,
                           }}
-                          className="h-[37px] rounded-full border border-[#4b100d] bg-white px-4 text-[14px] text-[#141c2e] outline-none placeholder:text-[#94a3b8] focus:ring-2 focus:ring-[#4b100d]/20 transition-[width] duration-200"
+                          className="h-[37px] rounded-full border border-[#4b100d] bg-white px-4 text-[14px] text-[#141c2e] outline-none placeholder:text-[#94a3b8] focus:ring-2 focus:ring-[#4b100d]/20"
                         />
                       </motion.div>
                     ) : isOthersSelected && hasCustomText ? (
@@ -203,7 +203,7 @@ export function MenteeOnboardingPage() {
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
-                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                         onClick={() => {
                           setIsEditingOther(true);
                           setTimeout(() => otherInputRef.current?.focus(), 60);
