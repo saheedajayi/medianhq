@@ -11,28 +11,10 @@ import { AnimatedAuthCopy } from "./animated-auth-copy";
 import { OnboardingProvider, useOnboarding } from "./onboarding-context";
 import { OnboardingSidebar } from "./onboarding-sidebar";
 
-const PUBLIC_AUTH_PATHS = new Set([
-  "/signin",
-  "/login",
-  "/signup",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-]);
-
 const GUARDED_PATHS = new Set([
-  "/signin",
-  "/login",
-  "/signup",
-  "/register",
-  "/email-verification",
-  "/forgot-password",
-  "/reset-password",
   "/role-selection",
   "/mentee-onboarding",
   "/mentor-onboarding",
-  "/mentor-matches",
-  "/mentor-submitted",
 ]);
 
 const ONBOARDING_PATHS = new Set([
@@ -110,96 +92,91 @@ function AuthShellInner({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (!isCancelled) {
-          if (PUBLIC_AUTH_PATHS.has(pathname)) {
-            setCheckedPath(pathname);
-          } else {
-            router.replace("/signin");
-          }
+          router.replace("/signin");
         }
       });
 
     return () => {
       isCancelled = true;
     };
-  }, [isGuardedPath, pathname, router, setRole]);
+  }, [isGuardedPath, pathname, router]);
 
   return (
-    <main className="grid h-svh min-h-0 overflow-hidden bg-[#FFFAF5] text-[#141c2e] lg:grid-cols-[40%_60%]">
-      {/* Left panel */}
-      <section className="relative hidden flex-col justify-between overflow-hidden bg-[#350b09] p-10 text-white lg:flex">
-        <Link href="/" className="relative z-10 flex items-center gap-2">
+    <main className="grid h-svh min-h-0 overflow-hidden bg-white text-[#141c2e] lg:grid-cols-[40%_60%]">
+      <aside className="relative hidden h-svh min-h-0 overflow-hidden bg-primary px-10 py-14 text-white lg:flex lg:flex-col xl:px-20 xl:pt-[120px] xl:pb-20">
+        <Link href="/" aria-label="Median home" className="relative z-10 w-fit">
           <Image
             src="/auth/auth-logo-white.svg"
-            alt="Median Logo"
-            width={120}
-            height={32}
+            alt="Median"
+            width={224}
+            height={45}
             priority
-            className="h-8 w-auto"
+            className="h-auto w-[190px] xl:w-[224px]"
           />
         </Link>
-        <AnimatedAuthCopy />
-        <footer className="relative z-10 text-xs font-normal text-[#e4e7ec]">
-          © {new Date().getFullYear()} Median, Inc. All rights reserved.
-        </footer>
-      </section>
 
-      {/* Right panel */}
-      <section className="relative flex h-full flex-col overflow-y-auto bg-[#FFFAF5]">
-        <header className="flex h-20 items-center justify-between px-6 sm:px-12">
-          {isOnboardingPath && previousRoute ? (
-            <Link
-              href={previousRoute}
-              className="inline-flex items-center gap-2 text-sm font-medium text-[#475467] hover:text-[#101828]"
-            >
-              <ArrowLeft className="size-4" />
-              Back
-            </Link>
-          ) : (
-            <div />
-          )}
+        <Image
+          src="/auth/auth-bg-sidebar.svg"
+          alt=""
+          width={564}
+          height={386}
+          className="pointer-events-none absolute bottom-0 left-[6.6%] z-0 h-auto w-[93.4%] max-w-none select-none opacity-[0.15]"
+        />
 
-          {!isOnboardingPath && (
-            <p className="text-sm font-normal text-[#344054]">
-              {pathname === "/signin" || pathname === "/login" ? (
-                <>
-                  Don&apos;t have an account?{" "}
-                  <Link
-                    href="/signup"
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Sign up
-                  </Link>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <Link
-                    href="/signin"
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Sign in
-                  </Link>
-                </>
-              )}
-            </p>
-          )}
-        </header>
+        {isOnboardingPath ? <OnboardingSidebar /> : <AnimatedAuthCopy />}
+      </aside>
 
-        <div className="flex flex-1 items-center justify-center px-4 pb-12 pt-4 sm:px-10">
-          <div className="w-full max-w-[520px]">
-            {isOnboardingPath && (
-              <div className="mb-8">
-                <OnboardingSidebar />
+      <section className="relative flex h-svh min-h-0 flex-col overflow-hidden bg-[#FFFAF5]">
+        <Image
+          src="/auth/auth-bg-left-mobile.svg"
+          alt=""
+          width={325}
+          height={318}
+          unoptimized
+          className="pointer-events-none absolute bottom-0 left-0 z-0 h-auto w-[280px] select-none opacity-[0.04] lg:hidden"
+        />
+        <Image
+          src="/auth/auth-bg-right.svg"
+          alt=""
+          width={324}
+          height={318}
+          className="pointer-events-none absolute right-0 bottom-0 z-0 hidden h-auto w-[280px] select-none sm:block xl:w-[324px]"
+        />
+
+        <div className="relative z-10 flex h-full flex-col overflow-y-auto overscroll-contain">
+          <div className="flex min-h-full flex-1 px-4 py-8 sm:px-10">
+            <div className="m-auto w-full max-w-[552px] min-w-0 overflow-hidden">
+              <div className="mb-8 flex w-full justify-center lg:hidden">
+                <Link href="/" aria-label="Median home">
+                  <Image
+                    src="/auth/auth-logo-orange.svg"
+                    alt="Median"
+                    width={168}
+                    height={30}
+                    priority
+                    className="h-auto w-[160px]"
+                  />
+                </Link>
               </div>
-            )}
-            <div className="rounded-3xl bg-white p-6 sm:p-10 shadow-sm border border-[#f3e8df]">
-              {isCheckingAccess ? (
-                <div className="flex justify-center py-12">
-                  <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                </div>
-              ) : (
-                children
+              {previousRoute && (
+                <button
+                  type="button"
+                  onClick={() => router.push(previousRoute)}
+                  className="mb-4 inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-[#344054] transition-colors hover:text-[#111827]"
+                >
+                  <ArrowLeft className="size-4" />
+                  Back
+                </button>
               )}
+              <div className="rounded-3xl bg-white p-4 sm:p-8 shadow-sm w-full max-w-full min-w-0 overflow-hidden">
+                {isCheckingAccess ? (
+                  <p className="py-10 text-center text-sm text-[#667085]">
+                    Checking your account…
+                  </p>
+                ) : (
+                  children
+                )}
+              </div>
             </div>
           </div>
         </div>

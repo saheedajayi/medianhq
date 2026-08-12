@@ -138,7 +138,7 @@ export function MentorOnboardingPage() {
       toast.success("Welcome to Median!", {
         description: "Your application has been submitted.",
       });
-      router.replace("/mentor-submitted");
+      router.push("/mentor-submitted");
     } catch (error) {
       toast.error("Unable to submit application", {
         description: getErrorMessage(error, "Please check your details."),

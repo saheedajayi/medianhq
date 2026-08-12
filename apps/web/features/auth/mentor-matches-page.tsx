@@ -1,13 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/base/button";
 import { ArrowRight, UserSearch } from "lucide-react";
+import Link from "next/link";
 import { mentorsService } from "@/services/mentors";
 
 export function MentorMatchesPage() {
-  const router = useRouter();
   const { data, isLoading, error } = useQuery({
     queryKey: ["mentorMatches"],
     queryFn: () => mentorsService.getMatches(),
@@ -25,18 +24,18 @@ export function MentorMatchesPage() {
         </div>
 
         <h1 className="mb-4 text-[28px] font-bold tracking-[-0.02em] text-[#4b100d]">
-          We&apos;re finding your perfect matches!
+          We're finding your perfect matches!
         </h1>
 
         <p className="mb-10 max-w-[440px] text-[15px] text-[#64748b] leading-relaxed">
-          We are carefully reviewing our network of top-tier mentors to find the best fit for your specific goals. Keep an eye on your inbox—we&apos;ll email you as soon as your matches are ready.
+          We are carefully reviewing our network of top-tier mentors to find the best fit for your specific goals. Keep an eye on your inbox—we'll email you as soon as your matches are ready.
         </p>
 
         <Button
-          onClick={() => router.replace("/dashboard")}
+          asChild
           className="h-14 w-full rounded-full bg-primary text-base font-medium text-white shadow-none hover:bg-primary/90 sm:w-[320px]"
         >
-          Go to Dashboard
+          <Link href="/dashboard">Go to Dashboard</Link>
         </Button>
       </div>
     );
@@ -61,20 +60,42 @@ export function MentorMatchesPage() {
         {mentors.map((mentor) => (
           <div
             key={mentor.id}
-            className="flex items-center justify-between rounded-2xl border border-[#eaecf0] p-4 sm:p-5 transition-shadow hover:shadow-sm"
+            className="flex items-center justify-between rounded-2xl border border-[#f1f5f9] bg-white p-4 shadow-[0px_2px_4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-sm"
           >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <img
-                src={mentor.image}
-                alt={mentor.name}
-                className="size-12 rounded-full object-cover sm:size-14"
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <img
+                  src={mentor.image}
+                  alt={mentor.name}
+                  className="size-14 rounded-full object-cover"
+                />
+                <svg
+                  className="absolute -bottom-1.5 -right-1.5 size-7 drop-shadow-sm"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"
+                    className="fill-primary"
+                  />
+                  <path
+                    d="m9 12 2 2 4-4"
+                    stroke="white"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
               <div>
-                <h3 className="font-semibold text-[#101828] text-base sm:text-lg">
+                <h3 className="text-base font-semibold text-[#111827]">
                   {mentor.name}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#475467]">{mentor.role}</p>
-                <p className="mt-0.5 text-xs text-[#667085]">
+                <p className="mt-0.5 text-[15px] text-[#64748b]">
+                  {mentor.role}
+                </p>
+                <p className="mt-1 text-[15px] text-[#64748b]">
                   {mentor.sessions}
                 </p>
               </div>
@@ -90,12 +111,11 @@ export function MentorMatchesPage() {
       </div>
 
       <div className="mt-8">
-        <Button
-          onClick={() => router.replace("/dashboard")}
-          className="h-14 w-full rounded-full text-base font-medium shadow-none"
-        >
-          Go to Dashboard
-          <ArrowRight className="ml-2 size-5" />
+        <Button asChild className="h-14 w-full rounded-full text-base font-medium shadow-none">
+          <Link href="/dashboard">
+            Go to Dashboard
+            <ArrowRight className="ml-2 size-5" />
+          </Link>
         </Button>
       </div>
     </>
