@@ -193,7 +193,7 @@ export function MenteeOnboardingPage() {
                           style={{
                             width: `${Math.max(150, Math.min(260, otherGoalText.length * 9 + 48))}px`,
                           }}
-                          className="h-[37px] rounded-full border border-[#4b100d] bg-white px-4 text-[14px] text-[#141c2e] outline-none placeholder:text-[#94a3b8] focus:ring-2 focus:ring-[#4b100d]/20"
+                          className="h-[37px] rounded-full border border-[#4b100d] bg-white px-4 text-[14px] text-[#141c2e] outline-none focus:outline-none focus:ring-0 focus:border-[#4b100d] placeholder:text-[#94a3b8]"
                         />
                       </motion.div>
                     ) : isOthersSelected && hasCustomText ? (
