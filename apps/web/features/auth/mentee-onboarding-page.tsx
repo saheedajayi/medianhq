@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, useRef } from "react";
 import { toast } from "sonner";
 import { menteesService } from "@/services/mentees";
 import type { ApiError } from "@/services/api-client";
@@ -40,8 +40,6 @@ const goals = [
   "Others",
 ];
 
-// Industries are now imported from constants
-
 const timeframes = [
   "1-3 months",
   "3-6 months",
@@ -51,10 +49,12 @@ const timeframes = [
 export function MenteeOnboardingPage() {
   const router = useRouter();
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [otherGoalText, setOtherGoalText] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [currentRole, setCurrentRole] = useState("");
   const [industry, setIndustry] = useState("");
   const [timeframe, setTimeframe] = useState("");
+  const otherInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data: taxonomyData, refetch: refetchTaxonomy } = useQuery({
     queryKey: ["taxonomy"],
@@ -75,9 +75,22 @@ export function MenteeOnboardingPage() {
   };
 
   function toggleGoal(goal: string) {
-    setSelectedGoals((prev) =>
-      prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
-    );
+    setSelectedGoals((prev) => {
+      const exists = prev.includes(goal);
+      if (exists) {
+        if (goal === "Others") {
+          setOtherGoalText("");
+        }
+        return prev.filter((g) => g !== goal);
+      } else {
+        if (goal === "Others") {
+          setTimeout(() => {
+            otherInputRef.current?.focus();
+          }, 50);
+        }
+        return [...prev, goal];
+      }
+    });
   }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,9 +99,16 @@ export function MenteeOnboardingPage() {
     event.preventDefault();
     setIsSubmitting(true);
 
+    const finalGoals = selectedGoals.map((g) => {
+      if (g === "Others" && otherGoalText.trim()) {
+        return otherGoalText.trim();
+      }
+      return g;
+    });
+
     menteesService
       .createProfile({
-        goals: selectedGoals,
+        goals: finalGoals,
         goalDescription,
         currentRole,
         industry,
@@ -98,7 +118,7 @@ export function MenteeOnboardingPage() {
         toast.success("Welcome to Median!", {
           description: "Your mentee profile preferences have been saved.",
         });
-        router.replace("/mentor-matches");
+        router.push("/mentor-matches");
       })
       .catch((error) => {
         toast.error("Unable to save profile", {
@@ -120,22 +140,35 @@ export function MenteeOnboardingPage() {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {goals.map((goal) => {
             const isSelected = selectedGoals.includes(goal);
+            const isOthers = goal === "Others";
+
             return (
-              <button
-                key={goal}
-                type="button"
-                onClick={() => toggleGoal(goal)}
-                className={`rounded-full border px-4 py-1.5 text-[15px] transition-colors ${
-                  isSelected
-                    ? "border-[#4b100d] bg-[#4b100d] text-white"
-                    : "border-[#e2e8f0] bg-white text-[#344054] hover:border-[#ff8e62]"
-                }`}
-              >
-                {goal}
-              </button>
+              <div key={goal} className="inline-flex items-center gap-2.5">
+                {isOthers && isSelected && (
+                  <input
+                    ref={otherInputRef}
+                    type="text"
+                    value={otherGoalText}
+                    onChange={(e) => setOtherGoalText(e.target.value)}
+                    placeholder="Specify other goal..."
+                    className="h-[37px] w-[160px] sm:w-[200px] rounded-full border border-[#4b100d] bg-white px-4 text-[14px] text-[#141c2e] outline-none placeholder:text-[#94a3b8] focus:ring-2 focus:ring-[#4b100d]/20 transition-all"
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggleGoal(goal)}
+                  className={`rounded-full border px-4 py-1.5 text-[15px] transition-colors ${
+                    isSelected
+                      ? "border-[#4b100d] bg-[#4b100d] text-white"
+                      : "border-[#e2e8f0] bg-white text-[#344054] hover:border-[#ff8e62]"
+                  }`}
+                >
+                  {goal}
+                </button>
+              </div>
             );
           })}
         </div>
