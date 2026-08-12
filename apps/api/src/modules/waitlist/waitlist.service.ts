@@ -24,6 +24,52 @@ export class WaitlistService {
     };
   }
 
+  async exportCsv(): Promise<string> {
+    const entries = await this.waitlistRepository.findAllForExport();
+    const headers = [
+      'ID',
+      'First Name',
+      'Last Name',
+      'Email',
+      'Audience',
+      'Current Role',
+      'Company',
+      'Expertise',
+      'Level of Experience',
+      'Location',
+      'Created At',
+    ];
+
+    const rows = entries.map((entry) => [
+      entry.id,
+      entry.firstName,
+      entry.lastName,
+      entry.email,
+      entry.audience === WaitlistAudience.MENTOR ? 'Mentor' : 'Mentee',
+      entry.currentRole,
+      entry.company ?? '',
+      entry.expertise ?? '',
+      entry.levelOfExperience ?? '',
+      entry.location ?? '',
+      entry.createdAt instanceof Date
+        ? entry.createdAt.toISOString()
+        : String(entry.createdAt),
+    ]);
+
+    return [
+      headers.map(this.escapeCsvCell).join(','),
+      ...rows.map((row) => row.map(this.escapeCsvCell).join(',')),
+    ].join('\r\n');
+  }
+
+  private escapeCsvCell(value: string | null | undefined): string {
+    if (value == null) {
+      return '""';
+    }
+    const str = String(value);
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+
   async getDashboard({ page, limit }: { page: number; limit: number }) {
     const requestedPage = Number.isFinite(page) ? page : 1;
     const requestedLimit = Number.isFinite(limit) ? limit : 20;

@@ -55,6 +55,15 @@ export class WaitlistRepository {
     });
   }
 
+  findAllForExport() {
+    return this.prisma.waitlistEntry.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: waitlistEntrySelect,
+    });
+  }
+
   findLatest() {
     return this.prisma.waitlistEntry.findFirst({
       orderBy: {
