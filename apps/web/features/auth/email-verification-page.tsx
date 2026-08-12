@@ -19,9 +19,10 @@ import { Label } from "@/components/ui/base/label";
 import {
   InputOTP,
   InputOTPGroup,
-  InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/base/input-otp";
+
+const COOLDOWN_INITIAL_SECONDS = 60;
 
 export function EmailVerificationPage({
   email,
@@ -32,7 +33,16 @@ export function EmailVerificationPage({
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(COOLDOWN_INITIAL_SECONDS);
   const hasRetried = useRef(false);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setCooldownSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
 
   useEffect(() => {
     if (retryEmail && !hasRetried.current) {
@@ -40,7 +50,7 @@ export function EmailVerificationPage({
       authService
         .resendVerification({ email })
         .then(() => {
-          // Silent success for seamless UX
+          setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);
         })
         .catch(() => {
           toast.error("We hit a snag sending your code.", {
@@ -81,12 +91,23 @@ export function EmailVerificationPage({
   }
 
   function handleResend() {
+    if (cooldownSeconds > 0) return;
+
     toast.promise(authService.resendVerification({ email }), {
       loading: "Sending new code...",
-      success: "A new verification code has been sent.",
+      success: () => {
+        setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);
+        return "A new verification code has been sent.";
+      },
       error: (error) => getErrorMessage(error, "Failed to send code."),
     });
   }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
     <>
@@ -96,11 +117,14 @@ export function EmailVerificationPage({
         </h1>
         <p className="mt-2 text-base leading-6 text-[#344054]">
           Enter the verification code we sent to
-          <strong className="block font-semibold">{email}</strong>
+          <strong className="block font-semibold text-[#141c2e]">{email}</strong>
+        </p>
+        <p className="mt-2 text-xs font-normal text-[#667085]">
+          Code expires in <span className="font-semibold text-[#344054]">15 minutes</span>.
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="mt-14 grid gap-8">
+      <form onSubmit={handleSubmit} className="mt-10 grid gap-8">
         <div className="grid gap-2">
           <Label
             htmlFor="verificationCode"
@@ -133,13 +157,27 @@ export function EmailVerificationPage({
           {isSubmitting ? "Checking code..." : "Continue"}
         </Button>
 
-        <button
-          type="button"
-          onClick={handleResend}
-          className="justify-self-center text-base font-medium text-primary hover:underline"
-        >
-          Resend Code
-        </button>
+        <div className="flex flex-col items-center gap-1 justify-self-center text-center">
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={cooldownSeconds > 0}
+            className={`text-base font-medium transition-colors ${
+              cooldownSeconds > 0
+                ? "text-[#94a3b8] cursor-not-allowed"
+                : "text-primary hover:underline cursor-pointer"
+            }`}
+          >
+            {cooldownSeconds > 0
+              ? `Resend Code in ${formatTime(cooldownSeconds)}`
+              : "Resend Code"}
+          </button>
+          {cooldownSeconds === 0 && (
+            <span className="text-xs text-[#94a3b8]">
+              Didn&apos;t receive the code? Click above to send a new one.
+            </span>
+          )}
+        </div>
       </form>
     </>
   );
