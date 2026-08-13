@@ -2,6 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 
+const MENTEE_PROFILE_SELECT = {
+  id: true,
+  gender: true,
+  location: true,
+  bio: true,
+  avatarUrl: true,
+};
+
+const MENTOR_PROFILE_SELECT = {
+  id: true,
+  status: true,
+};
+
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -10,8 +23,8 @@ export class AuthRepository {
     return this.prisma.user.findUnique({
       where: { id },
       include: {
-        menteeProfile: { select: { id: true } },
-        mentorProfile: { select: { id: true, status: true } },
+        menteeProfile: { select: MENTEE_PROFILE_SELECT },
+        mentorProfile: { select: MENTOR_PROFILE_SELECT },
       },
     });
   }
@@ -20,8 +33,8 @@ export class AuthRepository {
     return this.prisma.user.findUnique({
       where: { email },
       include: {
-        menteeProfile: { select: { id: true } },
-        mentorProfile: { select: { id: true, status: true } },
+        menteeProfile: { select: MENTEE_PROFILE_SELECT },
+        mentorProfile: { select: MENTOR_PROFILE_SELECT },
       },
     });
   }
@@ -30,8 +43,8 @@ export class AuthRepository {
     return this.prisma.user.findUnique({
       where: provider === 'google' ? { googleId: providerId } : { linkedinId: providerId },
       include: {
-        menteeProfile: { select: { id: true } },
-        mentorProfile: { select: { id: true, status: true } },
+        menteeProfile: { select: MENTEE_PROFILE_SELECT },
+        mentorProfile: { select: MENTOR_PROFILE_SELECT },
       },
     });
   }
@@ -47,8 +60,8 @@ export class AuthRepository {
     return this.prisma.user.create({
       data,
       include: {
-        menteeProfile: { select: { id: true } },
-        mentorProfile: { select: { id: true, status: true } },
+        menteeProfile: { select: MENTEE_PROFILE_SELECT },
+        mentorProfile: { select: MENTOR_PROFILE_SELECT },
       },
     });
   }
