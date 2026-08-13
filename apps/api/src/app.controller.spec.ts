@@ -15,7 +15,14 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return API health', () => {
+    it('should return API health from root', () => {
+      expect(appController.root()).toEqual({
+        ok: true,
+        service: 'median-api',
+      });
+    });
+
+    it('should return API health from health endpoint', () => {
       expect(appController.health()).toEqual({
         ok: true,
         service: 'median-api',
