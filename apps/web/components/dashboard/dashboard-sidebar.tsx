@@ -80,7 +80,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose }: Dashbo
             <button
               type="button"
               onClick={onMobileClose}
-              className="flex size-8 items-center justify-center rounded-full bg-[#F7F8FB] text-[#101828] transition-colors hover:bg-[#EAECF0] md:hidden"
+              className="flex size-8 items-center justify-center rounded-full bg-[#F7F8FB] text-[#101828] transition-colors hover:bg-[#EAECF0] lg:hidden"
             >
               <Add size="20" variant="Linear" color="#101828" className="rotate-45" />
               <span className="sr-only">Close sidebar</span>
@@ -145,14 +145,14 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose }: Dashbo
 
   return (
     <>
-      {/* Desktop Fixed Sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-0 z-30 h-screen w-64 flex-col border-r border-[#EAECF0] bg-white px-5 py-6">
+      {/* Desktop Fixed Sidebar (visible from lg: 1024px and up) */}
+      <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-64 flex-col border-r border-[#EAECF0] bg-white px-5 py-6">
         {navContent}
       </aside>
 
-      {/* Mobile Drawer (Tablet & Phone Screens) */}
+      {/* Mobile & Tablet Drawer (below lg: 1024px) */}
       {isMobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
+        <div className="fixed inset-0 z-50 flex lg:hidden">
           {/* Backdrop Overlay */}
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"

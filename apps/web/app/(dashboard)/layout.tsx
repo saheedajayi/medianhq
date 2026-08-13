@@ -54,18 +54,18 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#FAFAFA] text-[#101828]">
-      {/* Left Navigation Sidebar (Desktop + Mobile Drawer) */}
+      {/* Navigation Sidebar (Desktop + Mobile/Tablet Drawer) */}
       <DashboardSidebar
         isMobileOpen={isMobileNavOpen}
         onMobileClose={() => setIsMobileNavOpen(false)}
       />
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col h-screen overflow-hidden md:pl-64">
+      <div className="flex flex-1 flex-col h-screen overflow-hidden lg:pl-64">
         {/* Top Header Bar */}
         <header className="flex h-18 shrink-0 items-center justify-between border-b border-[#EAECF0] bg-white px-4 sm:px-8">
-          {/* Tablet/Mobile Header: Hamburger Menu Icon + Median Logo */}
-          <div className="flex items-center gap-3.5 md:hidden">
+          {/* Tablet & Mobile Header: Hamburger Menu Icon + Median Logo (< 1024px) */}
+          <div className="flex items-center gap-3.5 lg:hidden">
             <button
               type="button"
               onClick={() => setIsMobileNavOpen(true)}
