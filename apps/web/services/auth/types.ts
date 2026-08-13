@@ -19,6 +19,14 @@ export type AuthUser = {
   hasMentorProfile: boolean;
   mentorStatus?: string;
   accountStage: AccountStage;
+  createdAt?: string;
+  isProfileComplete?: boolean;
+  menteeProfile?: {
+    gender?: string | null;
+    location?: string | null;
+    bio?: string | null;
+    avatarUrl?: string | null;
+  } | null;
 };
 
 export type AuthResponse = {

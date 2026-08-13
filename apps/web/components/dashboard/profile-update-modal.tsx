@@ -3,6 +3,8 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { User, GalleryAdd, Add } from "iconsax-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { menteesService } from "@/services/mentees";
 import {
   Select,
   SelectContent,
@@ -22,6 +24,7 @@ export function ProfileUpdateModal({
   onClose,
   onSuccess,
 }: ProfileUpdateModalProps) {
+  const queryClient = useQueryClient();
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
@@ -39,16 +42,25 @@ export function ProfileUpdateModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate profile update submit
-    setTimeout(() => {
+    try {
+      await menteesService.createProfile({
+        gender,
+        location,
+        bio,
+        avatarUrl: avatarPreview || undefined,
+      });
+    } catch (err) {
+      console.error("Profile update failed:", err);
+    } finally {
       setIsSubmitting(false);
+      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
       onSuccess?.();
       onClose();
-    }, 600);
+    }
   };
 
   return (
@@ -72,7 +84,7 @@ export function ProfileUpdateModal({
           <span className="sr-only">Close</span>
         </button>
 
-        {/* Modal Header (font-semibold heading) */}
+        {/* Modal Header */}
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-semibold tracking-tight text-[#2C1810]">
             Profile update

@@ -451,6 +451,14 @@ export class AuthService {
   }
 
   private toAuthUser(user: any): AuthUser {
+    const hasMenteeProfile = Boolean(user.menteeProfile);
+    const isProfileComplete = Boolean(
+      user.menteeProfile &&
+        (user.menteeProfile.gender ||
+          user.menteeProfile.location ||
+          user.menteeProfile.bio),
+    );
+
     return {
       id: user.id,
       email: user.email,
@@ -458,10 +466,20 @@ export class AuthService {
       lastName: user.lastName,
       role: user.role,
       isEmailVerified: Boolean(user.emailVerifiedAt),
-      hasMenteeProfile: Boolean(user.menteeProfile),
+      hasMenteeProfile,
       hasMentorProfile: Boolean(user.mentorProfile),
       mentorStatus: user.mentorProfile?.status,
       accountStage: getAccountStage(user),
+      createdAt: user.createdAt,
+      isProfileComplete,
+      menteeProfile: user.menteeProfile
+        ? {
+            gender: user.menteeProfile.gender,
+            location: user.menteeProfile.location,
+            bio: user.menteeProfile.bio,
+            avatarUrl: user.menteeProfile.avatarUrl,
+          }
+        : null,
     };
   }
 }
