@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
 import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
+import { getAuthDestination } from "@/lib/auth-routing";
 import { passwordSchema } from "@/lib/validations";
 import { authService } from "@/services/auth";
 
@@ -40,8 +41,39 @@ export function SignupPage() {
   const searchParams = useSearchParams();
   const defaultEmail = searchParams.get("email") ?? "";
 
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    authService
+      .me()
+      .then((response) => {
+        if (isCancelled) return;
+        const destination = getAuthDestination(response.data);
+        router.replace(destination);
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setIsCheckingAuth(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [router]);
+
+  if (isCheckingAuth) {
+    return (
+      <p className="py-10 text-center text-sm text-[#667085]">
+        Checking account...
+      </p>
+    );
+  }
+
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

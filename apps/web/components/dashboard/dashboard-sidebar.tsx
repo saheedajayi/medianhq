@@ -56,7 +56,7 @@ export function DashboardSidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col justify-between border-r border-[#EAECF0] bg-white px-5 py-6">
+    <aside className="hidden md:flex fixed left-0 top-0 z-30 h-screen w-64 flex-col justify-between border-r border-[#EAECF0] bg-white px-5 py-6">
       <div className="flex flex-col gap-8">
         {/* Brand Logo */}
         <div className="flex items-center px-2">
