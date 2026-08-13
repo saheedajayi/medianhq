@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Calendar } from "iconsax-react";
+import { Calendar, HambergerMenu } from "iconsax-react";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { authService } from "@/services/auth";
 import { getAuthDestination } from "@/lib/auth-routing";
@@ -15,6 +16,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
@@ -52,20 +54,49 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#FAFAFA] text-[#101828]">
-      {/* Left Navigation Sidebar */}
-      <DashboardSidebar />
+      {/* Left Navigation Sidebar (Desktop + Mobile Drawer) */}
+      <DashboardSidebar
+        isMobileOpen={isMobileNavOpen}
+        onMobileClose={() => setIsMobileNavOpen(false)}
+      />
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col h-screen overflow-hidden md:pl-64">
         {/* Top Header Bar */}
-        <header className="flex h-18 shrink-0 items-center justify-end border-b border-[#EAECF0] bg-white px-4 sm:px-8">
-          <Link
-            href="/mentee/bookings/new"
-            className="inline-flex items-center gap-2 rounded-full bg-[#FF5500] px-5 py-2.5 text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
-          >
-            <Calendar size="18" variant="Bulk" color="#FFFFFF" className="shrink-0" />
-            <span className="text-white">Book a session</span>
-          </Link>
+        <header className="flex h-18 shrink-0 items-center justify-between border-b border-[#EAECF0] bg-white px-4 sm:px-8">
+          {/* Tablet/Mobile Header: Hamburger Menu Icon + Median Logo */}
+          <div className="flex items-center gap-3.5 md:hidden">
+            <button
+              type="button"
+              onClick={() => setIsMobileNavOpen(true)}
+              className="flex size-9 items-center justify-center rounded-full bg-[#F7F8FB] border border-[#EAECF0] text-[#344054] transition-colors hover:bg-[#EAECF0]"
+              aria-label="Open navigation menu"
+            >
+              <HambergerMenu size="18" variant="Linear" color="#344054" />
+            </button>
+
+            <Link href="/dashboard" className="flex items-center">
+              <Image
+                src="/median-logo.svg"
+                alt="Median Logo"
+                width={100}
+                height={26}
+                className="h-6 w-auto object-contain"
+                priority
+              />
+            </Link>
+          </div>
+
+          {/* Right Header Action: Book a Session button */}
+          <div className="flex items-center gap-4 ml-auto">
+            <Link
+              href="/mentee/bookings/new"
+              className="inline-flex items-center gap-2 rounded-full bg-[#FF5500] px-5 py-2.5 text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+            >
+              <Calendar size="18" variant="Bulk" color="#FFFFFF" className="shrink-0" />
+              <span className="text-white">Book a session</span>
+            </Link>
+          </div>
         </header>
 
         {/* Dynamic Dashboard Page Content */}
@@ -76,4 +107,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-

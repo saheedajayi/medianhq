@@ -15,6 +15,7 @@ import {
   MedalStar,
   Setting2,
   Logout,
+  Add,
 } from "iconsax-react";
 import { authService } from "@/services/auth";
 
@@ -35,7 +36,12 @@ const mainNavItems: NavItem[] = [
   { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline" },
 ];
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function DashboardSidebar({ isMobileOpen = false, onMobileClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -55,12 +61,12 @@ export function DashboardSidebar() {
     }
   };
 
-  return (
-    <aside className="hidden md:flex fixed left-0 top-0 z-30 h-screen w-64 flex-col justify-between border-r border-[#EAECF0] bg-white px-5 py-6">
+  const navContent = (
+    <div className="flex h-full flex-col justify-between">
       <div className="flex flex-col gap-8">
-        {/* Brand Logo */}
-        <div className="flex items-center px-2">
-          <Link href="/dashboard" className="flex items-center gap-2">
+        {/* Brand Logo & Mobile Close */}
+        <div className="flex items-center justify-between px-2">
+          <Link href="/dashboard" onClick={onMobileClose} className="flex items-center gap-2">
             <Image
               src="/median-logo.svg"
               alt="Median Logo"
@@ -70,6 +76,16 @@ export function DashboardSidebar() {
               priority
             />
           </Link>
+          {onMobileClose && (
+            <button
+              type="button"
+              onClick={onMobileClose}
+              className="flex size-8 items-center justify-center rounded-full bg-[#F7F8FB] text-[#101828] transition-colors hover:bg-[#EAECF0] md:hidden"
+            >
+              <Add size="20" variant="Linear" color="#101828" className="rotate-45" />
+              <span className="sr-only">Close sidebar</span>
+            </button>
+          )}
         </div>
 
         {/* Main Navigation Items */}
@@ -84,6 +100,7 @@ export function DashboardSidebar() {
               <Link
                 key={item.label}
                 href={item.href}
+                onClick={onMobileClose}
                 className={`flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
                   isActive
                     ? "bg-[#FFF0EB] text-[#FF5500] font-semibold"
@@ -107,6 +124,7 @@ export function DashboardSidebar() {
       <div className="flex flex-col gap-1">
         <Link
           href="/settings"
+          onClick={onMobileClose}
           className="flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#475467] transition-all hover:bg-[#F9FAFB] hover:text-[#101828]"
         >
           <Setting2 size="18" variant="Outline" color="#667085" className="shrink-0" />
@@ -122,6 +140,32 @@ export function DashboardSidebar() {
           <span>{isLoggingOut ? "Logging out..." : "Log Out"}</span>
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Fixed Sidebar */}
+      <aside className="hidden md:flex fixed left-0 top-0 z-30 h-screen w-64 flex-col border-r border-[#EAECF0] bg-white px-5 py-6">
+        {navContent}
+      </aside>
+
+      {/* Mobile Drawer (Tablet & Phone Screens) */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
+            onClick={onMobileClose}
+            aria-hidden="true"
+          />
+
+          {/* Sliding Drawer Container */}
+          <aside className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col border-r border-[#EAECF0] bg-white px-5 py-6 shadow-2xl transition-transform animate-in slide-in-from-left duration-200">
+            {navContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
