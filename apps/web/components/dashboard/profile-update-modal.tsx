@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { User, GalleryAdd, Add } from "iconsax-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { menteesService } from "@/services/mentees";
+import { uploadsService } from "@/services/uploads";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import {
   Select,
   SelectContent,
@@ -25,18 +28,33 @@ export function ProfileUpdateModal({
   onSuccess,
 }: ProfileUpdateModalProps) {
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
+
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Prefill modal form with existing saved profile data when opened
+  useEffect(() => {
+    if (isOpen && user?.menteeProfile) {
+      const profile = user.menteeProfile;
+      setGender(profile.gender || "");
+      setLocation(profile.location || "");
+      setBio(profile.bio || "");
+      setAvatarPreview(profile.avatarUrl || null);
+    }
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       const url = URL.createObjectURL(file);
       setAvatarPreview(url);
     }
@@ -47,19 +65,36 @@ export function ProfileUpdateModal({
     setIsSubmitting(true);
 
     try {
+      let avatarUrl = user?.menteeProfile?.avatarUrl || undefined;
+
+      // Upload profile image to Cloudinary if new image file selected
+      if (avatarFile) {
+        try {
+          const uploadRes = await uploadsService.uploadAvatar(avatarFile);
+          if (uploadRes?.url) {
+            avatarUrl = uploadRes.url;
+          }
+        } catch (uploadErr) {
+          console.warn("Avatar upload to Cloudinary failed:", uploadErr);
+        }
+      }
+
       await menteesService.createProfile({
         gender,
         location,
         bio,
-        avatarUrl: avatarPreview || undefined,
+        avatarUrl,
       });
-    } catch (err) {
-      console.error("Profile update failed:", err);
-    } finally {
-      setIsSubmitting(false);
+
+      toast.success("Profile updated successfully");
       await queryClient.invalidateQueries({ queryKey: ["current-user"] });
       onSuccess?.();
       onClose();
+    } catch (err) {
+      console.error("Profile update failed:", err);
+      toast.error("Failed to update profile. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -74,11 +109,12 @@ export function ProfileUpdateModal({
 
       {/* Modal Dialog Card */}
       <div className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-[24px] bg-white p-7 shadow-2xl transition-all md:p-8 animate-in zoom-in-95 duration-200">
-        {/* Close Button (Circular #F7F8FB background with rotated Vuesax Add icon) */}
+        {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-6 top-6 flex size-8 items-center justify-center rounded-full bg-[#F7F8FB] text-[#101828] transition-colors hover:bg-[#EAECF0]"
+          disabled={isSubmitting}
+          className="absolute right-6 top-6 flex size-8 items-center justify-center rounded-full bg-[#F7F8FB] text-[#101828] transition-colors hover:bg-[#EAECF0] disabled:opacity-50"
         >
           <Add size="20" variant="Linear" color="#101828" className="rotate-45" />
           <span className="sr-only">Close</span>
