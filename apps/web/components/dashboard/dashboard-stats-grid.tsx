@@ -19,21 +19,21 @@ const defaultStats: StatItem[] = [
 
 export function DashboardStatsGrid({ stats = defaultStats }: DashboardStatsGridProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-4">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="flex flex-col justify-between rounded-2xl bg-white p-5 shadow-xs transition-shadow hover:shadow-md md:p-6"
+          className="flex flex-col justify-between rounded-2xl bg-white p-4 shadow-xs transition-shadow hover:shadow-md md:p-6"
         >
-          <span className="text-xs font-semibold tracking-wider text-[#667085] uppercase">
+          <span className="text-[11px] font-semibold tracking-wider text-[#667085] uppercase md:text-xs">
             {stat.label}
           </span>
 
-          <div className="my-3 text-4xl font-bold text-[#2C1810] font-[family-name:var(--font-neco)]">
+          <div className="my-2 text-3xl font-bold text-[#2C1810] font-[family-name:var(--font-neco)] md:my-3 md:text-4xl">
             {stat.value}
           </div>
 
-          <span className="text-xs font-medium text-[#667085]">
+          <span className="text-[11px] font-medium text-[#667085] md:text-xs">
             {stat.subtext}
           </span>
         </div>

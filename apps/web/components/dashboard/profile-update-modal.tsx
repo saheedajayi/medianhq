@@ -6,6 +6,7 @@ import { User, GalleryAdd, Add } from "iconsax-react";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { z } from "zod";
 import { menteesService } from "@/services/mentees";
 import { uploadsService } from "@/services/uploads";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -16,6 +17,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/base/select";
+
+// Zod Validation Schema for Profile Update
+const profileUpdateSchema = z.object({
+  gender: z
+    .string({ required_error: "Gender is required" })
+    .min(1, "Please select your gender"),
+  location: z
+    .string({ required_error: "Where are you based is required" })
+    .trim()
+    .min(1, "Where are you based is required")
+    .max(100, "Location cannot exceed 100 characters"),
+  bio: z
+    .string()
+    .trim()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const words = val.trim().split(/\s+/).filter(Boolean);
+        return words.length <= 300;
+      },
+      { message: "Bio must be less than 300 words" }
+    )
+    .optional(),
+});
 
 interface ProfileUpdateModalProps {
   isOpen: boolean;
@@ -38,12 +63,14 @@ export function ProfileUpdateModal({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImageFetching, setIsImageFetching] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Refetch user session when modal opens to ensure fresh data
   useEffect(() => {
     if (isOpen) {
       refetch();
+      setErrors({});
     }
   }, [isOpen, refetch]);
 
@@ -89,6 +116,22 @@ export function ProfileUpdateModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+
+    // Validate form values using Zod schema
+    const validation = profileUpdateSchema.safeParse({ gender, location, bio });
+    if (!validation.success) {
+      const fieldErrors: Record<string, string> = {};
+      validation.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0] as string;
+        if (fieldName && !fieldErrors[fieldName]) {
+          fieldErrors[fieldName] = issue.message;
+        }
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -214,13 +257,24 @@ export function ProfileUpdateModal({
             </span>
           </div>
 
-          {/* Form Field: Gender (shadcn Select with key force-refresh for async prefill) */}
+          {/* Form Field: Gender (shadcn Select with Zod validation error) */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[#101828]">
               Gender <span className="text-[#FF5500]">*</span>
             </label>
-            <Select key={gender || "empty"} value={gender} onValueChange={setGender}>
-              <SelectTrigger className="h-11.5 w-full rounded-xl border border-[#D0D5DD] bg-white px-4 text-sm text-[#101828] shadow-none outline-none focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20">
+            <Select
+              key={gender || "empty"}
+              value={gender}
+              onValueChange={(val) => {
+                setGender(val);
+                setErrors((prev) => ({ ...prev, gender: "" }));
+              }}
+            >
+              <SelectTrigger
+                className={`h-11.5 w-full rounded-xl border bg-white px-4 text-sm text-[#101828] shadow-none outline-none focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 ${
+                  errors.gender ? "border-[#D92D20]" : "border-[#D0D5DD]"
+                }`}
+              >
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border border-[#EAECF0] bg-white shadow-lg">
@@ -238,6 +292,9 @@ export function ProfileUpdateModal({
                 </SelectItem>
               </SelectContent>
             </Select>
+            {errors.gender && (
+              <span className="text-xs font-medium text-[#D92D20]">{errors.gender}</span>
+            )}
           </div>
 
           {/* Form Field: Location */}
@@ -248,11 +305,18 @@ export function ProfileUpdateModal({
             <input
               type="text"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => {
+                setLocation(e.target.value);
+                setErrors((prev) => ({ ...prev, location: "" }));
+              }}
               placeholder="Enter your location"
-              required
-              className="w-full rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] outline-none transition-all focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20"
+              className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] outline-none transition-all focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 ${
+                errors.location ? "border-[#D92D20]" : "border-[#D0D5DD]"
+              }`}
             />
+            {errors.location && (
+              <span className="text-xs font-medium text-[#D92D20]">{errors.location}</span>
+            )}
           </div>
 
           {/* Form Field: Bio */}
@@ -263,10 +327,18 @@ export function ProfileUpdateModal({
             <textarea
               rows={4}
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              onChange={(e) => {
+                setBio(e.target.value);
+                setErrors((prev) => ({ ...prev, bio: "" }));
+              }}
               placeholder="Select area..."
-              className="w-full rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] outline-none transition-all focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 resize-none"
+              className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] outline-none transition-all focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 resize-none ${
+                errors.bio ? "border-[#D92D20]" : "border-[#D0D5DD]"
+              }`}
             />
+            {errors.bio && (
+              <span className="text-xs font-medium text-[#D92D20]">{errors.bio}</span>
+            )}
           </div>
 
           {/* Submit Button */}
