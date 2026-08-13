@@ -14,6 +14,7 @@ export function useCurrentUser() {
         return null;
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 1000, // 10 seconds for immediate reactivity
+    refetchOnWindowFocus: true,
   });
 }

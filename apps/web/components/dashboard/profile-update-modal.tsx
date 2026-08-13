@@ -29,7 +29,7 @@ export function ProfileUpdateModal({
   onSuccess,
 }: ProfileUpdateModalProps) {
   const queryClient = useQueryClient();
-  const { data: user } = useCurrentUser();
+  const { data: user, refetch } = useCurrentUser();
 
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
@@ -40,14 +40,21 @@ export function ProfileUpdateModal({
   const [isImageFetching, setIsImageFetching] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Prefill modal form with existing saved profile data when opened
+  // Refetch user session when modal opens to ensure fresh data
+  useEffect(() => {
+    if (isOpen) {
+      refetch();
+    }
+  }, [isOpen, refetch]);
+
+  // Prefill modal form with existing saved profile data when user data is available
   useEffect(() => {
     if (isOpen && user?.menteeProfile) {
       const profile = user.menteeProfile;
 
       // Normalize gender value casing to match SelectItem values ("Male" | "Female")
       if (profile.gender) {
-        const raw = profile.gender.trim();
+        const raw = String(profile.gender).trim();
         const lower = raw.toLowerCase();
         if (lower === "male") setGender("Male");
         else if (lower === "female") setGender("Female");
@@ -108,6 +115,7 @@ export function ProfileUpdateModal({
 
       toast.success("Profile updated successfully");
       await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      await refetch();
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -206,12 +214,12 @@ export function ProfileUpdateModal({
             </span>
           </div>
 
-          {/* Form Field: Gender (shadcn Select with Male & Female) */}
+          {/* Form Field: Gender (shadcn Select with key force-refresh for async prefill) */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[#101828]">
               Gender <span className="text-[#FF5500]">*</span>
             </label>
-            <Select value={gender} onValueChange={setGender}>
+            <Select key={gender || "empty"} value={gender} onValueChange={setGender}>
               <SelectTrigger className="h-11.5 w-full rounded-xl border border-[#D0D5DD] bg-white px-4 text-sm text-[#101828] shadow-none outline-none focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20">
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
@@ -220,6 +228,12 @@ export function ProfileUpdateModal({
                   Male
                 </SelectItem>
                 <SelectItem value="Female" className="cursor-pointer py-2 text-sm text-[#101828]">
+                  Female
+                </SelectItem>
+                <SelectItem value="male" className="hidden">
+                  Male
+                </SelectItem>
+                <SelectItem value="female" className="hidden">
                   Female
                 </SelectItem>
               </SelectContent>
