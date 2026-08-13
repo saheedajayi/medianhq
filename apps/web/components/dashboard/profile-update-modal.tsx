@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { User, GalleryAdd, Add } from "iconsax-react";
+import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { menteesService } from "@/services/mentees";
@@ -36,16 +37,34 @@ export function ProfileUpdateModal({
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImageFetching, setIsImageFetching] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Prefill modal form with existing saved profile data when opened
   useEffect(() => {
     if (isOpen && user?.menteeProfile) {
       const profile = user.menteeProfile;
-      setGender(profile.gender || "");
+
+      // Normalize gender value casing to match SelectItem values ("Male" | "Female")
+      if (profile.gender) {
+        const raw = profile.gender.trim();
+        const lower = raw.toLowerCase();
+        if (lower === "male") setGender("Male");
+        else if (lower === "female") setGender("Female");
+        else setGender(raw);
+      } else {
+        setGender("");
+      }
+
       setLocation(profile.location || "");
       setBio(profile.bio || "");
       setAvatarPreview(profile.avatarUrl || null);
+
+      if (profile.avatarUrl) {
+        setIsImageFetching(true);
+      } else {
+        setIsImageFetching(false);
+      }
     }
   }, [isOpen, user]);
 
@@ -57,6 +76,7 @@ export function ProfileUpdateModal({
       setAvatarFile(file);
       const url = URL.createObjectURL(file);
       setAvatarPreview(url);
+      setIsImageFetching(false);
     }
   };
 
@@ -138,12 +158,24 @@ export function ProfileUpdateModal({
               className="group relative flex size-24 cursor-pointer items-center justify-center rounded-full bg-[#F2F4F7] border border-[#EAECF0] transition-all hover:border-[#FF5500]"
             >
               {avatarPreview ? (
-                <Image
-                  src={avatarPreview}
-                  alt="Avatar preview"
-                  fill
-                  className="rounded-full object-cover"
-                />
+                <>
+                  <Image
+                    src={avatarPreview}
+                    alt="Avatar preview"
+                    fill
+                    sizes="96px"
+                    className={`rounded-full object-cover transition-opacity duration-300 ${
+                      isImageFetching ? "opacity-0" : "opacity-100"
+                    }`}
+                    onLoadingComplete={() => setIsImageFetching(false)}
+                    onError={() => setIsImageFetching(false)}
+                  />
+                  {isImageFetching && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[#F2F4F7]">
+                      <Loader2 className="size-6 animate-spin text-[#FF5500]" />
+                    </div>
+                  )}
+                </>
               ) : (
                 <User size="44" variant="Outline" color="#98A2B3" />
               )}
