@@ -19,7 +19,7 @@ async function bootstrap() {
   const httpAdapterHost = app.get(HttpAdapterHost);
 
   app.setGlobalPrefix('api', {
-    exclude: ['health'],
+    exclude: ['', '/', 'health'],
   });
   app.enableVersioning({
     type: VersioningType.URI,
