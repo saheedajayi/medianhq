@@ -25,6 +25,14 @@ export type AuthUser = {
   hasMentorProfile: boolean;
   mentorStatus?: MentorStatus;
   accountStage: AccountStage;
+  createdAt: Date | string;
+  isProfileComplete: boolean;
+  menteeProfile?: {
+    gender?: string | null;
+    location?: string | null;
+    bio?: string | null;
+    avatarUrl?: string | null;
+  } | null;
 };
 
 export type VerifyEmailDto = {

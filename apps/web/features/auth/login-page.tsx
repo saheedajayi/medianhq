@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -32,10 +32,41 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function LoginPage() {
   const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {},
   );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    authService
+      .me()
+      .then((response) => {
+        if (isCancelled) return;
+        const destination = getAuthDestination(response.data);
+        router.replace(destination);
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setIsCheckingAuth(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [router]);
+
+  if (isCheckingAuth) {
+    return (
+      <p className="py-10 text-center text-sm text-[#667085]">
+        Checking account...
+      </p>
+    );
+  }
+
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -13,26 +13,29 @@ export class MenteesService {
   async createProfile(userId: string, dto: CreateMenteeProfileDto) {
     const user = await this.menteesRepository.findUserForOnboarding(userId);
 
-    if (!user?.emailVerifiedAt) {
+    if (user?.role === UserRole.MENTOR) {
       throw new ForbiddenException(
-        'Verify your email before starting onboarding.',
+        'A mentee profile cannot be created for a mentor user.',
       );
     }
 
-    if (user?.role !== UserRole.MENTEE) {
-      throw new ForbiddenException(
-        'A mentee role is required to create this profile.',
-      );
-    }
+    const payload = {
+      ...(dto.gender && { gender: dto.gender }),
+      ...(dto.location && { location: dto.location }),
+      ...(dto.bio && { bio: dto.bio }),
+      ...(dto.avatarUrl && { avatarUrl: dto.avatarUrl }),
+      ...(dto.goals && { goals: dto.goals }),
+      ...(dto.goalDescription && { goalDescription: dto.goalDescription }),
+      ...(dto.currentRole && { currentRole: dto.currentRole }),
+      ...(dto.industry && { industry: dto.industry }),
+      ...(dto.timeframe && { timeframe: dto.timeframe }),
+    };
 
-    if (user.menteeProfile) {
-      const profile = await this.menteesRepository.updateProfileByUserId(userId, {
-        goals: dto.goals,
-        goalDescription: dto.goalDescription,
-        currentRole: dto.currentRole,
-        industry: dto.industry,
-        timeframe: dto.timeframe,
-      });
+    if (user?.menteeProfile) {
+      const profile = await this.menteesRepository.updateProfileByUserId(
+        userId,
+        payload,
+      );
 
       return {
         success: true,
@@ -43,11 +46,8 @@ export class MenteesService {
 
     const profile = await this.menteesRepository.createProfile({
       user: { connect: { id: userId } },
-      goals: dto.goals,
-      goalDescription: dto.goalDescription,
-      currentRole: dto.currentRole,
-      industry: dto.industry,
-      timeframe: dto.timeframe,
+      ...payload,
+      goals: dto.goals || [],
     });
 
     return {

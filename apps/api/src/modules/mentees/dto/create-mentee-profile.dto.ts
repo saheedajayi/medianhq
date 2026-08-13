@@ -1,5 +1,9 @@
 export type CreateMenteeProfileDto = {
-  goals: string[];
+  gender?: string;
+  location?: string;
+  bio?: string;
+  avatarUrl?: string;
+  goals?: string[];
   goalDescription?: string;
   currentRole?: string;
   industry?: string;

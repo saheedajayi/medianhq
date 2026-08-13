@@ -3,7 +3,11 @@ import { apiClient } from "./api-client";
 const MENTEES_PATH = "/mentees";
 
 export type CreateMenteeProfilePayload = {
-  goals: string[];
+  gender?: string;
+  location?: string;
+  bio?: string;
+  avatarUrl?: string;
+  goals?: string[];
   goalDescription?: string;
   currentRole?: string;
   industry?: string;

@@ -26,6 +26,7 @@ const ONBOARDING_PATHS = new Set([
 ]);
 
 const STEP_PREVIOUS_ROUTE: Record<string, string> = {
+  "/role-selection": "/signin",
   "/mentee-onboarding": "/role-selection",
   "/mentor-onboarding": "/role-selection",
   "/mentor-matches": "/mentee-onboarding",
