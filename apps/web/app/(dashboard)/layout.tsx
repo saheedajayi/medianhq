@@ -10,14 +10,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#101828]">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#FAFAFA] text-[#101828]">
       {/* Left Navigation Sidebar */}
       <DashboardSidebar />
 
       {/* Main Content Area */}
-      <div className="pl-64 flex flex-col min-h-screen">
+      <div className="pl-64 flex flex-col flex-1 h-screen overflow-hidden">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-20 flex h-18 items-center justify-end border-b border-[#EAECF0] bg-white/80 px-8 backdrop-blur-md">
+        <header className="flex h-18 shrink-0 items-center justify-end border-b border-[#EAECF0] bg-white px-8">
           <Link
             href="/mentee/bookings/new"
             className="inline-flex items-center gap-2 rounded-full bg-[#FF5500] px-5 py-2.5 text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
@@ -28,7 +28,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Dynamic Dashboard Page Content */}
-        <main className="flex-1 px-6 py-6 md:px-8 md:py-8 lg:px-10">
+        <main className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8 lg:px-10">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>

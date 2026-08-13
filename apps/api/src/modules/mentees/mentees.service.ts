@@ -13,15 +13,9 @@ export class MenteesService {
   async createProfile(userId: string, dto: CreateMenteeProfileDto) {
     const user = await this.menteesRepository.findUserForOnboarding(userId);
 
-    if (!user?.emailVerifiedAt) {
+    if (user?.role === UserRole.MENTOR) {
       throw new ForbiddenException(
-        'Verify your email before starting onboarding.',
-      );
-    }
-
-    if (user?.role !== UserRole.MENTEE) {
-      throw new ForbiddenException(
-        'A mentee role is required to create this profile.',
+        'A mentee profile cannot be created for a mentor user.',
       );
     }
 
@@ -37,7 +31,7 @@ export class MenteesService {
       ...(dto.timeframe && { timeframe: dto.timeframe }),
     };
 
-    if (user.menteeProfile) {
+    if (user?.menteeProfile) {
       const profile = await this.menteesRepository.updateProfileByUserId(
         userId,
         payload,
