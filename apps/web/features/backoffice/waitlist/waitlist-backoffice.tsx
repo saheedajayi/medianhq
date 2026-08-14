@@ -70,8 +70,7 @@ type ApiEnvelope<T> = {
   data?: T;
 };
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
-  .replace(/\/$/, "");
+const API_BASE_URL = "";
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
 const PAGE_SIZE = 20;
 
