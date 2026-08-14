@@ -3,14 +3,10 @@
 import {
   type FormEvent,
   type ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, ChevronsUpDown, Search } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -18,17 +14,13 @@ import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/base/popover";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/base/select";
+import { CountrySelect } from "@/components/ui/custom/country-select";
 import { useWaitlistStore } from "@/features/waitlist/store";
 import { waitlistQueryKeys } from "@/services/waitlist/queries/query-keys";
 import { useCreateWaitlistEntry } from "@/services/waitlist/queries/waitlist.queries";
@@ -166,139 +158,17 @@ function OptionalStringSelectField({
 }
 
 function SearchableLocationField({ error }: { error?: string }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [value, setValue] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const selectedOption = locationOptions.find((option) => option.value === value);
-  const filteredOptions = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-
-    if (!normalizedQuery) return locationOptions;
-
-    return locationOptions.filter((option) =>
-      option.label.toLocaleLowerCase().includes(normalizedQuery),
-    );
-  }, [query]);
-
-  useEffect(() => {
-    const form = wrapperRef.current?.closest("form");
-    const handleReset = () => {
-      setValue("");
-      setQuery("");
-      setOpen(false);
-    };
-
-    form?.addEventListener("reset", handleReset);
-    return () => form?.removeEventListener("reset", handleReset);
-  }, []);
-
   return (
     <Field id="location" label="Location" error={error}>
-      <div ref={wrapperRef}>
-        <input type="hidden" name="location" value={value} />
-        <Popover
-          open={open}
-          onOpenChange={(nextOpen) => {
-            setOpen(nextOpen);
-            if (!nextOpen) setQuery("");
-          }}
-        >
-          <PopoverTrigger asChild>
-            <button
-              id="location"
-              type="button"
-              role="combobox"
-              aria-expanded={open}
-              aria-controls="location-options"
-              aria-describedby={error ? "location-error" : undefined}
-              aria-invalid={Boolean(error)}
-              className={`${selectClassName} flex w-full items-center justify-between rounded-lg border text-left text-sm shadow-xs outline-none transition-[color,box-shadow] ${
-                selectedOption ? "text-text-500" : "text-text-400"
-              }`}
-            >
-              <span className="truncate">
-                {selectedOption?.label ?? "Search for a location..."}
-              </span>
-              <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="start"
-            className="w-[var(--radix-popover-trigger-width)] p-0"
-            onOpenAutoFocus={(event) => {
-              event.preventDefault();
-              inputRef.current?.focus();
-            }}
-          >
-            <div className="flex items-center gap-2 border-b border-text-200 px-3">
-              <Search className="size-4 shrink-0 text-text-400" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search countries..."
-                aria-label="Search countries"
-                className="h-11 min-w-0 flex-1 bg-transparent text-sm text-text-900 outline-none placeholder:text-text-400"
-              />
-            </div>
-            <div
-              id="location-options"
-              role="listbox"
-              className="max-h-64 overflow-y-auto p-1"
-            >
-              {filteredOptions.length ? (
-                filteredOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="option"
-                    aria-selected={value === option.value}
-                    className="flex w-full items-center rounded-md px-2 py-2 text-left text-sm text-text-700 outline-none hover:bg-accent-100 focus-visible:bg-accent-100"
-                    onClick={() => {
-                      setValue(option.value);
-                      setOpen(false);
-                      setQuery("");
-                    }}
-                  >
-                    <Check
-                      className={`mr-2 size-4 text-primary ${
-                        value === option.value ? "opacity-100" : "opacity-0"
-                      }`}
-                    />
-                    {option.label}
-                  </button>
-                ))
-              ) : (
-                <p className="px-3 py-6 text-center text-sm text-text-400">
-                  No location found.
-                </p>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+      <CountrySelect
+        id="location"
+        name="location"
+        error={error}
+        placeholder="Search for a location..."
+      />
     </Field>
   );
 }
-
-const countryCodes =
-  "AF AX AL DZ AS AD AO AI AQ AG AR AM AW AU AT AZ BS BH BD BB BY BE BZ BJ BM BT BO BQ BA BW BV BR IO BN BG BF BI CV KH CM CA KY CF TD CL CN CX CC CO KM CG CD CK CR CI HR CU CW CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FK FO FJ FI FR GF PF TF GA GM GE DE GH GI GR GL GD GP GU GT GG GN GW GY HT HM VA HN HK HU IS IN ID IR IQ IE IM IL IT JM JP JE JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MO MG MW MY MV ML MT MH MQ MR MU YT MX FM MD MC MN ME MS MA MZ MM NA NR NP NL NC NZ NI NE NG NU NF MK MP NO OM PK PW PS PA PG PY PE PH PN PL PT PR QA RE RO RU RW BL SH KN LC MF PM VC WS SM ST SA SN RS SC SL SG SX SK SI SB SO ZA GS SS ES LK SD SR SJ SE CH SY TW TJ TZ TH TL TG TK TO TT TN TR TM TC TV UG UA AE GB US UM UY UZ VU VE VN VG VI WF EH YE ZM ZW".split(
-    " ",
-  );
-
-const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-
-const locationOptions = [
-  ...countryCodes
-    .map((region) => ({
-      value: region.toLowerCase(),
-      label: regionNames.of(region) ?? region,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label)),
-  { value: "other", label: "Other" },
-] satisfies Array<{ label: string; value: string }>;
 
 const expertiseOptions = [
   { value: "technology", label: "Technology" },

@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/base/select";
+import { CountrySelect } from "@/components/ui/custom/country-select";
 
 // Zod Validation Schema for Profile Update
 const profileUpdateSchema = z.object({
@@ -302,17 +303,16 @@ export function ProfileUpdateModal({
             <label className="text-sm font-medium text-[#101828]">
               Where are you based? <span className="text-[#FF5500]">*</span>
             </label>
-            <input
-              type="text"
+            <CountrySelect
+              id="profile-location"
               value={location}
-              onChange={(e) => {
-                setLocation(e.target.value);
+              onChange={(val) => {
+                setLocation(val);
                 setErrors((prev) => ({ ...prev, location: "" }));
               }}
-              placeholder="Enter your location"
-              className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] outline-none transition-all focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 ${
-                errors.location ? "border-[#D92D20]" : "border-[#D0D5DD]"
-              }`}
+              error={errors.location}
+              placeholder="Select your country"
+              triggerClassName="py-3 h-auto text-sm text-[#101828] placeholder-[#98A2B3] rounded-xl"
             />
             {errors.location && (
               <span className="text-xs font-medium text-[#D92D20]">{errors.location}</span>
