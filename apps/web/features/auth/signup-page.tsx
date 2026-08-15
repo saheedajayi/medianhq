@@ -139,13 +139,13 @@ export function SignupPage() {
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
         <a
-          href="/api/v1/auth/linkedin"
+          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/linkedin`}
           className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
         >
           Continue with LinkedIn
         </a>
         <a
-          href="/api/v1/auth/google"
+          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
           className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
         >
           Continue with Google
