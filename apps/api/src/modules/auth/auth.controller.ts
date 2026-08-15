@@ -140,12 +140,14 @@ export class AuthController {
 
   private getCookieOptions() {
     const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
     return {
       httpOnly: true,
       sameSite: isProduction ? ('none' as const) : ('lax' as const),
       secure: isProduction,
       path: '/',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     };
   }
 
