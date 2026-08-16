@@ -26,7 +26,6 @@ const ONBOARDING_PATHS = new Set([
 ]);
 
 const STEP_PREVIOUS_ROUTE: Record<string, string> = {
-  "/role-selection": "/signin",
   "/mentee-onboarding": "/role-selection",
   "/mentor-onboarding": "/role-selection",
   "/mentor-matches": "/mentee-onboarding",
@@ -58,6 +57,24 @@ function AuthShellInner({ children }: { children: ReactNode }) {
 
   const [checkedPath, setCheckedPath] = useState<string | null>(null);
   const isCheckingAccess = isGuardedPath && checkedPath !== pathname;
+
+  useEffect(() => {
+    if (!isOnboardingPath && !isGuardedPath) {
+      return;
+    }
+
+    // Trap browser back button so user cannot navigate backward out of onboarding
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [isOnboardingPath, isGuardedPath]);
 
   useEffect(() => {
     if (!isGuardedPath) {
@@ -162,7 +179,7 @@ function AuthShellInner({ children }: { children: ReactNode }) {
               {previousRoute && (
                 <button
                   type="button"
-                  onClick={() => router.push(previousRoute)}
+                  onClick={() => router.replace(previousRoute)}
                   className="mb-4 inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-[#344054] transition-colors hover:text-[#111827]"
                 >
                   <ArrowLeft className="size-4" />

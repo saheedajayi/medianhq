@@ -57,7 +57,7 @@ export function RoleSelectionPage() {
     usersService
       .updateRole({ role })
       .then(() => {
-        router.push(role === "MENTEE" ? "/mentee-onboarding" : "/mentor-onboarding");
+        router.replace(role === "MENTEE" ? "/mentee-onboarding" : "/mentor-onboarding");
       })
       .catch((error) => {
         toast.error("Unable to update role", {

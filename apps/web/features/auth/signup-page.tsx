@@ -114,7 +114,7 @@ export function SignupPage() {
         });
 
         const retryParam = response.data.emailSent === false ? "&retryEmail=true" : "";
-        router.push(`/email-verification?email=${encodeURIComponent(email)}${retryParam}`);
+        router.replace(`/email-verification?email=${encodeURIComponent(email)}${retryParam}`);
       })
       .catch((error) => {
         toast.error("Unable to create account", {
