@@ -42,7 +42,10 @@ export default function DashboardLayout({
       .then((response) => {
         if (isCancelled) return;
 
-        if (response.data.accountStage !== "READY") {
+        const stage = response.data.accountStage;
+        const isAllowedOnDashboard = stage === "READY" || stage === "MENTOR_PENDING";
+
+        if (!isAllowedOnDashboard) {
           const destination = getAuthDestination(response.data);
           router.replace(destination);
           return;
