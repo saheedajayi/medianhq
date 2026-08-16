@@ -9,7 +9,7 @@ import {
   type IState,
   type ICity,
 } from "country-state-city";
-import { Check, ChevronsUpDown, Search, MapPin, ChevronRight, X } from "lucide-react";
+import { ChevronsUpDown, Search, MapPin, ChevronRight, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -270,7 +270,6 @@ export function ProgressiveLocationSelect({
                 }`}
               >
                 1. Country
-                {selectedCountry && <Check className="size-3 text-emerald-500" />}
               </button>
 
               <ChevronRight className="size-3 text-[#D0D5DD]" />
@@ -289,7 +288,6 @@ export function ProgressiveLocationSelect({
                 }`}
               >
                 2. State
-                {selectedState && <Check className="size-3 text-emerald-500" />}
               </button>
 
               <ChevronRight className="size-3 text-[#D0D5DD]" />
@@ -308,7 +306,6 @@ export function ProgressiveLocationSelect({
                 }`}
               >
                 3. City
-                {selectedCity && <Check className="size-3 text-emerald-500" />}
               </button>
             </div>
 
@@ -352,17 +349,14 @@ export function ProgressiveLocationSelect({
                       type="button"
                       role="option"
                       aria-selected={isSelected}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-[#344054] outline-none hover:bg-[#F9FAFB] focus-visible:bg-[#F9FAFB]"
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm outline-none transition-colors ${
+                        isSelected
+                          ? "bg-[#FFF5F0] font-semibold text-[#FF5500]"
+                          : "text-[#344054] hover:bg-[#F9FAFB] focus-visible:bg-[#F9FAFB]"
+                      }`}
                       onClick={() => handleSelectCountry(c)}
                     >
-                      <span className="flex items-center gap-2">
-                        <Check
-                          className={`size-4 text-[#FF5500] ${
-                            isSelected ? "opacity-100" : "opacity-0"
-                          }`}
-                        />
-                        {c.name}
-                      </span>
+                      <span>{c.name}</span>
                       <ChevronRight className="size-4 text-[#98A2B3]" />
                     </button>
                   );
@@ -385,17 +379,14 @@ export function ProgressiveLocationSelect({
                       type="button"
                       role="option"
                       aria-selected={isSelected}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-[#344054] outline-none hover:bg-[#F9FAFB] focus-visible:bg-[#F9FAFB]"
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm outline-none transition-colors ${
+                        isSelected
+                          ? "bg-[#FFF5F0] font-semibold text-[#FF5500]"
+                          : "text-[#344054] hover:bg-[#F9FAFB] focus-visible:bg-[#F9FAFB]"
+                      }`}
                       onClick={() => handleSelectState(s)}
                     >
-                      <span className="flex items-center gap-2">
-                        <Check
-                          className={`size-4 text-[#FF5500] ${
-                            isSelected ? "opacity-100" : "opacity-0"
-                          }`}
-                        />
-                        {s.name}
-                      </span>
+                      <span>{s.name}</span>
                       <ChevronRight className="size-4 text-[#98A2B3]" />
                     </button>
                   );
@@ -419,14 +410,13 @@ export function ProgressiveLocationSelect({
                         type="button"
                         role="option"
                         aria-selected={isSelected}
-                        className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-[#344054] outline-none hover:bg-[#F9FAFB] focus-visible:bg-[#F9FAFB]"
+                        className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm outline-none transition-colors ${
+                          isSelected
+                            ? "bg-[#FFF5F0] font-semibold text-[#FF5500]"
+                            : "text-[#344054] hover:bg-[#F9FAFB] focus-visible:bg-[#F9FAFB]"
+                        }`}
                         onClick={() => handleSelectCity(c.name)}
                       >
-                        <Check
-                          className={`mr-2 size-4 text-[#FF5500] ${
-                            isSelected ? "opacity-100" : "opacity-0"
-                          }`}
-                        />
                         {c.name}
                       </button>
                     );
@@ -440,7 +430,6 @@ export function ProgressiveLocationSelect({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#FF5500] bg-[#FFF5F0] hover:bg-[#FFEBE2]"
                     onClick={() => handleSelectCity(query.trim())}
                   >
-                    <Check className="size-4" />
                     Use &quot;{query.trim()}&quot;
                   </button>
                 ) : filteredCities.length === 0 ? (
