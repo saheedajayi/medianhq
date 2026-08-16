@@ -4,6 +4,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { TopSignupNoticeBanner } from "@/components/dashboard/top-signup-notice-banner";
 import { DashboardHeroBanner } from "@/components/dashboard/dashboard-hero-banner";
 import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
+import { MentorApplicationStatusCard } from "@/components/dashboard/mentor-application-status-card";
 import { MentorsForYouSection } from "@/components/dashboard/mentors-for-you-section";
 import { UpcomingSessionsCard } from "@/components/dashboard/upcoming-sessions-card";
 import { ActionItemsCard } from "@/components/dashboard/action-items-card";
@@ -26,20 +27,25 @@ function calculateCompletionPercentage(userProfile?: {
 
 export default function DashboardPage() {
   const { data: user } = useCurrentUser();
+  const isMentor = user?.role === "MENTOR";
   const completionPercentage = calculateCompletionPercentage(user?.menteeProfile);
   const is100PercentComplete = completionPercentage === 100;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
-      {/* Top Notice Banner (Visible strictly when completion reaches 100%) */}
-      {is100PercentComplete && <TopSignupNoticeBanner />}
+      {/* Top Notice Banner (Visible strictly when completion reaches 100% for mentees) */}
+      {!isMentor && is100PercentComplete && <TopSignupNoticeBanner />}
 
       {/* Hero Banner with Geometric Tile Pattern & Dynamic Logged In User Greeting */}
       <DashboardHeroBanner upcomingCount={0} />
 
-      {/* Profile Completion Meter (Visible when completion is < 100%) */}
-      {!is100PercentComplete && (
-        <ProfileCompletionCard percentage={completionPercentage} />
+      {/* Conditional Status Banner: Mentor Review Card vs Mentee Profile Completion */}
+      {isMentor ? (
+        <MentorApplicationStatusCard />
+      ) : (
+        !is100PercentComplete && (
+          <ProfileCompletionCard percentage={completionPercentage} />
+        )
       )}
 
       {/* Mentors For You Recommendation Grid */}
