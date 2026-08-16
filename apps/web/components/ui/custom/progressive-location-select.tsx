@@ -4,10 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Country,
   State,
-  City,
   type ICountry,
   type IState,
-  type ICity,
 } from "country-state-city";
 import { ChevronsUpDown, Search, MapPin, ChevronRight, X } from "lucide-react";
 import {
@@ -28,14 +26,14 @@ export interface ProgressiveLocationSelectProps {
   triggerClassName?: string;
 }
 
-type TabStep = "country" | "state" | "city";
+type TabStep = "country" | "state";
 
 export function ProgressiveLocationSelect({
   id = "progressive-location",
   name,
   value = "",
   onChange,
-  placeholder = "Select your location...",
+  placeholder = "Select country and state...",
   error,
   disabled = false,
   className = "",
@@ -47,7 +45,6 @@ export function ProgressiveLocationSelect({
 
   const [selectedCountry, setSelectedCountry] = useState<ICountry | null>(null);
   const [selectedState, setSelectedState] = useState<IState | null>(null);
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
   const [displayValue, setDisplayValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,62 +59,39 @@ export function ProgressiveLocationSelect({
     return State.getStatesOfCountry(selectedCountry.isoCode);
   }, [selectedCountry]);
 
-  // Cities for selected Country and State
-  const cities = useMemo(() => {
-    if (!selectedCountry || !selectedState) return [];
-    return City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode);
-  }, [selectedCountry, selectedState]);
-
   // Parse initial or prop value
   useEffect(() => {
     setDisplayValue(value);
     if (!value) {
       setSelectedCountry(null);
       setSelectedState(null);
-      setSelectedCity(null);
       return;
     }
 
     const parts = value.split(",").map((p) => p.trim());
 
-    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
-      // City, State, Country
-      const [cityName, stateName, countryName] = parts;
+    const cName = parts[parts.length - 1];
+    const sName = parts.length >= 2 ? parts[parts.length - 2] : undefined;
+
+    if (parts.length >= 2 && cName && sName) {
+      // Could be "State, Country" or "City, State, Country"
       const foundCountry = countries.find(
-        (c) => c.name.toLowerCase() === countryName.toLowerCase(),
+        (c) => c.name.toLowerCase() === cName.toLowerCase(),
       );
       if (foundCountry) {
         setSelectedCountry(foundCountry);
         const countryStates = State.getStatesOfCountry(foundCountry.isoCode);
         const foundState = countryStates.find(
-          (s) => s.name.toLowerCase() === stateName.toLowerCase(),
-        );
-        if (foundState) {
-          setSelectedState(foundState);
-          setSelectedCity(cityName);
-        }
-      }
-    } else if (parts.length === 2 && parts[0] && parts[1]) {
-      // State, Country
-      const [stateName, countryName] = parts;
-      const foundCountry = countries.find(
-        (c) => c.name.toLowerCase() === countryName.toLowerCase(),
-      );
-      if (foundCountry) {
-        setSelectedCountry(foundCountry);
-        const countryStates = State.getStatesOfCountry(foundCountry.isoCode);
-        const foundState = countryStates.find(
-          (s) => s.name.toLowerCase() === stateName.toLowerCase(),
+          (s) => s.name.toLowerCase() === sName.toLowerCase(),
         );
         if (foundState) {
           setSelectedState(foundState);
         }
       }
-    } else if (parts.length === 1 && parts[0]) {
-      // Country
-      const [countryName] = parts;
+    } else if (parts.length === 1 && cName) {
+      // Country only
       const foundCountry = countries.find(
-        (c) => c.name.toLowerCase() === countryName.toLowerCase(),
+        (c) => c.name.toLowerCase() === cName.toLowerCase(),
       );
       if (foundCountry) {
         setSelectedCountry(foundCountry);
@@ -140,24 +114,9 @@ export function ProgressiveLocationSelect({
     return states.filter((s) => s.name.toLowerCase().includes(q));
   }, [states, activeTab, query]);
 
-  const filteredCities = useMemo(() => {
-    if (activeTab !== "city") return [];
-    const q = query.trim().toLowerCase();
-    if (!q) return cities;
-    return cities.filter((c) => c.name.toLowerCase().includes(q));
-  }, [cities, activeTab, query]);
-
-  // Finish and emit final formatted location string
-  const finalizeLocation = (cName: string, sName?: string, countryName?: string) => {
-    let finalStr = "";
-    if (cName && sName && countryName) {
-      finalStr = `${cName}, ${sName}, ${countryName}`;
-    } else if (sName && countryName) {
-      finalStr = `${sName}, ${countryName}`;
-    } else {
-      finalStr = cName;
-    }
-
+  // Finish and emit final formatted location string ("State, Country")
+  const finalizeLocation = (sName: string, countryName: string) => {
+    const finalStr = `${sName}, ${countryName}`;
     setDisplayValue(finalStr);
     onChange?.(finalStr);
     setOpen(false);
@@ -167,44 +126,30 @@ export function ProgressiveLocationSelect({
   const handleSelectCountry = (country: ICountry) => {
     setSelectedCountry(country);
     setSelectedState(null);
-    setSelectedCity(null);
     setQuery("");
 
     const countryStates = State.getStatesOfCountry(country.isoCode);
     if (countryStates.length > 0) {
       setActiveTab("state");
     } else {
-      finalizeLocation(country.name);
+      // If country has no states, use Country name as final location
+      setDisplayValue(country.name);
+      onChange?.(country.name);
+      setOpen(false);
     }
   };
 
   const handleSelectState = (state: IState) => {
     setSelectedState(state);
-    setSelectedCity(null);
-    setQuery("");
-
-    if (!selectedCountry) return;
-    const stateCities = City.getCitiesOfState(selectedCountry.isoCode, state.isoCode);
-    if (stateCities.length > 0) {
-      setActiveTab("city");
-    } else {
+    if (selectedCountry) {
       finalizeLocation(state.name, selectedCountry.name);
-    }
-  };
-
-  const handleSelectCity = (cityName: string) => {
-    setSelectedCity(cityName);
-    if (selectedState && selectedCountry) {
-      finalizeLocation(cityName, selectedState.name, selectedCountry.name);
     }
   };
 
   const searchPlaceholder =
     activeTab === "country"
       ? "Search countries..."
-      : activeTab === "state"
-      ? `Search states in ${selectedCountry?.name ?? "country"}...`
-      : `Search cities in ${selectedState?.name ?? "state"}...`;
+      : `Search states in ${selectedCountry?.name ?? "country"}...`;
 
   const defaultTriggerStyles =
     "flex h-11 w-full items-center justify-between rounded-xl border border-[#D0D5DD] bg-white px-4 text-left text-sm shadow-2xs outline-none transition-all focus-visible:border-[#FF5500] focus-visible:ring-2 focus-visible:ring-[#FF5500]/15 disabled:cursor-not-allowed disabled:opacity-50";
@@ -248,7 +193,7 @@ export function ProgressiveLocationSelect({
 
         <PopoverContent
           align="start"
-          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] max-w-[420px] p-0 z-50 bg-white border border-[#E4E7EC] shadow-xl rounded-2xl overflow-hidden"
+          className="w-[var(--radix-popover-trigger-width)] min-w-[300px] max-w-[400px] p-0 z-50 bg-white border border-[#E4E7EC] shadow-xl rounded-2xl overflow-hidden"
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             inputRef.current?.focus();
@@ -287,25 +232,7 @@ export function ProgressiveLocationSelect({
                     : "text-[#98A2B3] cursor-not-allowed"
                 }`}
               >
-                2. State
-              </button>
-
-              <ChevronRight className="size-3 text-[#D0D5DD]" />
-
-              {/* Tab 3: City */}
-              <button
-                type="button"
-                disabled={!selectedState}
-                onClick={() => selectedState && setActiveTab("city")}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 transition-colors ${
-                  activeTab === "city"
-                    ? "bg-[#FF5500] text-white font-semibold shadow-xs"
-                    : selectedCity
-                    ? "bg-[#F2F4F7] text-[#344054] hover:bg-[#E4E7EC]"
-                    : "text-[#98A2B3] cursor-not-allowed"
-                }`}
-              >
-                3. City
+                2. State / Region
               </button>
             </div>
 
@@ -387,7 +314,6 @@ export function ProgressiveLocationSelect({
                       onClick={() => handleSelectState(s)}
                     >
                       <span>{s.name}</span>
-                      <ChevronRight className="size-4 text-[#98A2B3]" />
                     </button>
                   );
                 })
@@ -396,48 +322,6 @@ export function ProgressiveLocationSelect({
                   No state found for {selectedCountry?.name}.
                 </p>
               )
-            )}
-
-            {/* City List */}
-            {activeTab === "city" && (
-              <>
-                {filteredCities.length > 0 ? (
-                  filteredCities.map((c, index) => {
-                    const isSelected = selectedCity === c.name;
-                    return (
-                      <button
-                        key={`${c.name}-${index}`}
-                        type="button"
-                        role="option"
-                        aria-selected={isSelected}
-                        className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm outline-none transition-colors ${
-                          isSelected
-                            ? "bg-[#FFF5F0] font-semibold text-[#FF5500]"
-                            : "text-[#344054] hover:bg-[#F9FAFB] focus-visible:bg-[#F9FAFB]"
-                        }`}
-                        onClick={() => handleSelectCity(c.name)}
-                      >
-                        {c.name}
-                      </button>
-                    );
-                  })
-                ) : null}
-
-                {/* Allow Custom City entry if typing query */}
-                {query.trim() ? (
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#FF5500] bg-[#FFF5F0] hover:bg-[#FFEBE2]"
-                    onClick={() => handleSelectCity(query.trim())}
-                  >
-                    Use &quot;{query.trim()}&quot;
-                  </button>
-                ) : filteredCities.length === 0 ? (
-                  <p className="px-3 py-6 text-center text-sm text-[#667085]">
-                    No city listed for {selectedState?.name}. Type above to enter custom city.
-                  </p>
-                ) : null}
-              </>
             )}
           </div>
         </PopoverContent>
