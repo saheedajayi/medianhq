@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/base/select";
-import { CountrySelect } from "@/components/ui/custom/country-select";
+import { ProgressiveLocationSelect } from "@/components/ui/custom/progressive-location-select";
 
 // Zod Validation Schema for Profile Update
 const profileUpdateSchema = z.object({
@@ -303,7 +303,7 @@ export function ProfileUpdateModal({
             <label className="text-sm font-medium text-[#101828]">
               Where are you based? <span className="text-[#FF5500]">*</span>
             </label>
-            <CountrySelect
+            <ProgressiveLocationSelect
               id="profile-location"
               value={location}
               onChange={(val) => {
@@ -311,7 +311,7 @@ export function ProfileUpdateModal({
                 setErrors((prev) => ({ ...prev, location: "" }));
               }}
               error={errors.location}
-              placeholder="Select your country"
+              placeholder="Select your location..."
               triggerClassName="py-3 h-auto text-sm text-[#101828] placeholder-[#98A2B3] rounded-xl"
             />
             {errors.location && (
