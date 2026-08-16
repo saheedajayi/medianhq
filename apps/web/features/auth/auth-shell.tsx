@@ -15,6 +15,7 @@ const GUARDED_PATHS = new Set([
   "/role-selection",
   "/mentee-onboarding",
   "/mentor-onboarding",
+  "/mentor-submitted",
 ]);
 
 const ONBOARDING_PATHS = new Set([

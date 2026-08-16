@@ -26,7 +26,7 @@ export function MentorSubmittedPage() {
         asChild
         className="h-14 w-full rounded-full bg-primary text-base font-medium text-white shadow-none hover:bg-primary/90 sm:w-[320px]"
       >
-        <Link href="/dashboard">Go to Dashboard</Link>
+        <Link href="/dashboard" replace>Go to Dashboard</Link>
       </Button>
     </div>
   );

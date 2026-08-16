@@ -21,18 +21,20 @@ export default function DashboardLayout({
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    // Lock browser back button on dashboard to prevent navigating back to signin/signup
+    // Lock browser back button on dashboard to prevent navigating back to signin/signup/onboarding
     window.history.pushState(null, "", window.location.href);
 
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
       window.history.pushState(null, "", window.location.href);
+      router.replace("/dashboard");
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     let isCancelled = false;
