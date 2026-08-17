@@ -21,20 +21,6 @@ export default function DashboardLayout({
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    // Lock browser back button on dashboard to prevent navigating back to signin/signup
-    window.history.pushState(window.history.state, "", window.location.href);
-
-    const handlePopState = () => {
-      window.history.pushState(window.history.state, "", window.location.href);
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
-
-  useEffect(() => {
     let isCancelled = false;
 
     authService

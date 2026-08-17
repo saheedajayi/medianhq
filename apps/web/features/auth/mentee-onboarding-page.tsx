@@ -142,7 +142,7 @@ export function MenteeOnboardingPage() {
         toast.success("Welcome to Median!", {
           description: "Your mentee profile preferences have been saved.",
         });
-        router.replace("/mentor-matches");
+        router.push("/mentor-matches");
       })
       .catch((error) => {
         toast.error("Unable to save profile", {

@@ -118,12 +118,13 @@ export function EmailVerificationPage({
           Enter the verification code we sent to
           <strong className="block font-semibold text-[#141c2e] mt-0.5">{email}</strong>
         </p>
-        
+        <p className="mt-5 text-xs font-normal text-[#667085]">
+          Code expires in <span className="font-semibold text-[#344054]">15 minutes</span>.
+        </p>
       </header>
 
       <form onSubmit={handleSubmit} className="mt-8 grid gap-8">
-        <div className="grid gap-2 space-y-1">
-          <p className="text-sm text-gray-700">Enter code</p>
+        <div className="grid gap-2">
           <InputOTP
             maxLength={6}
             name="verificationCode"
@@ -139,9 +140,6 @@ export function EmailVerificationPage({
               <InputOTPSlot index={5} />
             </InputOTPGroup>
           </InputOTP>
-          <p className="text-xs font-normal text-[#667085]">
-            Code expires in <span className="font-semibold text-[#344054]">15 minutes</span>.
-          </p>
         </div>
 
         <Button
