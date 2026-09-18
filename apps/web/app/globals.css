@@ -24,6 +24,11 @@ body {
     serif;
 }
 
+.font-playfair {
+  font-family: var(--font-playfair-display), Georgia, Cambria, "Times New Roman", Times,
+    serif;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -37,6 +42,7 @@ a {
   --font-heading: var(--font-general-sans);
   --font-sans: var(--font-general-sans);
   --font-serif: var(--font-neco);
+  --font-playfair: var(--font-playfair-display);
   --font-mono: var(--font-geist-mono);
   --color-accent-50: var(--accent-50);
   --color-accent-100: var(--accent-100);
@@ -207,3 +213,41 @@ a {
     @apply font-sans;
   }
 }
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+@utility animate-marquee {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee 40s linear infinite;
+}
+
+@utility animate-marquee-reverse {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee-reverse 40s linear infinite;
+}
+
+.animate-marquee:hover,
+.animate-marquee-reverse:hover {
+  animation-play-state: paused;
+}
+
