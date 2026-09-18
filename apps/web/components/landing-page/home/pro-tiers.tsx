@@ -30,7 +30,7 @@ export function LandingProTiers() {
         {/* Action Button */}
         <div className="mt-8 sm:mt-10">
           <Link
-            href="/signup"
+            href="/pricing"
             className="inline-flex h-12 items-center justify-center rounded-full bg-[#FF5514] px-8 text-sm sm:text-base font-semibold !text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.98]"
           >
             Explore Median pro plans

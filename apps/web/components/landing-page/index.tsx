@@ -1,6 +1,6 @@
 "use client";
 
-import { LandingHeader } from "./header";
+import { LandingHeader, LandingCTABanner, LandingFooter } from "./shared";
 import { LandingHero } from "./home/hero";
 import { LandingFeatures } from "./home/features";
 import { LandingSteps } from "./home/steps";
@@ -9,8 +9,6 @@ import { LandingProTiers } from "./home/pro-tiers";
 import { LandingTestimonials } from "./home/testimonials";
 import { LandingFAQ } from "./home/faq";
 import { LandingFounderNote } from "./home/founder-note";
-import { LandingCTABanner } from "./cta-banner";
-import { LandingFooter } from "./footer";
 
 export function LandingPage() {
   return (
