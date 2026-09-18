@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 145 36" fill="none">
+  <!-- Access Bank Chevron Arrows -->
+  <path d="M6 18l10-10v5.5l-4.5 4.5 4.5 4.5V28L6 18zm9 0l10-10v5.5l-4.5 4.5 4.5 4.5V28L15 18z" fill="#101828"/>
+  <!-- Access wordmark -->
+  <text x="34" y="25" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800" fill="#101828" letter-spacing="-0.5px">access</text>
+</svg>

@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
-import { CountrySelect } from "@/components/ui/custom/country-select";
+import { ProgressiveLocationSelect } from "@/components/ui/custom/progressive-location-select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { taxonomyService } from "@/services/taxonomy";
 
@@ -254,11 +254,11 @@ export function MentorOnboardingPage() {
             <label className="text-sm font-medium text-[#111827]">
               Where are you based? *
             </label>
-            <CountrySelect
+            <ProgressiveLocationSelect
               id="mentor-location"
               value={location}
               onChange={setLocation}
-              placeholder="Select your country"
+              placeholder="Select your location..."
               triggerClassName="h-[46px] rounded-xl border-[#e2e8f0] bg-transparent px-3.5 text-[15px] shadow-none placeholder:text-[#94a3b8]"
             />
           </div>

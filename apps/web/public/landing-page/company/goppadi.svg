@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 36" fill="none">
+  <!-- Gopaddi Icon (Pin / Plane) -->
+  <path d="M6 18c0-6.6 5.4-12 12-12s12 5.4 12 12c0 8-12 16-12 16S6 26 6 18z" fill="#101828"/>
+  <circle cx="18" cy="17" r="4.5" fill="#FFFFFF"/>
+  <!-- Gopaddi Wordmark -->
+  <text x="36" y="25" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="800" fill="#101828" letter-spacing="-0.5px">gopaddi</text>
+</svg>

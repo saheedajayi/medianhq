@@ -25,7 +25,7 @@ describe("authentication routing", () => {
     ["ROLE_SELECTION", "/role-selection"],
     ["MENTEE_ONBOARDING", "/mentee-onboarding"],
     ["MENTOR_ONBOARDING", "/mentor-onboarding"],
-    ["MENTOR_PENDING", "/mentor-submitted"],
+    ["MENTOR_PENDING", "/dashboard"],
     ["READY", "/dashboard"],
   ] satisfies Array<[AccountStage, string]>;
 

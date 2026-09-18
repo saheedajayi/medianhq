@@ -54,6 +54,21 @@ const neco = localFont({
   ],
   variable: "--font-neco",
 });
+const playfair = localFont({
+  src: [
+    {
+      path: "./fonts/PlayfairDisplay-Variable.ttf",
+      weight: "400 900",
+      style: "normal",
+    },
+    {
+      path: "./fonts/PlayfairDisplay-Italic-Variable.ttf",
+      weight: "400 900",
+      style: "italic",
+    },
+  ],
+  variable: "--font-playfair-display",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -127,7 +142,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${generalSans.variable} ${neco.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${generalSans.variable} ${neco.variable} ${playfair.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

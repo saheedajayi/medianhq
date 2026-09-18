@@ -25,7 +25,6 @@ export function getAuthDestination(
     case "MENTOR_ONBOARDING":
       return "/mentor-onboarding";
     case "MENTOR_PENDING":
-      return "/mentor-submitted";
     case "READY":
       return "/dashboard";
   }
