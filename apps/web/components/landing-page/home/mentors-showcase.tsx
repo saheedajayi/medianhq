@@ -110,7 +110,7 @@ export function LandingMentorsShowcase() {
           </p>
 
           {/* Category Tabs */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             {CATEGORIES.map((category) => {
               const isActive = selectedCategory === category;
               return (
@@ -118,7 +118,7 @@ export function LandingMentorsShowcase() {
                   key={category}
                   type="button"
                   onClick={() => setSelectedCategory(category)}
-                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                  className={`rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all ${
                     isActive
                       ? "bg-[#FF5514] text-white shadow-xs"
                       : "border border-[#D0D5DD] bg-white text-[#344054] hover:bg-[#F9FAFB]"
