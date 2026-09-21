@@ -94,7 +94,8 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose }: Dashbo
             const Icon = item.icon;
             const isActive =
               pathname === item.href ||
-              (item.href !== "/dashboard" && pathname?.startsWith(item.href));
+              (item.href !== "/dashboard" && pathname?.startsWith(item.href)) ||
+              (item.label === "Explore" && (pathname === "/explore" || pathname?.startsWith("/mentors/") || pathname?.startsWith("/mentee/mentors/")));
 
             return (
               <Link

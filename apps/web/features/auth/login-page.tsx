@@ -139,22 +139,22 @@ export function LoginPage() {
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
         <a
-          href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1"}/auth/linkedin`}
-          className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
+          href={authService.getOAuthUrl("linkedin")}
+          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
         >
           Log in with LinkedIn
         </a>
         <a
-          href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1"}/auth/google`}
-          className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
+          href={authService.getOAuthUrl("google")}
+          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
         >
           Log in with Google
         </a>
 
-        <div className="flex items-center gap-3 py-1 text-sm text-[#b5bdcc]">
-          <span className="h-px flex-1 bg-[#e1e5eb]" />
+        <div className="flex items-center gap-3 py-1 text-sm text-[#98A2B3]">
+          <span className="h-px flex-1 bg-[#EAECF0]" />
           Or
-          <span className="h-px flex-1 bg-[#e1e5eb]" />
+          <span className="h-px flex-1 bg-[#EAECF0]" />
         </div>
         <FormField
           id="loginEmail"

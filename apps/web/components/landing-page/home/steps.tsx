@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { LandingStepCard } from "../shared/step-card";
 import { Location, Messages, Clock } from "iconsax-react";
 import { Star } from "lucide-react";
 
@@ -164,7 +165,7 @@ export function LandingSteps() {
         {/* 4 Steps Grid (2x2) */}
         <div className="mt-14 sm:mt-18 grid grid-cols-1 gap-10 md:grid-cols-2 lg:gap-12">
           {/* Step 1: Share your goal */}
-          <div className="flex flex-col">
+          <LandingStepCard title="Share your goal" description="Turn your ambitions into clear goals and find the right mentor to help you move forward.">
             {/* Visual Stage with spacious #FDF9F6 background */}
             <div className="flex h-[330px] sm:h-[350px] w-full items-center justify-center rounded-xl sm:rounded-2xl bg-[#FDF9F6] p-4 sm:p-6">
               <div className="w-full max-w-[340px] sm:max-w-[360px] rounded-2xl bg-white p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-black/[0.04]">
@@ -200,17 +201,10 @@ export function LandingSteps() {
               </div>
             </div>
 
-            {/* Caption (below #FDF9F6 container) */}
-            <div className="mt-4 sm:mt-5">
-              <h3 className="text-lg sm:text-xl font-medium text-[#101828]">Share your goal</h3>
-              <p className="mt-1.5 text-xs sm:text-sm text-[#475467] leading-relaxed">
-                Turn your ambitions into clear goals and find the right mentor to help you move forward.
-              </p>
-            </div>
-          </div>
+          </LandingStepCard>
 
           {/* Step 2: Browse vetted mentors */}
-          <div className="flex flex-col">
+          <LandingStepCard title="Browse vetted mentors" description="Explore our curated directory of experienced professionals across Tech, Finance, Consulting and Business.">
             {/* Visual Stage with spacious #FDF9F6 background */}
             <div className="flex h-[330px] sm:h-[350px] w-full flex-col items-center justify-center rounded-xl sm:rounded-2xl bg-[#FDF9F6] p-3 sm:p-5">
               {/* Clean Floating Category Tabs Bar */}
@@ -265,17 +259,10 @@ export function LandingSteps() {
               </div>
             </div>
 
-            {/* Caption (below #FDF9F6 container) */}
-            <div className="mt-4 sm:mt-5">
-              <h3 className="text-lg sm:text-xl font-medium text-[#101828]">Browse vetted mentors</h3>
-              <p className="mt-1.5 text-xs sm:text-sm text-[#475467] leading-relaxed">
-                Explore our curated directory of experienced professionals across Tech, Finance, Consulting and Business.
-              </p>
-            </div>
-          </div>
+          </LandingStepCard>
 
           {/* Step 3: Connect with a mentor */}
-          <div className="flex flex-col">
+          <LandingStepCard title="Connect with a mentor" description="Choose how you want to connect — 1-on-1 sessions or group calls, based on availability, price, or expertise.">
             {/* Visual Stage with spacious #FDF9F6 background */}
             <div className="flex h-[330px] sm:h-[350px] w-full items-center justify-center rounded-xl sm:rounded-2xl bg-[#FDF9F6] p-4 sm:p-6">
               <div className="w-full max-w-[280px] sm:max-w-[300px] rounded-2xl bg-white p-3.5 sm:p-4 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-black/[0.04] space-y-2">
@@ -308,17 +295,10 @@ export function LandingSteps() {
               </div>
             </div>
 
-            {/* Caption (below #FDF9F6 container) */}
-            <div className="mt-4 sm:mt-5">
-              <h3 className="text-lg sm:text-xl font-medium text-[#101828]">Connect with a mentor</h3>
-              <p className="mt-1.5 text-xs sm:text-sm text-[#475467] leading-relaxed">
-                Choose how you want to connect — 1-on-1 sessions or group calls, based on availability, price, or expertise.
-              </p>
-            </div>
-          </div>
+          </LandingStepCard>
 
           {/* Step 4: Grow with structure */}
-          <div className="flex flex-col">
+          <LandingStepCard title="Grow with structure" description="Leave every session with a clear action plan. Track your milestone and stay accountable between calls.">
             {/* Visual Stage with spacious #FDF9F6 background */}
             <div className="flex h-[330px] sm:h-[350px] w-full flex-col items-center justify-center rounded-xl sm:rounded-2xl bg-[#FDF9F6] p-4 sm:p-6">
               <div className="w-full max-w-[280px] sm:max-w-[300px] flex flex-col items-center">
@@ -348,14 +328,7 @@ export function LandingSteps() {
               </div>
             </div>
 
-            {/* Caption (below #FDF9F6 container) */}
-            <div className="mt-4 sm:mt-5">
-              <h3 className="text-lg sm:text-xl font-medium text-[#101828]">Grow with structure</h3>
-              <p className="mt-1.5 text-xs sm:text-sm text-[#475467] leading-relaxed">
-                Leave every session with a clear action plan. Track your milestone and stay accountable between calls.
-              </p>
-            </div>
-          </div>
+          </LandingStepCard>
         </div>
       </div>
     </section>

@@ -12,9 +12,9 @@ interface MentorHeroCardProps {
 
 export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-[#F2F2F7] bg-[#FDF9F6] p-8 text-center shadow-xs">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-[#F2F2F7] bg-[#FDF9F6] p-6 text-center">
       {/* Mentor Avatar */}
-      <div className="relative mb-4 size-[120px] overflow-hidden rounded-full border-4 border-white shadow-sm">
+      <div className="relative mb-3 size-[112px] overflow-hidden rounded-full border-4 border-white shadow-sm">
         <Image
           src={mentor.avatarUrl || "/mentor-avatar.png"}
           alt={mentor.name}
@@ -26,7 +26,7 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
       </div>
 
       {/* Mentor Name in Primary Brand Orange */}
-      <h1 className="text-2xl font-bold text-[#FF5500]">
+      <h1 className="text-lg font-semibold text-[#D94B09]">
         {mentor.name}
       </h1>
 
@@ -56,7 +56,7 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
       </div>
 
       {/* Social Media Links */}
-      <div className="mt-5 flex items-center gap-2.5">
+      <div className="mt-3 flex items-center gap-2.5">
         {mentor.socials.website && (
           <Link
             href={mentor.socials.website}

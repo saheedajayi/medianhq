@@ -1,5 +1,15 @@
-import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
+import type { ExploreMentorsQueryDto } from './dto/explore-mentors-query.dto';
 import { MentorsService } from './mentors.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -11,10 +21,25 @@ export class MentorsController {
 
   constructor(private readonly mentorsService: MentorsService) {}
 
+  @Get()
+  explore(@Query() query: ExploreMentorsQueryDto) {
+    return this.mentorsService.explore(query);
+  }
+
+  @Get('featured')
+  getFeatured(@Query('limit') limit?: string) {
+    return this.mentorsService.getFeatured(limit ? Number(limit) : 6);
+  }
+
   @UseGuards(AuthGuard)
   @Get('matches')
   getMatches(@CurrentUser() user: AuthUser) {
     return this.mentorsService.getMatches(user.id);
+  }
+
+  @Get(':id')
+  getMentorProfile(@Param('id') id: string) {
+    return this.mentorsService.getMentorProfile(id);
   }
 
   @UseGuards(AuthGuard)

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Calendar, HambergerMenu, Notification, User } from "iconsax-react";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { authService } from "@/services/auth";
@@ -16,6 +16,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isExploreRoute = pathname === "/explore" || pathname === "/mentee/explore" || pathname?.startsWith("/mentors/") || pathname?.startsWith("/mentee/mentors/");
   const { data: user } = useCurrentUser();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -70,7 +72,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col h-screen overflow-hidden lg:pl-64">
         {/* Top Header Bar */}
-        <header className="flex h-16 sm:h-18 shrink-0 items-center justify-between border-b border-[#EAECF0] bg-white px-4 sm:px-8">
+        <header className={`flex h-16 sm:h-18 shrink-0 items-center justify-between border-b border-[#EAECF0] bg-white px-4 sm:px-8 ${isExploreRoute ? "lg:hidden" : ""}`}>
           {/* Mobile Header (< 640px): Logo on Left, Bell + Avatar + Hamburger on Right */}
           <div className="flex w-full items-center justify-between sm:hidden">
             <Link href="/dashboard" className="flex items-center">
@@ -153,7 +155,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Dynamic Dashboard Page Content */}
-        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+        <main className={`flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 ${isExploreRoute ? "lg:px-6 lg:py-6" : "lg:px-10"}`}>
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>

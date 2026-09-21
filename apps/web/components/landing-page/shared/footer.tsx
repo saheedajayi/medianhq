@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import type { LandingAudience } from "../audience";
 
-export function LandingFooter() {
+export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audience: LandingAudience) => void }) {
   return (
     <footer className="relative overflow-hidden bg-[#FFFAF5] pt-20 pb-10">
       {/* Ambient Warm Sunset Gradient Glow behind the giant logo matching Figma */}
@@ -65,14 +66,18 @@ export function LandingFooter() {
             </h4>
             <ul className="mt-5 space-y-3.5 text-sm text-[#475467]">
               <li>
-                <Link href="/signup?role=mentee" className="transition-colors hover:text-[#101828]">
-                  Find a mentor
-                </Link>
+                {onAudienceChange ? (
+                  <button type="button" onClick={() => onAudienceChange("mentee")} className="transition-colors hover:text-[#101828]">Find a mentor</button>
+                ) : (
+                  <Link href="/signup?role=mentee" className="transition-colors hover:text-[#101828]">Find a mentor</Link>
+                )}
               </li>
               <li>
-                <Link href="/signup?role=mentor" className="transition-colors hover:text-[#101828]">
-                  Become a mentor
-                </Link>
+                {onAudienceChange ? (
+                  <button type="button" onClick={() => onAudienceChange("mentor")} className="transition-colors hover:text-[#101828]">Become a mentor</button>
+                ) : (
+                  <Link href="/signup?role=mentor" className="transition-colors hover:text-[#101828]">Become a mentor</Link>
+                )}
               </li>
               <li>
                 <Link href="#" className="transition-colors hover:text-[#101828]">
@@ -144,10 +149,10 @@ export function LandingFooter() {
         {/* Bottom Bar: Links & Copyright */}
         <div className="mt-8 flex flex-col items-center justify-between gap-4 pt-4 text-xs text-[#667085] sm:mt-12 sm:flex-row">
           <div className="flex items-center gap-6">
-            <Link href="#" className="hover:text-[#101828]">
+            <Link href="/privacy" className="hover:text-[#101828] transition-colors">
               Privacy
             </Link>
-            <Link href="#" className="hover:text-[#101828]">
+            <Link href="/terms" className="hover:text-[#101828] transition-colors">
               Terms
             </Link>
             <a href="mailto:hello@median.com" className="hover:text-[#101828]">

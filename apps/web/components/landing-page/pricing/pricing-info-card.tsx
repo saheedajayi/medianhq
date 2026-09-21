@@ -3,7 +3,7 @@
 export function PricingInfoCard() {
   return (
     <section className="relative w-full bg-white pb-20 sm:pb-28">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-[32px] bg-[#F7F8FB] p-8 sm:p-12 md:p-14">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8 lg:gap-12">
             {/* Column 1: Service Fee Options */}

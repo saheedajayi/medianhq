@@ -119,7 +119,7 @@ export const uploadsService = {
     }
 
     // Fallback for local development
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dfwqgi9em";
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const mockPublicId = `median/${folder}/${Date.now()}_${safeName}`;
     const mockUrl = `https://res.cloudinary.com/${cloudName}/image/authenticated/v1/${mockPublicId}`;

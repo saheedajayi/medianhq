@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { defaultMentorProfile, mentorsDirectory } from "./mock-profile-data";
 import { MentorHeroCard } from "./mentor-hero-card";
 import { MentorProfileTabs } from "./mentor-profile-tabs";
@@ -38,7 +36,12 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
   // Formatted date string for modals
-  const dateSlotDisplay = `${selectedDate.dayOfWeek}, ${selectedDate.dayNumber} ${selectedDate.month} 2026`;
+  const dateSlotDisplay = new Date(`${selectedDate.dateString}T12:00:00`).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
   const dateTimeDisplay = `${dateSlotDisplay} - ${selectedTime} WAT`;
 
   // Step 1: User completes session goals & submits
@@ -60,22 +63,9 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-16">
-      {/* Back to Explore Breadcrumb */}
-      <div>
-        <Link
-          href="/mentee/explore"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#667085] transition-colors hover:text-[#FF5500]"
-        >
-          <ArrowLeft className="size-4" />
-          <span>Back to Explore</span>
-        </Link>
-      </div>
-
-      {/* Main 2-Column Responsive Layout */}
+    <div className="rounded-2xl border border-[#EAECF0] bg-white p-5 pb-16 sm:p-7">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Left Column: Hero Card & Profile/Reviews Tabs (8 cols on desktop) */}
-        <div className="flex flex-col gap-6 lg:col-span-8">
+        <div className="flex flex-col gap-4 lg:col-span-7">
           <MentorHeroCard mentor={mentor} />
           <MentorProfileTabs
             mentor={mentor}
@@ -84,8 +74,7 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
           />
         </div>
 
-        {/* Right Column: Booking Sidepanel (4 cols on desktop) */}
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-5">
           <div className="sticky top-6">
             <MentorBookingPanel
               packages={mentor.packages}

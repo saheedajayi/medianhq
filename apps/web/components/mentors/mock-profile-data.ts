@@ -1,4 +1,22 @@
-import { MentorDetailProfile } from "./types";
+import { AvailableDateSlot, MentorDetailProfile } from "./types";
+import { mockExploreMentors } from "../explore/mock-mentors";
+
+function upcomingDates(): AvailableDateSlot[] {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + index + 1);
+    const times = ["3:00PM", "3:30PM", "4:00PM", "4:30PM"];
+    return {
+      dateString: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+      dayOfWeek: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(),
+      dayNumber: String(date.getDate()).padStart(2, "0"),
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+      slotsCount: times.length,
+      times,
+    };
+  });
+}
 
 export const defaultMentorProfile: MentorDetailProfile = {
   id: "1",
@@ -71,74 +89,33 @@ export const defaultMentorProfile: MentorDetailProfile = {
   packages: [
     {
       id: "pkg-1",
-      title: "Get to Know Each Other",
+      title: "Get to Know You",
       durationMinutes: 15,
       price: "Free",
       numericPrice: 0,
       description:
-        "A quick intro call to discuss your goals, challenges, and plan your strategy sessions.",
+        "A quick intro chat to see if we're a good fit before booking longer strategy sessions.",
     },
     {
       id: "pkg-2",
-      title: "CV Review & Optimization",
+      title: "CV Review",
       durationMinutes: 30,
       price: "₦20,000",
       numericPrice: 20000,
       description:
-        "Deep dive into CV improvement, portfolio critique, and positioning for top companies.",
+        "Deep dive into your CV with actionable feedback, layout improvements and positioning tips.",
     },
     {
       id: "pkg-3",
-      title: "Career Positioning & Strategy",
+      title: "Career Positioning",
       durationMinutes: 30,
-      price: "₦25,000",
-      numericPrice: 25000,
+      price: "₦15,000",
+      numericPrice: 15000,
       description:
-        "Strategic advice on navigating promotions, team leadership, and cross-functional influence.",
+        "Strategic advice on your next career move, salary negotiation, support or portfolio positioning.",
     },
   ],
-  availableDates: [
-    {
-      dateString: "2026-06-07",
-      dayOfWeek: "SUN",
-      dayNumber: "07",
-      month: "Jun",
-      slotsCount: 8,
-      times: ["03:00PM", "03:30PM", "04:00PM", "04:30PM", "05:00PM"],
-    },
-    {
-      dateString: "2026-06-08",
-      dayOfWeek: "MON",
-      dayNumber: "08",
-      month: "Jun",
-      slotsCount: 6,
-      times: ["02:00PM", "03:00PM", "03:30PM", "05:00PM"],
-    },
-    {
-      dateString: "2026-06-09",
-      dayOfWeek: "TUE",
-      dayNumber: "09",
-      month: "Jun",
-      slotsCount: 4,
-      times: ["11:00AM", "01:30PM", "04:00PM", "04:30PM"],
-    },
-    {
-      dateString: "2026-06-10",
-      dayOfWeek: "WED",
-      dayNumber: "10",
-      month: "Jun",
-      slotsCount: 5,
-      times: ["10:00AM", "11:30AM", "02:00PM", "03:00PM"],
-    },
-    {
-      dateString: "2026-06-11",
-      dayOfWeek: "THU",
-      dayNumber: "11",
-      month: "Jun",
-      slotsCount: 7,
-      times: ["01:00PM", "02:30PM", "03:00PM", "04:00PM"],
-    },
-  ],
+  availableDates: upcomingDates(),
   groupSessions: [
     {
       id: "grp-1",
@@ -161,33 +138,23 @@ export const defaultMentorProfile: MentorDetailProfile = {
   ],
 };
 
-export const mentorsDirectory: Record<string, MentorDetailProfile> = {
-  "1": defaultMentorProfile,
-  "2": {
-    ...defaultMentorProfile,
-    id: "2",
-    name: "Amina Yusuf",
-    role: "VP of Product",
-    company: "Paystack",
-    location: "Lagos",
-    avatarUrl: "/mentors/mentor-2.png",
-  },
-  "3": {
-    ...defaultMentorProfile,
-    id: "3",
-    name: "Chidinma Okafor",
-    role: "Engineering Director",
-    company: "Moniepoint",
-    location: "London",
-    avatarUrl: "/mentors/mentor-3.png",
-  },
-  "4": {
-    ...defaultMentorProfile,
-    id: "4",
-    name: "Tunde Balogun",
-    role: "Head of Growth",
-    company: "Flutterwave",
-    location: "San Francisco",
-    avatarUrl: "/mentors/mentor-4.png",
-  },
-};
+export const mentorsDirectory: Record<string, MentorDetailProfile> = Object.fromEntries(
+  mockExploreMentors.map((mentor) => [
+    mentor.id,
+    {
+      ...defaultMentorProfile,
+      id: mentor.id,
+      name: mentor.name,
+      role: mentor.role,
+      company: mentor.company,
+      location: mentor.location,
+      sessionCount: mentor.sessionCount,
+      rating: mentor.rating,
+      reviewCount: mentor.reviewCount,
+      avatarUrl: mentor.avatarUrl,
+      bio: mentor.bio,
+      expertise: mentor.tags,
+      experience: [{ role: mentor.role, company: mentor.company, period: "Present" }],
+    },
+  ])
+);
