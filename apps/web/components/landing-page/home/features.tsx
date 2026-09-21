@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { LandingBenefitCard } from "../shared/benefit-card";
 
 export function LandingFeatures() {
   return (
@@ -45,44 +46,26 @@ export function LandingFeatures() {
             />
           </div>
 
-          {/* AI Powered Matching Card */}
-          <div
-            className="absolute left-[12%] top-[11%] z-20 flex flex-col justify-center rounded-2xl bg-[#EDE6E6] p-7 shadow-sm transition-transform hover:-translate-y-1"
-            style={{ width: "372px", height: "178px" }}
-          >
-            <h3 className="text-xl font-bold text-[#101828]">
-              AI Powered Matching
-            </h3>
-            <p className="mt-2.5 text-sm text-[#475467] leading-relaxed">
-              Semantic goal-based matching. We Surface mentors who&apos;ve walked your exact path, with a one-line explanation of why they fit.
-            </p>
-          </div>
+          <LandingBenefitCard
+            title="AI Powered Matching"
+            description="Semantic goal-based matching. We Surface mentors who've walked your exact path, with a one-line explanation of why they fit."
+            color="bg-[#EDE6E6]"
+            className="lg:absolute lg:left-[12%] lg:top-[11%]"
+          />
 
-          {/* 4. Top-Right: One-on-One Live Calls Card */}
-          <div
-            className="absolute right-[4%] top-[4%] z-20 flex flex-col justify-center rounded-2xl bg-[#FFEEE8] p-7 shadow-sm transition-transform hover:-translate-y-1"
-            style={{ width: "372px", height: "178px" }}
-          >
-            <h3 className="text-xl font-bold text-[#101828]">
-              One-on-One Live Calls
-            </h3>
-            <p className="mt-2.5 text-sm text-[#475467] leading-relaxed">
-              Turn your questions into actionable insights with dedicated live sessions tailored to your journey.
-            </p>
-          </div>
+          <LandingBenefitCard
+            title="One-on-One Live Calls"
+            description="Turn your questions into actionable insights with dedicated live sessions tailored to your journey."
+            color="bg-[#FFEEE8]"
+            className="lg:absolute lg:right-[4%] lg:top-[4%]"
+          />
 
-          {/* 5. Bottom-Left: Async QnA Card */}
-          <div
-            className="absolute left-[4%] bottom-[12%] z-20 flex flex-col justify-center rounded-2xl bg-[#FFEEE8] p-7 shadow-sm transition-transform hover:-translate-y-1"
-            style={{ width: "372px", height: "178px" }}
-          >
-            <h3 className="text-xl font-bold text-[#101828]">
-              Async QnA
-            </h3>
-            <p className="mt-2.5 text-sm text-[#475467] leading-relaxed">
-              Send questions to your mentor anytime and receive personalized guidance at your convenience.
-            </p>
-          </div>
+          <LandingBenefitCard
+            title="Async QnA"
+            description="Send questions to your mentor anytime and receive personalized guidance at your convenience."
+            color="bg-[#FFEEE8]"
+            className="lg:absolute lg:left-[4%] lg:bottom-[12%]"
+          />
 
           {/* 6. Bottom-Right: Vetted Experts Only Card & Photo */}
           {/* Mentee Photo */}
@@ -98,18 +81,12 @@ export function LandingFeatures() {
             />
           </div>
 
-          {/* Vetted Experts Card */}
-          <div
-            className="absolute right-[3%] bottom-[23%] z-20 flex flex-col justify-center rounded-2xl bg-[#EDE6E6] p-7 shadow-sm transition-transform hover:-translate-y-1"
-            style={{ width: "372px", height: "178px" }}
-          >
-            <h3 className="text-xl font-bold text-[#101828]">
-              Vetted Experts Only
-            </h3>
-            <p className="mt-2.5 text-sm text-[#475467] leading-relaxed">
-              Gain access to accomplished professionals selected for their expertise and real-world experience.
-            </p>
-          </div>
+          <LandingBenefitCard
+            title="Vetted Experts Only"
+            description="Gain access to accomplished professionals selected for their expertise and real-world experience."
+            color="bg-[#EDE6E6]"
+            className="lg:absolute lg:right-[3%] lg:bottom-[23%]"
+          />
         </div>
 
         {/* Mobile / Small Screen Responsive Layout */}

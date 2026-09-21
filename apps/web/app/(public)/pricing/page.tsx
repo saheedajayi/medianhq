@@ -7,6 +7,7 @@ export const metadata: Metadata = {
     "Explore Median Pro tiers and transparent session pricing. Keep what's yours and grow your impact.",
 };
 
-export default function PricingPage() {
-  return <LandingPricingPage />;
+export default async function PricingPage({ searchParams }: { searchParams: Promise<{ audience?: string }> }) {
+  const { audience } = await searchParams;
+  return <LandingPricingPage audience={audience === "mentor" ? "mentor" : "mentee"} />;
 }

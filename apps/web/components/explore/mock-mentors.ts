@@ -1,5 +1,14 @@
 import { ExploreMentor } from "./types";
 
+function getNextAvailability(daysAhead: number, time: string) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  return {
+    relative: daysAhead === 1 ? "tomorrow" : `in ${daysAhead} days`,
+    formattedDate: `${date.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "long" })} ${time}`,
+  };
+}
+
 export const mockExploreMentors: ExploreMentor[] = [
   {
     id: "1",
@@ -15,10 +24,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Product Strategy", "Fintech", "Healthtech"],
     avatarUrl: "/mentors/mentor-1.png",
     isFeatured: true,
-    nextAvailability: {
-      relative: "in 3 days",
-      formattedDate: "Wed, 12 August 11:30 AM",
-    },
+    nextAvailability: getNextAvailability(3, "11:30 AM"),
     price: "Free",
   },
   {
@@ -35,10 +41,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Product Strategy", "Fintech", "Payments"],
     avatarUrl: "/mentors/mentor-2.png",
     isFeatured: true,
-    nextAvailability: {
-      relative: "in 2 days",
-      formattedDate: "Thu, 13 August 02:00 PM",
-    },
+    nextAvailability: getNextAvailability(2, "02:00 PM"),
     price: "N25,000",
   },
   {
@@ -55,10 +58,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Engineering Leadership", "Cloud Architecture", "Career Growth"],
     avatarUrl: "/mentors/mentor-3.png",
     isFeatured: true,
-    nextAvailability: {
-      relative: "tomorrow",
-      formattedDate: "Tue, 11 August 04:30 PM",
-    },
+    nextAvailability: getNextAvailability(1, "04:30 PM"),
     price: "Free",
   },
   {
@@ -75,10 +75,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Growth Marketing", "B2B Sales", "Fintech"],
     avatarUrl: "/mentors/mentor-4.png",
     isFeatured: true,
-    nextAvailability: {
-      relative: "in 4 days",
-      formattedDate: "Fri, 14 August 10:00 AM",
-    },
+    nextAvailability: getNextAvailability(4, "10:00 AM"),
     price: "N30,000",
   },
   {
@@ -95,10 +92,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Design Systems", "UX Research", "Figma"],
     avatarUrl: "/mentors/mentor-2.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 3 days",
-      formattedDate: "Wed, 12 August 01:00 PM",
-    },
+    nextAvailability: getNextAvailability(3, "01:00 PM"),
     price: "Free",
   },
   {
@@ -115,10 +109,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Financial Modeling", "Venture Capital", "Corporate Finance"],
     avatarUrl: "/mentors/mentor-1.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 5 days",
-      formattedDate: "Sat, 15 August 11:00 AM",
-    },
+    nextAvailability: getNextAvailability(5, "11:00 AM"),
     price: "N20,000",
   },
   {
@@ -135,10 +126,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Strategy", "Management", "Operations"],
     avatarUrl: "/mentors/mentor-3.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 2 days",
-      formattedDate: "Thu, 13 August 03:30 PM",
-    },
+    nextAvailability: getNextAvailability(2, "03:30 PM"),
     price: "N35,000",
   },
   {
@@ -155,10 +143,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Product Management", "AI/ML", "Strategy"],
     avatarUrl: "/mentors/mentor-4.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 3 days",
-      formattedDate: "Wed, 12 August 05:00 PM",
-    },
+    nextAvailability: getNextAvailability(3, "05:00 PM"),
     price: "Free",
   },
   {
@@ -175,10 +160,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Investment Banking", "Valuation", "Career Coaching"],
     avatarUrl: "/mentors/mentor-2.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 4 days",
-      formattedDate: "Fri, 14 August 02:00 PM",
-    },
+    nextAvailability: getNextAvailability(4, "02:00 PM"),
     price: "Free",
   },
   {
@@ -195,10 +177,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Operations", "Marketplaces", "Growth Strategy"],
     avatarUrl: "/mentors/mentor-1.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 3 days",
-      formattedDate: "Wed, 12 August 10:00 AM",
-    },
+    nextAvailability: getNextAvailability(3, "10:00 AM"),
     price: "N20,000",
   },
   {
@@ -215,10 +194,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["Case Prep", "Management Consulting", "Leadership"],
     avatarUrl: "/mentors/mentor-3.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 6 days",
-      formattedDate: "Sun, 16 August 01:30 PM",
-    },
+    nextAvailability: getNextAvailability(6, "01:30 PM"),
     price: "N25,000",
   },
   {
@@ -235,10 +211,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     tags: ["System Design", "Cloud Infrastructure", "DevOps"],
     avatarUrl: "/mentors/mentor-4.png",
     isFeatured: false,
-    nextAvailability: {
-      relative: "in 2 days",
-      formattedDate: "Thu, 13 August 11:00 AM",
-    },
+    nextAvailability: getNextAvailability(2, "11:00 AM"),
     price: "Free",
   },
 ];

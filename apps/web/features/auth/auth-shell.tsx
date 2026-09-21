@@ -146,7 +146,7 @@ function AuthShellInner({ children }: { children: ReactNode }) {
 
         <div className="relative z-10 flex h-full flex-col overflow-y-auto overscroll-contain">
           <div className="flex min-h-full flex-1 px-4 py-8 sm:px-10">
-            <div className="m-auto w-full max-w-[552px] min-w-0 overflow-hidden">
+            <div className={`m-auto w-full ${isOnboardingPath ? "max-w-[552px]" : "max-w-[480px]"} min-w-0`}>
               <div className="mb-8 flex w-full justify-center lg:hidden">
                 <Link href="/" aria-label="Median home">
                   <Image
@@ -169,7 +169,7 @@ function AuthShellInner({ children }: { children: ReactNode }) {
                   Back
                 </button>
               )}
-              <div className="rounded-3xl bg-white p-4 sm:p-8 shadow-sm w-full max-w-full min-w-0 overflow-hidden">
+              <div className="rounded-[28px] bg-white p-6 sm:p-8 md:p-9 shadow-[0px_4px_24px_rgba(0,0,0,0.03)] w-full max-w-full min-w-0">
                 {isCheckingAccess ? (
                   <p className="py-10 text-center text-sm text-[#667085]">
                     Checking your account…
@@ -178,6 +178,8 @@ function AuthShellInner({ children }: { children: ReactNode }) {
                   children
                 )}
               </div>
+
+              <div id="auth-footer-slot" />
             </div>
           </div>
         </div>

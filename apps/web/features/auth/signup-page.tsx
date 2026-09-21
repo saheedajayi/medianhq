@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -44,6 +45,11 @@ export function SignupPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -128,37 +134,37 @@ export function SignupPage() {
 
   return (
     <>
-      <header className="mb-10 text-center">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#4b100d]">
+      <header className="mb-6 text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-[#4E0703] sm:text-[26px]">
           Join Median
         </h1>
-        <p className="mt-2 text-base text-[#344054]">
-          Grow with clarity and confidence.
+        <p className="mt-2 text-sm text-[#475467]">
+          Grow with and clarity and confidence.
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} noValidate className="grid gap-4">
+      <form onSubmit={handleSubmit} noValidate className="grid gap-3.5">
         <a
-          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/linkedin`}
-          className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
+          href={authService.getOAuthUrl("linkedin")}
+          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
         >
           Continue with LinkedIn
         </a>
         <a
-          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/google`}
-          className="flex h-12 items-center justify-center rounded-lg border border-[#cbd5e1] bg-white text-base font-medium text-[#26344d] shadow-xs transition-colors hover:bg-slate-50"
+          href={authService.getOAuthUrl("google")}
+          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
         >
           Continue with Google
         </a>
 
-        <div className="flex items-center gap-3 py-1 text-sm text-[#b5bdcc]">
-          <span className="h-px flex-1 bg-[#e1e5eb]" />
+        <div className="flex items-center gap-3 py-1 text-sm text-[#98A2B3]">
+          <span className="h-px flex-1 bg-[#EAECF0]" />
           Or
-          <span className="h-px flex-1 bg-[#e1e5eb]" />
+          <span className="h-px flex-1 bg-[#EAECF0]" />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <FormField id="firstName" label="First name" compact={false} error={errors.firstName?.[0]}>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField id="firstName" label="First name" error={errors.firstName?.[0]}>
             <Input
               id="firstName"
               name="firstName"
@@ -169,7 +175,7 @@ export function SignupPage() {
               aria-invalid={!!errors.firstName}
             />
           </FormField>
-          <FormField id="lastName" label="Last name" compact={false} error={errors.lastName?.[0]}>
+          <FormField id="lastName" label="Last name" error={errors.lastName?.[0]}>
             <Input
               id="lastName"
               name="lastName"
@@ -196,7 +202,7 @@ export function SignupPage() {
           />
         </FormField>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           <FormField id="signupPassword" label="Password" error={errors.password?.[0]}>
             <PasswordInput
               id="signupPassword"
@@ -225,22 +231,45 @@ export function SignupPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 h-12 rounded-full text-base font-medium text-white"
+          className="mt-2 h-12 w-full cursor-pointer rounded-full bg-[#FF5514] text-base font-medium text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.99]"
         >
-          {isSubmitting ? "Creating account..." : "Create Account"}
+          {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
 
-        <p className="text-center text-sm text-[#141c2e]">
+        <p className="mt-1 text-center text-sm font-medium text-[#101828]">
           Already have an account?{" "}
           <Link
             href="/signin"
-            className="font-medium hover:underline"
-            style={{ color: '#ff5514' }}
+            className="font-semibold !text-[#FF5514] hover:underline"
           >
             Log in
           </Link>
         </p>
       </form>
+
+      {mounted && typeof document !== "undefined" && document.getElementById("auth-footer-slot")
+        ? createPortal(
+            <div className="mt-6 text-center text-sm text-[#475467] leading-relaxed">
+              <p>By continuing, you agree to Median’s</p>
+              <p>
+                <Link
+                  href="/terms"
+                  className="font-medium !text-[#FF5514] underline decoration-[#FF5514]/40 underline-offset-2 transition-all hover:text-[#E84D12] hover:decoration-[#E84D12]"
+                >
+                  terms of service
+                </Link>{" "}
+                &amp;{" "}
+                <Link
+                  href="/privacy"
+                  className="font-medium !text-[#FF5514] underline decoration-[#FF5514]/40 underline-offset-2 transition-all hover:text-[#E84D12] hover:decoration-[#E84D12]"
+                >
+                  privacy policy
+                </Link>
+              </p>
+            </div>,
+            document.getElementById("auth-footer-slot")!
+          )
+        : null}
     </>
   );
 }

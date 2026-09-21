@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { LandingAudience } from "../audience";
 
 const FAQS = [
   {
@@ -45,8 +46,11 @@ const FAQS = [
   },
 ];
 
-export function LandingFAQ() {
-  const [openIndices, setOpenIndices] = useState<number[]>([1, 2, 3, 4, 5, 6, 7]);
+export function LandingFAQ({ audience = "mentee" }: { audience?: LandingAudience }) {
+  const [openIndices, setOpenIndices] = useState<number[]>([0]);
+  const faqs = audience === "mentor"
+    ? FAQS.filter((faq) => faq.question !== "What if a mentor doesn't show up?")
+    : FAQS;
 
   const toggleIndex = (index: number) => {
     setOpenIndices((prev) =>
@@ -64,7 +68,7 @@ export function LandingFAQ() {
 
         {/* Accordion list with #FFD9A8 dividers */}
         <div className="mt-14 divide-y divide-[#FFD9A8] border-b border-[#FFD9A8]">
-          {FAQS.map((faq, index) => {
+          {faqs.map((faq, index) => {
             const isOpen = openIndices.includes(index);
             return (
               <div key={faq.question} className="py-5 sm:py-6">

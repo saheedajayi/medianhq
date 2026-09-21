@@ -16,14 +16,14 @@ export function MentorProfileTabs({
   onTabChange,
 }: MentorProfileTabsProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Segmented Tab Bar */}
       <div>
-        <div className="inline-flex h-11 items-center gap-1 rounded-full border border-[#EAECF0]/70 bg-[#F7F8FB] p-1">
+        <div className="inline-flex h-9 items-center gap-1 rounded-full border border-[#EAECF0]/70 bg-[#F7F8FB] p-1">
           <button
             type="button"
             onClick={() => onTabChange("profile")}
-            className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-150 ${
+            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-150 ${
               activeTab === "profile"
                 ? "bg-white font-semibold text-[#FF5500] shadow-2xs"
                 : "text-[#475467] hover:text-[#101828]"
@@ -34,7 +34,7 @@ export function MentorProfileTabs({
           <button
             type="button"
             onClick={() => onTabChange("reviews")}
-            className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-150 ${
+            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-150 ${
               activeTab === "reviews"
                 ? "bg-white font-semibold text-[#FF5500] shadow-2xs"
                 : "text-[#475467] hover:text-[#101828]"
@@ -47,9 +47,9 @@ export function MentorProfileTabs({
 
       {/* Tab 1: Profile View (Bio, Expertise, Experience) */}
       {activeTab === "profile" && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {/* Bio Section Card */}
-          <div className="rounded-2xl border border-[#F2F2F7] bg-white p-6 shadow-2xs">
+          <div className="rounded-2xl border border-[#F2F2F7] bg-white p-5">
             <h2 className="text-base font-bold text-[#101828]">Bio</h2>
             <p className="mt-3 text-sm leading-relaxed text-[#475467]">
               {mentor.bio}
@@ -57,7 +57,7 @@ export function MentorProfileTabs({
           </div>
 
           {/* Expertise Section Card */}
-          <div className="rounded-2xl border border-[#F2F2F7] bg-white p-6 shadow-2xs">
+          <div className="rounded-2xl border border-[#F2F2F7] bg-white p-5">
             <h2 className="text-base font-bold text-[#101828]">Expertise</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {mentor.expertise.map((item) => (
@@ -72,7 +72,7 @@ export function MentorProfileTabs({
           </div>
 
           {/* Experience Timeline Card */}
-          <div className="rounded-2xl border border-[#F2F2F7] bg-white p-6 shadow-2xs">
+          <div className="rounded-2xl border border-[#F2F2F7] bg-white p-5">
             <h2 className="text-base font-bold text-[#101828]">Experience</h2>
             <div className="mt-4 flex flex-col gap-5">
               {mentor.experience.map((item, index) => (
@@ -151,7 +151,7 @@ export function MentorProfileTabs({
                 </div>
 
                 <p className="text-sm leading-relaxed text-[#475467]">
-                  "{review.comment}"
+                  &ldquo;{review.comment}&rdquo;
                 </p>
               </div>
             ))}

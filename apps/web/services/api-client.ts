@@ -1,10 +1,10 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
 
 const API_TIMEOUT = 15_000;
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
-  .replace(/\/$/, "");
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
-const API_BASE_PATH = `/api/${API_VERSION}`;
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+export const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
+export const API_BASE_PATH = `/api/${API_VERSION}`;
+export const API_URL = `${API_BASE_URL}${API_BASE_PATH}`;
 
 export interface ApiError {
   status: number;

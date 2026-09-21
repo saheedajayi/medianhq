@@ -1,4 +1,4 @@
-import { apiClient } from "@/services/api-client";
+import { apiClient, API_URL } from "@/services/api-client";
 import type {
   AuthResponse,
   AuthUser,
@@ -13,6 +13,10 @@ import type {
 const AUTH_PATH = "/auth";
 
 export const authService = {
+  getOAuthUrl(provider: "google" | "linkedin") {
+    return `${API_URL}${AUTH_PATH}/${provider}`;
+  },
+
   register(payload: RegisterPayload) {
     return apiClient.post<AuthResponse>(`${AUTH_PATH}/register`, payload);
   },

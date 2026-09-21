@@ -14,6 +14,11 @@ describe('MentorsService', () => {
       upsertProfileByUserId: jest.fn(),
       findMenteeProfileByUserId: jest.fn(),
       findApprovedMatches: jest.fn(),
+      findMentorById: jest.fn(),
+      buildExploreWhereClause: jest.fn(),
+      findExploreMentors: jest.fn(),
+      countExploreMentors: jest.fn(),
+      findFeaturedMentors: jest.fn(),
     };
 
     service = new MentorsService(repository as unknown as MentorsRepository);
@@ -48,13 +53,7 @@ describe('MentorsService', () => {
         location: 'Lagos, Nigeria',
         bio: 'Passionate about software architecture.',
         cvUrl: 'https://res.cloudinary.com/demo/cv.pdf',
-        headline: null,
-        linkedinUrl: null,
-        pricePerSession: 0,
-        currency: 'NGN',
         status: MentorStatus.PENDING_REVIEW,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       repository.findUserForOnboarding.mockResolvedValue(mockUser);
@@ -62,62 +61,61 @@ describe('MentorsService', () => {
 
       const result = await service.apply('user-1', validDto);
 
+      expect(repository.findUserForOnboarding).toHaveBeenCalledWith('user-1');
+      expect(repository.upsertProfileByUserId).toHaveBeenCalledWith('user-1', validDto);
       expect(result).toEqual({
         success: true,
         message: 'Application submitted successfully',
         profile: mockProfile,
       });
-
-      expect(repository.findUserForOnboarding).toHaveBeenCalledWith('user-1');
-      expect(repository.upsertProfileByUserId).toHaveBeenCalledWith('user-1', validDto);
     });
 
-    it('should throw ForbiddenException if email is not verified', async () => {
-      repository.findUserForOnboarding.mockResolvedValue({
+    it('should throw ForbiddenException if user email is not verified', async () => {
+      const mockUser = {
         emailVerifiedAt: null,
         role: UserRole.MENTOR,
         menteeProfile: null,
         mentorProfile: null,
-      });
+      };
+
+      repository.findUserForOnboarding.mockResolvedValue(mockUser);
 
       await expect(service.apply('user-1', validDto)).rejects.toThrow(
         ForbiddenException,
       );
-      await expect(service.apply('user-1', validDto)).rejects.toThrow(
-        'Verify your email before starting onboarding.',
-      );
+      expect(repository.upsertProfileByUserId).not.toHaveBeenCalled();
     });
 
-    it('should throw ForbiddenException if user is registered as a Mentee', async () => {
-      repository.findUserForOnboarding.mockResolvedValue({
+    it('should throw ForbiddenException if user is already a mentee', async () => {
+      const mockUser = {
         emailVerifiedAt: new Date(),
         role: UserRole.MENTEE,
         menteeProfile: { id: 'mentee-1' },
         mentorProfile: null,
-      });
+      };
+
+      repository.findUserForOnboarding.mockResolvedValue(mockUser);
 
       await expect(service.apply('user-1', validDto)).rejects.toThrow(
         ForbiddenException,
       );
-      await expect(service.apply('user-1', validDto)).rejects.toThrow(
-        'Your account is currently registered as a Mentee.',
-      );
+      expect(repository.upsertProfileByUserId).not.toHaveBeenCalled();
     });
 
-    it('should throw ConflictException if mentor application is already APPROVED', async () => {
-      repository.findUserForOnboarding.mockResolvedValue({
+    it('should throw ConflictException if mentor application is already approved', async () => {
+      const mockUser = {
         emailVerifiedAt: new Date(),
         role: UserRole.MENTOR,
         menteeProfile: null,
         mentorProfile: { id: 'mentor-1', status: MentorStatus.APPROVED },
-      });
+      };
+
+      repository.findUserForOnboarding.mockResolvedValue(mockUser);
 
       await expect(service.apply('user-1', validDto)).rejects.toThrow(
         ConflictException,
       );
-      await expect(service.apply('user-1', validDto)).rejects.toThrow(
-        'Your mentor application has already been approved.',
-      );
+      expect(repository.upsertProfileByUserId).not.toHaveBeenCalled();
     });
 
     it('should rethrow errors occurring during upsert operation', async () => {
@@ -218,6 +216,119 @@ describe('MentorsService', () => {
           },
         ],
       });
+    });
+  });
+
+  describe('explore', () => {
+    it('should return paginated explore mentors', async () => {
+      const mockMentors = [
+        {
+          id: 'mentor-1',
+          userId: 'user-1',
+          headline: 'Leading product design',
+          bio: 'Passionate about mentoring',
+          industry: 'Technology',
+          experience: '5-10 years',
+          company: 'Andela',
+          jobTitle: 'Senior Designer',
+          location: 'London',
+          pricePerSession: 0,
+          currency: 'NGN',
+          user: {
+            id: 'user-1',
+            firstName: 'Abdulrahman',
+            lastName: 'Hassan',
+            email: 'abdul@example.com',
+            mentorBookings: [],
+          },
+        },
+      ];
+
+      repository.buildExploreWhereClause.mockReturnValue({ status: 'APPROVED' });
+      repository.findExploreMentors.mockResolvedValue(mockMentors);
+      repository.countExploreMentors.mockResolvedValue(1);
+
+      const result = await service.explore({ category: 'Tech' });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].name).toBe('Abdulrahman Hassan');
+      expect(result.data[0].category).toBe('Tech');
+      expect(result.data[0].price).toBe('Free');
+      expect(result.pagination).toEqual({
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+      });
+    });
+  });
+
+  describe('getFeatured', () => {
+    it('should return featured mentors', async () => {
+      const mockMentors = [
+        {
+          id: 'mentor-1',
+          industry: 'Finance',
+          jobTitle: 'VP Finance',
+          company: 'Paystack',
+          location: 'Lagos',
+          pricePerSession: 25000,
+          currency: 'NGN',
+          user: {
+            firstName: 'Amina',
+            lastName: 'Yusuf',
+            mentorBookings: [],
+          },
+        },
+      ];
+
+      repository.findFeaturedMentors.mockResolvedValue(mockMentors);
+
+      const result = await service.getFeatured(2);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].isFeatured).toBe(true);
+      expect(result[0].category).toBe('Finance');
+      expect(result[0].price).toBe('₦25,000');
+    });
+  });
+
+  describe('getMentorProfile', () => {
+    it('should return mentor profile by ID', async () => {
+      const mockMentor = {
+        id: 'mentor-1',
+        bio: 'Mentor bio',
+        experience: '5-10 years',
+        company: 'Moniepoint',
+        jobTitle: 'Engineering Director',
+        location: 'Lagos',
+        pricePerSession: 0,
+        currency: 'NGN',
+        user: {
+          firstName: 'Chidinma',
+          lastName: 'Okafor',
+          mentorBookings: [
+            {
+              review: {
+                id: 'rev-1',
+                rating: 5,
+                comment: 'Great session!',
+                author: { id: 'u2', firstName: 'Tunde', lastName: 'A' },
+                createdAt: new Date(),
+              },
+            },
+          ],
+        },
+      };
+
+      repository.findMentorById.mockResolvedValue(mockMentor);
+
+      const result = await service.getMentorProfile('mentor-1');
+
+      expect(result.name).toBe('Chidinma Okafor');
+      expect(result.rating).toBe(5);
+      expect(result.reviews).toHaveLength(1);
+      expect(result.reviews[0].comment).toBe('Great session!');
     });
   });
 });

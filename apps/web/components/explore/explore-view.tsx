@@ -124,7 +124,7 @@ export function ExploreView({
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-12">
+    <div className="relative flex flex-col gap-5 overflow-hidden rounded-2xl border border-[#EAECF0] bg-white px-5 py-6 pb-12 sm:px-7 lg:px-8">
       {/* 1. Header: Page title, subtitle, Search bar and Filters button */}
       <ExploreHeader
         searchQuery={filters.search}
@@ -145,16 +145,13 @@ export function ExploreView({
       {filteredMentors.length === 0 ? (
         <div className="flex flex-col gap-8">
           {/* Empty search notice */}
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <div className="relative flex size-14 items-center justify-center rounded-full bg-[#FFEEE8]">
-              <div className="size-5 rounded-full border-2 border-[#FF5500]/70" />
-              <div className="absolute right-3.5 bottom-3.5 size-1.5 rounded-full bg-[#FF5500]" />
-            </div>
-            <h3 className="mt-4 text-lg font-bold text-[#101828]">
+          <div className="flex flex-col items-center justify-center py-4 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF0EB] text-2xl text-[#FF5500]">⌕</div>
+            <h3 className="mt-3 text-lg font-semibold text-[#101828]">
               No mentors found
             </h3>
             <p className="mt-1 max-w-sm text-sm text-[#667085]">
-              Try adjusting your filters or search terms to find the right mentor for you.
+              Try adjusting your filters or search terms<br />to find the right mentor for you.
             </p>
           </div>
 
@@ -192,7 +189,7 @@ export function ExploreView({
         </>
       )}
 
-      {/* 5. Filters Dialog Modal */}
+      {/* Filters panel */}
       <FiltersDialog
         isOpen={isFiltersOpen}
         onClose={() => setIsFiltersOpen(false)}
