@@ -18,6 +18,7 @@ import {
   Add,
 } from "iconsax-react";
 import { authService } from "@/services/auth";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface NavItem {
   label: string;
@@ -26,7 +27,7 @@ interface NavItem {
   variant?: "Outline" | "Linear";
 }
 
-const mainNavItems: NavItem[] = [
+const menteeNavItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: Element4, variant: "Outline" },
   { label: "Explore", href: "/mentee/explore", icon: Global, variant: "Outline" },
   { label: "Sessions", href: "/mentee/bookings", icon: Calendar, variant: "Outline" },
@@ -36,15 +37,30 @@ const mainNavItems: NavItem[] = [
   { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline" },
 ];
 
+const mentorNavItems: NavItem[] = [
+  { label: "Dashboard", href: "/dashboard", icon: Element4, variant: "Outline" },
+  { label: "Sessions", href: "/mentor/sessions", icon: Calendar, variant: "Outline" },
+  { label: "Bookings", href: "/mentor/bookings", icon: Calendar, variant: "Outline" },
+  { label: "Availability", href: "/mentor/availability", icon: Calendar, variant: "Outline" },
+  { label: "Messages", href: "/mentor/messages", icon: Messages2, variant: "Outline" },
+  { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline" },
+  { label: "Earnings", href: "/mentor/earnings", icon: MedalStar, variant: "Outline" },
+  { label: "Community", href: "/mentor/community", icon: Profile2User, variant: "Outline" },
+  { label: "Achievements", href: "/mentor/achievements", icon: MedalStar, variant: "Outline" },
+];
+
 interface DashboardSidebarProps {
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
+  userRole?: "MENTEE" | "MENTOR" | "ADMIN" | null;
 }
 
-export function DashboardSidebar({ isMobileOpen = false, onMobileClose }: DashboardSidebarProps) {
+export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
+  const isMentor = (userRole ?? user?.role) === "MENTOR";
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -90,7 +106,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose }: Dashbo
 
         {/* Main Navigation Items */}
         <nav className="flex flex-col gap-1">
-          {mainNavItems.map((item) => {
+          {(isMentor ? mentorNavItems : menteeNavItems).map((item) => {
             const Icon = item.icon;
             const isActive =
               pathname === item.href ||

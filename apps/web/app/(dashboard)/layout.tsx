@@ -20,6 +20,7 @@ export default function DashboardLayout({
   const isExploreRoute = pathname === "/explore" || pathname === "/mentee/explore" || pathname?.startsWith("/mentors/") || pathname?.startsWith("/mentee/mentors/");
   const { data: user } = useCurrentUser();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [role, setRole] = useState<"MENTEE" | "MENTOR" | "ADMIN" | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -31,11 +32,23 @@ export default function DashboardLayout({
         if (isCancelled) return;
 
         const stage = response.data.accountStage;
+        setRole(response.data.role);
         const isAllowedOnDashboard = stage === "READY" || stage === "MENTOR_PENDING";
 
         if (!isAllowedOnDashboard) {
           const destination = getAuthDestination(response.data);
           router.replace(destination);
+          return;
+        }
+
+        const mentorRoute = pathname?.startsWith("/mentor/");
+        if (mentorRoute && response.data.role !== "MENTOR") {
+          router.replace("/dashboard");
+          return;
+        }
+        const menteeRoute = pathname?.startsWith("/mentee/") || pathname === "/explore";
+        if (menteeRoute && response.data.role === "MENTOR") {
+          router.replace("/mentor/sessions");
           return;
         }
 
@@ -49,7 +62,7 @@ export default function DashboardLayout({
     return () => {
       isCancelled = true;
     };
-  }, [router]);
+  }, [pathname, router]);
 
   if (isCheckingAuth) {
     return (
@@ -60,6 +73,7 @@ export default function DashboardLayout({
   }
 
   const avatarUrl = user?.menteeProfile?.avatarUrl;
+  const isMentor = user?.role === "MENTOR";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#FAFAFA] text-[#101828]">
@@ -67,6 +81,7 @@ export default function DashboardLayout({
       <DashboardSidebar
         isMobileOpen={isMobileNavOpen}
         onMobileClose={() => setIsMobileNavOpen(false)}
+        userRole={role}
       />
 
       {/* Main Content Area */}
@@ -144,6 +159,7 @@ export default function DashboardLayout({
 
           {/* Right Action on Tablet and Desktop: Book a Session button */}
           <div className="hidden sm:flex items-center gap-4 ml-auto">
+            {!isMentor && (
             <Link
               href="/mentee/bookings/new"
               className="inline-flex items-center gap-2 rounded-full bg-[#FF5500] px-5 py-2.5 text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
@@ -151,6 +167,7 @@ export default function DashboardLayout({
               <Calendar size="18" variant="Bulk" color="#FFFFFF" className="shrink-0" />
               <span className="text-white">Book a session</span>
             </Link>
+            )}
           </div>
         </header>
 

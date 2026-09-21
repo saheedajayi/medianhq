@@ -61,7 +61,7 @@ export function NewPasswordPage({ token }: { token: string }) {
         toast.success("Password reset successfully", {
           description: "You can now log in with your new password.",
         });
-        router.push("/login");
+        router.push("/signin");
       })
       .catch((error) => {
         toast.error("Unable to reset password", {

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDown2 } from "iconsax-react";
+import { cn } from "@/lib/utils";
 import { ExploreMentor, SortOption } from "./types";
 import { MentorCard } from "./mentor-card";
 
@@ -10,6 +11,7 @@ interface MentorsGridSectionProps {
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
   onResetFilters?: () => void;
+  isFiltersOpen?: boolean;
 }
 
 const sortOptions: { label: string; value: SortOption }[] = [
@@ -25,6 +27,7 @@ export function MentorsGridSection({
   sortBy,
   onSortChange,
   onResetFilters,
+  isFiltersOpen = false,
 }: MentorsGridSectionProps) {
   return (
     <section className="flex flex-col gap-5">
@@ -59,7 +62,12 @@ export function MentorsGridSection({
 
       {/* Grid of Mentors or 'No mentors found' recovery state */}
       {mentors.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6 md:grid-cols-2",
+            isFiltersOpen ? "lg:grid-cols-2" : "lg:grid-cols-3",
+          )}
+        >
           {mentors.map((mentor) => (
             <MentorCard key={mentor.id} mentor={mentor} />
           ))}

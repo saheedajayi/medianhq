@@ -48,8 +48,7 @@ export default function DashboardPage() {
         )
       )}
 
-      {/* Mentors For You Recommendation Grid */}
-      <MentorsForYouSection />
+      {!isMentor && <MentorsForYouSection />}
 
       {/* Bottom Grid: Upcoming Sessions & Action Items */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

@@ -58,7 +58,7 @@ export function ResetPasswordPage() {
           description: "Check your email for the reset link.",
         });
         // Optional: redirect to login or show success state
-        // router.push("/login");
+        // router.push("/signin");
       })
       .catch((error) => {
         toast.error("Unable to send reset link", {
