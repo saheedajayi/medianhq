@@ -17,11 +17,15 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isExploreRoute = pathname === "/explore" || pathname === "/mentee/explore" || pathname?.startsWith("/mentors/") || pathname?.startsWith("/mentee/mentors/");
+  const isExploreRoute =
+    pathname === "/explore" ||
+    pathname === "/mentee/explore" ||
+    pathname?.startsWith("/mentors/") ||
+    pathname?.startsWith("/mentee/mentors/");
   const { data: user } = useCurrentUser();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [role, setRole] = useState<"MENTEE" | "MENTOR" | "ADMIN" | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const effectiveRole = user?.role ?? role;
 
   useEffect(() => {
     let isCancelled = false;
@@ -51,8 +55,6 @@ export default function DashboardLayout({
           router.replace("/mentor/sessions");
           return;
         }
-
-        setIsCheckingAuth(false);
       })
       .catch(() => {
         if (isCancelled) return;
@@ -64,14 +66,6 @@ export default function DashboardLayout({
     };
   }, [pathname, router]);
 
-  if (isCheckingAuth) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#FAFAFA]">
-        <p className="text-sm text-[#667085]">Checking access...</p>
-      </div>
-    );
-  }
-
   const avatarUrl = user?.menteeProfile?.avatarUrl;
   const isMentor = user?.role === "MENTOR";
 
@@ -81,7 +75,7 @@ export default function DashboardLayout({
       <DashboardSidebar
         isMobileOpen={isMobileNavOpen}
         onMobileClose={() => setIsMobileNavOpen(false)}
-        userRole={role}
+        userRole={effectiveRole}
       />
 
       {/* Main Content Area */}

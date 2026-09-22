@@ -22,6 +22,7 @@ import type {
 
 type AuthPayload = {
   sessionToken: string;
+  refreshToken: string;
   user: AuthUser;
   emailSent: boolean;
 };
@@ -29,10 +30,13 @@ type AuthPayload = {
 type SessionPayload = {
   sub: string;
   role?: UserRole;
+  accountStage?: string;
   exp: number;
+  type?: 'access' | 'refresh';
 };
 
-const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
+const ACCESS_TOKEN_TTL_SECONDS = 60 * 15; // 15 minutes
+const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 const PASSWORD_MIN_LENGTH = 8;
 
 @Injectable()
@@ -72,7 +76,8 @@ export class AuthService {
     }
 
     return {
-      sessionToken: this.signToken(user),
+      sessionToken: this.signAccessToken(user),
+      refreshToken: this.signRefreshToken(user),
       user: this.toAuthUser(user),
       emailSent,
     };
@@ -123,7 +128,8 @@ export class AuthService {
     }
 
     return {
-      sessionToken: this.signToken(user),
+      sessionToken: this.signAccessToken(user),
+      refreshToken: this.signRefreshToken(user),
       user: this.toAuthUser(user),
       emailSent,
     };
@@ -178,7 +184,8 @@ export class AuthService {
     }
 
     return {
-      sessionToken: this.signToken(user!),
+      sessionToken: this.signAccessToken(user!),
+      refreshToken: this.signRefreshToken(user!),
       user: this.toAuthUser(user!),
       emailSent: true,
     };
@@ -215,7 +222,8 @@ export class AuthService {
     }
 
     return {
-      sessionToken: this.signToken(updatedUser),
+      sessionToken: this.signAccessToken(updatedUser),
+      refreshToken: this.signRefreshToken(updatedUser),
       user: this.toAuthUser(updatedUser),
     };
   }
@@ -382,12 +390,42 @@ export class AuthService {
     );
   }
 
+  async refreshAccessToken(refreshToken: string | undefined): Promise<{
+    sessionToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  }> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required.');
+    }
+
+    const payload = this.verifyRefreshToken(refreshToken);
+    const user = await this.authRepository.findById(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    return {
+      sessionToken: this.signAccessToken(user),
+      refreshToken: this.signRefreshToken(user),
+      user: this.toAuthUser(user),
+    };
+  }
+
   private signToken(user: User) {
-    const expiresAt = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
+    return this.signAccessToken(user);
+  }
+
+  private signAccessToken(user: User, accountStage?: string) {
+    const expiresAt = Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SECONDS;
+    const stage = accountStage || getAccountStage(user);
     const payload = Buffer.from(
       JSON.stringify({
         sub: user.id,
         role: user.role,
+        accountStage: stage,
+        type: 'access',
         exp: expiresAt,
       }),
       'utf8',
@@ -397,6 +435,69 @@ export class AuthService {
       .digest('base64url');
 
     return `${payload}.${signature}`;
+  }
+
+  private signRefreshToken(user: User) {
+    const expiresAt = Math.floor(Date.now() / 1000) + REFRESH_TOKEN_TTL_SECONDS;
+    const payload = Buffer.from(
+      JSON.stringify({
+        sub: user.id,
+        type: 'refresh',
+        exp: expiresAt,
+      }),
+      'utf8',
+    ).toString('base64url');
+    const signature = createHmac('sha256', this.getRefreshTokenSecret())
+      .update(payload)
+      .digest('base64url');
+
+    return `${payload}.${signature}`;
+  }
+
+  private verifyRefreshToken(token: string): SessionPayload {
+    const [payload, signature] = token.split('.');
+
+    if (!payload || !signature) {
+      throw new UnauthorizedException('Authentication is required.');
+    }
+
+    const expectedSignature = createHmac('sha256', this.getRefreshTokenSecret())
+      .update(payload)
+      .digest('base64url');
+    const signatureBuffer = Buffer.from(signature);
+    const expectedSignatureBuffer = Buffer.from(expectedSignature);
+
+    if (
+      signatureBuffer.length !== expectedSignatureBuffer.length ||
+      !timingSafeEqual(signatureBuffer, expectedSignatureBuffer)
+    ) {
+      throw new UnauthorizedException('Invalid or expired refresh token.');
+    }
+
+    let decodedPayload: Partial<SessionPayload>;
+
+    try {
+      decodedPayload = JSON.parse(
+        Buffer.from(payload, 'base64url').toString('utf8'),
+      ) as Partial<SessionPayload>;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token.');
+    }
+
+    if (
+      !decodedPayload.sub ||
+      decodedPayload.type !== 'refresh' ||
+      !decodedPayload.exp ||
+      decodedPayload.exp < Math.floor(Date.now() / 1000)
+    ) {
+      throw new UnauthorizedException('Invalid or expired refresh token.');
+    }
+
+    return {
+      sub: decodedPayload.sub,
+      exp: decodedPayload.exp,
+      type: 'refresh',
+    };
   }
 
   private verifyToken(token: string): SessionPayload {
@@ -433,6 +534,7 @@ export class AuthService {
       !decodedPayload.sub ||
       (decodedPayload.role &&
         !Object.values(UserRole).includes(decodedPayload.role)) ||
+      (decodedPayload.type && decodedPayload.type !== 'access') ||
       !decodedPayload.exp ||
       decodedPayload.exp < Math.floor(Date.now() / 1000)
     ) {
@@ -442,12 +544,21 @@ export class AuthService {
     return {
       sub: decodedPayload.sub,
       role: decodedPayload.role,
+      accountStage: decodedPayload.accountStage,
       exp: decodedPayload.exp,
+      type: 'access',
     };
   }
 
   private getTokenSecret() {
     return process.env.AUTH_TOKEN_SECRET ?? 'median-dev-auth-token-secret';
+  }
+
+  private getRefreshTokenSecret() {
+    return (
+      process.env.REFRESH_TOKEN_SECRET ??
+      `${this.getTokenSecret()}_refresh_secret`
+    );
   }
 
   private toAuthUser(user: any): AuthUser {

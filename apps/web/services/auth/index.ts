@@ -29,6 +29,10 @@ export const authService = {
     return apiClient.get<AuthUser>(`${AUTH_PATH}/me`);
   },
 
+  refresh() {
+    return apiClient.post<{ user: AuthUser }>(`${AUTH_PATH}/refresh`);
+  },
+
   logout() {
     return apiClient.post<{ message?: string }>(`${AUTH_PATH}/logout`);
   },
