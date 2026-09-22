@@ -43,7 +43,7 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
         </div>
 
         <div className="flex items-center gap-1">
-          <Messages size="16" variant="Outline" color="#667085" className="shrink-0" />
+          <Messages size="16" variant="Linear" color="#667085" className="shrink-0" />
           <span>{mentor.sessionCount} Session</span>
         </div>
 

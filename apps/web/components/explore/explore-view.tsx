@@ -13,6 +13,7 @@ import { CategoryPills } from "./category-pills";
 import { FeaturedMentorsSection } from "./featured-mentors-section";
 import { MentorsGridSection } from "./mentors-grid-section";
 import { FiltersDialog } from "./filters-dialog";
+import { SearchNormal } from "iconsax-react";
 
 interface ExploreViewProps {
   initialMentors?: ExploreMentor[];
@@ -27,7 +28,7 @@ export function ExploreView({
     sortBy: "relevance",
     priceType: "all",
     minRating: undefined,
-    location: undefined,
+    locations: undefined,
   });
 
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -37,7 +38,7 @@ export function ExploreView({
     let count = 0;
     if (filters.priceType && filters.priceType !== "all") count++;
     if (filters.minRating !== undefined) count++;
-    if (filters.location) count++;
+    if (filters.locations?.length) count++;
     return count;
   }, [filters]);
 
@@ -76,9 +77,8 @@ export function ExploreView({
     }
 
     // 5. Location filter
-    if (filters.location) {
-      const loc = filters.location.toLowerCase();
-      result = result.filter((m) => m.location.toLowerCase().includes(loc));
+    if (filters.locations?.length) {
+      result = result.filter((m) => filters.locations!.some((location) => m.location.toLowerCase().includes(location.toLowerCase())));
     }
 
     // 6. Sorting
@@ -119,93 +119,113 @@ export function ExploreView({
       sortBy: "relevance",
       priceType: "all",
       minRating: undefined,
-      location: undefined,
+      locations: undefined,
     });
   };
 
   return (
-    <div className="relative flex flex-col gap-5 overflow-hidden rounded-2xl border border-[#EAECF0] bg-white px-5 py-6 pb-12 sm:px-7 lg:px-8">
-      {/* 1. Header: Page title, subtitle, Search bar and Filters button */}
-      <ExploreHeader
-        searchQuery={filters.search}
-        onSearchChange={(search) => setFilters((prev) => ({ ...prev, search }))}
-        onOpenFilters={() => setIsFiltersOpen(true)}
-        activeFilterCount={activeFilterCount}
-      />
+    <div className="relative flex flex-col gap-6 rounded-2xl border border-[#EAECF0] bg-white px-5 py-6 pb-12 sm:px-7 lg:px-8">
+      {/* 1. Header: Page title and subtitle */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">
+          Discover Mentors
+        </h1>
+        <p className="mt-1 text-sm text-[#667085] sm:text-base">
+          Choose a mentor that makes you comfortable.
+        </p>
+      </div>
 
-      {/* 2. Category Navigation Pills */}
-      <CategoryPills
-        activeCategory={filters.category}
-        onSelectCategory={(category: ExploreCategory) =>
-          setFilters((prev) => ({ ...prev, category }))
-        }
-      />
-
-      {/* When no mentors match, show empty state message, OTHER MENTORS carousel, and fallback grid */}
-      {filteredMentors.length === 0 ? (
-        <div className="flex flex-col gap-8">
-          {/* Empty search notice */}
-          <div className="flex flex-col items-center justify-center py-4 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF0EB] text-2xl text-[#FF5500]">⌕</div>
-            <h3 className="mt-3 text-lg font-semibold text-[#101828]">
-              No mentors found
-            </h3>
-            <p className="mt-1 max-w-sm text-sm text-[#667085]">
-              Try adjusting your filters or search terms<br />to find the right mentor for you.
-            </p>
-          </div>
-
-          {/* OTHER MENTORS Carousel */}
-          <FeaturedMentorsSection mentors={featuredMentors} title="OTHER MENTORS" />
-
-          {/* Fallback All Mentors Grid */}
-          <MentorsGridSection
-            mentors={initialMentors}
-            totalCount={initialMentors.length}
-            sortBy={filters.sortBy}
-            onSortChange={(sortBy: SortOption) =>
-              setFilters((prev) => ({ ...prev, sortBy }))
-            }
-            onResetFilters={handleResetFilters}
+      {/* 2. Content Row: Search & Mentors on Left, Filters Sidebar on Right */}
+      <div className="flex items-start gap-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          {/* Search bar and Filters button */}
+          <ExploreHeader
+            searchQuery={filters.search}
+            onSearchChange={(search) => setFilters((prev) => ({ ...prev, search }))}
+            onOpenFilters={() => setIsFiltersOpen(true)}
+            activeFilterCount={activeFilterCount}
+            isFiltersOpen={isFiltersOpen}
           />
-        </div>
-      ) : (
-        <>
-          {/* Featured Mentors Section (shown on "All" view without active text search) */}
-          {filters.category === "All" && !filters.search.trim() && (
-            <FeaturedMentorsSection mentors={featuredMentors} />
+
+          {/* Category Navigation Pills */}
+          <CategoryPills
+            activeCategory={filters.category}
+            onSelectCategory={(category: ExploreCategory) =>
+              setFilters((prev) => ({ ...prev, category }))
+            }
+          />
+
+          {/* When no mentors match, show empty state message, OTHER MENTORS carousel, and fallback grid */}
+          {filteredMentors.length === 0 ? (
+            <div className="flex flex-col gap-8">
+              {/* Empty search notice */}
+              <div className="flex flex-col items-center justify-center py-4 text-center">
+                <div className="flex size-14 items-center justify-center rounded-full bg-[#FFEEE8]">
+                  <SearchNormal size="28" variant="Bulk" color="#FF5500" />
+                </div>
+                <h3 className="mt-3 text-lg font-semibold text-[#101828]">
+                  No mentors found
+                </h3>
+                <p className="mt-1 max-w-sm text-sm text-[#667085]">
+                  Try adjusting your filters or search terms<br />to find the right mentor for you.
+                </p>
+              </div>
+
+              {/* OTHER MENTORS Carousel */}
+              <FeaturedMentorsSection mentors={featuredMentors} title="OTHER MENTORS" />
+
+              {/* Fallback All Mentors Grid */}
+              <MentorsGridSection
+                mentors={initialMentors}
+                totalCount={initialMentors.length}
+                sortBy={filters.sortBy}
+                onSortChange={(sortBy: SortOption) =>
+                  setFilters((prev) => ({ ...prev, sortBy }))
+                }
+                onResetFilters={handleResetFilters}
+                isFiltersOpen={isFiltersOpen}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Featured Mentors Section (shown on "All" view without active text search) */}
+              {filters.category === "All" && !filters.search.trim() && (
+                <FeaturedMentorsSection mentors={featuredMentors} />
+              )}
+
+              {/* Mentors Grid Section */}
+              <MentorsGridSection
+                mentors={filteredMentors}
+                totalCount={filteredMentors.length}
+                sortBy={filters.sortBy}
+                onSortChange={(sortBy: SortOption) =>
+                  setFilters((prev) => ({ ...prev, sortBy }))
+                }
+                onResetFilters={handleResetFilters}
+                isFiltersOpen={isFiltersOpen}
+              />
+            </>
           )}
+        </div>
 
-          {/* Mentors Grid Section */}
-          <MentorsGridSection
-            mentors={filteredMentors}
-            totalCount={filteredMentors.length}
-            sortBy={filters.sortBy}
-            onSortChange={(sortBy: SortOption) =>
-              setFilters((prev) => ({ ...prev, sortBy }))
-            }
-            onResetFilters={handleResetFilters}
-          />
-        </>
-      )}
-
-      {/* Filters panel */}
-      <FiltersDialog
-        isOpen={isFiltersOpen}
-        onClose={() => setIsFiltersOpen(false)}
-        filters={filters}
-        onApplyFilters={(newFilters) =>
-          setFilters((prev) => ({ ...prev, ...newFilters }))
-        }
-        onResetFilters={() =>
-          setFilters((prev) => ({
-            ...prev,
-            priceType: "all",
-            minRating: undefined,
-            location: undefined,
-          }))
-        }
-      />
+        {/* Filters panel */}
+        <FiltersDialog
+          isOpen={isFiltersOpen}
+          onClose={() => setIsFiltersOpen(false)}
+          filters={filters}
+          onApplyFilters={(newFilters) =>
+            setFilters((prev) => ({ ...prev, ...newFilters }))
+          }
+          onResetFilters={() =>
+            setFilters((prev) => ({
+              ...prev,
+              priceType: "all",
+              minRating: undefined,
+              locations: undefined,
+            }))
+          }
+        />
+      </div>
     </div>
   );
 }

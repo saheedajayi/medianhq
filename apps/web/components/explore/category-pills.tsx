@@ -21,7 +21,7 @@ export function CategoryPills({
 }: CategoryPillsProps) {
   return (
     <div className="flex overflow-x-auto pb-1 scrollbar-none">
-      <div className="inline-flex h-11 items-center gap-1 rounded-full border border-[#EAECF0]/70 bg-[#F7F8FB] p-1">
+      <div className="inline-flex h-10 items-center gap-1 rounded-full border border-[#EAECF0]/70 bg-[#F7F8FB] p-1">
         {categories.map((category) => {
           const isActive = activeCategory === category;
           return (

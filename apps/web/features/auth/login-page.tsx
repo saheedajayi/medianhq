@@ -1,6 +1,12 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -19,6 +25,7 @@ import {
 } from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
 import { getAuthDestination } from "@/lib/auth-routing";
+import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth";
 import type { ApiError } from "@/services/api-client";
 
@@ -32,6 +39,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function LoginPage() {
   const router = useRouter();
+  const [isNavigatingToReset, startTransition] = useTransition();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
@@ -180,7 +188,26 @@ export function LoginPage() {
           action={
             <Link
               href="/reset-password"
-              className="text-sm font-medium text-[#141c2e] hover:underline"
+              onClick={(e) => {
+                if (
+                  !e.defaultPrevented &&
+                  e.button === 0 &&
+                  !e.metaKey &&
+                  !e.ctrlKey &&
+                  !e.altKey &&
+                  !e.shiftKey
+                ) {
+                  e.preventDefault();
+                  startTransition(() => {
+                    router.push("/reset-password");
+                  });
+                }
+              }}
+              aria-disabled={isNavigatingToReset}
+              className={cn(
+                "text-sm font-medium text-[#141c2e] transition-opacity hover:underline",
+                isNavigatingToReset && "pointer-events-none opacity-50",
+              )}
             >
               Forgot password?
             </Link>

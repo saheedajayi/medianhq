@@ -29,5 +29,5 @@ export interface ExploreFilterState {
   sortBy: SortOption;
   priceType?: "all" | "free" | "paid";
   minRating?: number;
-  location?: string;
+  locations?: string[];
 }

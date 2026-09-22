@@ -1,12 +1,15 @@
 "use client";
 
 import { SearchNormal1, Setting4 } from "iconsax-react";
+import { cn } from "@/lib/utils";
 
 interface ExploreHeaderProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onOpenFilters: () => void;
   activeFilterCount?: number;
+  isFiltersOpen?: boolean;
+  showTitle?: boolean;
 }
 
 export function ExploreHeader({
@@ -14,18 +17,22 @@ export function ExploreHeader({
   onSearchChange,
   onOpenFilters,
   activeFilterCount = 0,
+  isFiltersOpen = false,
+  showTitle = false,
 }: ExploreHeaderProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className={cn(showTitle && "flex flex-col gap-6")}>
       {/* Title & Subtitle */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">
-          Discover Mentors
-        </h1>
-        <p className="mt-1 text-sm text-[#667085] sm:text-base">
-          Choose a mentor that makes you comfortable.
-        </p>
-      </div>
+      {showTitle && (
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">
+            Discover Mentors
+          </h1>
+          <p className="mt-1 text-sm text-[#667085] sm:text-base">
+            Choose a mentor that makes you comfortable.
+          </p>
+        </div>
+      )}
 
       {/* Search Bar & Filters Trigger */}
       <div className="flex items-center gap-3">
@@ -57,7 +64,10 @@ export function ExploreHeader({
         <button
           type="button"
           onClick={onOpenFilters}
-          className="flex h-12 shrink-0 items-center gap-2 rounded-full border border-[#EAECF0] bg-white px-5 text-sm font-medium text-[#344054] shadow-2xs transition-all hover:bg-[#F9FAFB] hover:text-[#101828] active:scale-[0.98]"
+          className={cn(
+            "flex h-12 shrink-0 items-center gap-2 rounded-full border border-[#EAECF0] bg-white px-5 text-sm font-medium text-[#344054] shadow-2xs transition-all hover:bg-[#F9FAFB] hover:text-[#101828] active:scale-[0.98]",
+            isFiltersOpen && "lg:hidden",
+          )}
         >
           <Setting4 size="18" variant="Outline" color="#344054" className="shrink-0" />
           <span>Filters</span>

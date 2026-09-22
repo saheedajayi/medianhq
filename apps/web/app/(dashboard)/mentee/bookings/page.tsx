@@ -1,11 +1,10 @@
-import { EmptyState } from "@/components/ui/custom/empty-state";
+import { redirect } from "next/navigation";
+
+export const metadata = {
+  title: "Bookings | Median",
+  description: "Review your booked mentor sessions and confirm attendance.",
+};
 
 export default function MenteeBookingsPage() {
-  return (
-    <EmptyState
-      eyebrow="Mentee"
-      title="My bookings"
-      description="Mentees will track upcoming, completed, and cancelled mentorship sessions here."
-    />
-  );
+  redirect("/mentee/booking-session");
 }

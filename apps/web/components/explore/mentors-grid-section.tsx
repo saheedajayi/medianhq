@@ -1,6 +1,8 @@
 "use client";
 
-import { ArrowDown2 } from "iconsax-react";
+import { SearchNormal } from "iconsax-react";
+import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/base/select";
 import { ExploreMentor, SortOption } from "./types";
 import { MentorCard } from "./mentor-card";
 
@@ -10,6 +12,7 @@ interface MentorsGridSectionProps {
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
   onResetFilters?: () => void;
+  isFiltersOpen?: boolean;
 }
 
 const sortOptions: { label: string; value: SortOption }[] = [
@@ -25,6 +28,7 @@ export function MentorsGridSection({
   sortBy,
   onSortChange,
   onResetFilters,
+  isFiltersOpen = false,
 }: MentorsGridSectionProps) {
   return (
     <section className="flex flex-col gap-5">
@@ -35,31 +39,24 @@ export function MentorsGridSection({
         </span>
 
         {/* Sort Dropdown */}
-        <div className="relative">
-          <select
-            value={sortBy}
-            onChange={(e) => onSortChange(e.target.value as SortOption)}
-            aria-label="Sort mentors"
-            className="h-8 appearance-none rounded-full border border-[#F2F2F7] bg-[#F7F8FB] pl-3.5 pr-8 text-xs font-medium text-[#344054] outline-hidden transition-colors hover:bg-[#EAECF0]/60 focus:border-[#FF5500]"
-          >
-            {sortOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <ArrowDown2
-            size="12"
-            variant="Linear"
-            color="#667085"
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-          />
-        </div>
+        <Select value={sortBy} onValueChange={(value) => onSortChange(value as SortOption)}>
+          <SelectTrigger aria-label="Sort mentors" className="h-8 w-auto min-w-[184px] rounded-full border-[#F2F2F7] bg-[#F7F8FB] px-3.5 text-xs font-medium text-[#344054] shadow-none hover:bg-[#EAECF0]/60 focus:border-[#FF5500] focus:ring-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="min-w-[220px] rounded-xl border-[#EAECF0] bg-white p-1 shadow-lg">
+            {sortOptions.map((opt) => <SelectItem key={opt.value} value={opt.value} className="rounded-lg text-xs text-[#344054] focus:bg-[#FFF0EB] focus:text-[#E84D12]">{opt.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Grid of Mentors or 'No mentors found' recovery state */}
       {mentors.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6 md:grid-cols-2",
+            isFiltersOpen ? "lg:grid-cols-2" : "lg:grid-cols-3",
+          )}
+        >
           {mentors.map((mentor) => (
             <MentorCard key={mentor.id} mentor={mentor} />
           ))}
@@ -67,9 +64,8 @@ export function MentorsGridSection({
       ) : (
         <div className="flex flex-col items-center justify-center py-10 text-center">
           {/* Circular Search Badge */}
-          <div className="relative flex size-14 items-center justify-center rounded-full bg-[#FFEEE8]">
-            <div className="size-5 rounded-full border-2 border-[#FF5500]/70" />
-            <div className="absolute right-3.5 bottom-3.5 size-1.5 rounded-full bg-[#FF5500]" />
+          <div className="flex size-14 items-center justify-center rounded-full bg-[#FFEEE8]">
+            <SearchNormal size="28" variant="Bulk" color="#FF5500" />
           </div>
 
           <h3 className="mt-4 text-lg font-bold text-[#101828]">

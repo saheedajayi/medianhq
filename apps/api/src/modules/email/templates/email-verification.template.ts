@@ -170,9 +170,9 @@ function buildFooter(
                 <tbody><tr><td style="padding:0 36px 36px;font-family:arial,helvetica,sans-serif;" align="center">
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
                     <tr>
-                      <td style="padding:0 12px;"><a href="${input.linkedinUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email/email-linkedin-white@2x.png" width="18" height="18" alt="LinkedIn" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
-                      <td style="padding:0 12px;"><a href="${input.instagramUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email/email-instagram-white@2x.png" width="18" height="18" alt="Instagram" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
-                      <td style="padding:0 12px;"><a href="${input.twitterUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email/email-x-white@2x.png" width="18" height="18" alt="X" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
+                      <td style="padding:0 12px;"><a href="${input.linkedinUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email-linkedin-white@2x.png" width="18" height="18" alt="LinkedIn" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
+                      <td style="padding:0 12px;"><a href="${input.instagramUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email-instagram-white@2x.png" width="18" height="18" alt="Instagram" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
+                      <td style="padding:0 12px;"><a href="${input.twitterUrl}" style="text-decoration:none;display:inline-block;"><img src="${input.assetUrl}/email-x-white@2x.png" width="18" height="18" alt="X" style="display:block;border:0;outline:none;text-decoration:none;height:auto;"></a></td>
                     </tr>
                   </table>
                 </td></tr></tbody>

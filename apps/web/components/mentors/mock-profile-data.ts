@@ -18,6 +18,12 @@ function upcomingDates(): AvailableDateSlot[] {
   });
 }
 
+function upcomingGroupDate(daysAhead: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  return `${date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} • 6:00 PM WAT`;
+}
+
 export const defaultMentorProfile: MentorDetailProfile = {
   id: "1",
   name: "Adaeze Okonkwo",
@@ -120,7 +126,7 @@ export const defaultMentorProfile: MentorDetailProfile = {
     {
       id: "grp-1",
       title: "Career Clarity Masterclass",
-      date: "July 22nd, 2026 • 6:00 PM WAT",
+      date: upcomingGroupDate(14),
       description:
         "Step out of your comfort zone and define your high-impact product roadmap with like-minded peers.",
       imageUrl: "/mentors/mentor-2.png",
@@ -129,7 +135,7 @@ export const defaultMentorProfile: MentorDetailProfile = {
     {
       id: "grp-2",
       title: "Breaking into Fintech Leadership",
-      date: "August 5th, 2026 • 5:00 PM WAT",
+      date: upcomingGroupDate(28),
       description:
         "A group roundtable on scaling payments systems, building trust with stakeholders, and executive presence.",
       imageUrl: "/mentors/mentor-1.png",
@@ -155,6 +161,8 @@ export const mentorsDirectory: Record<string, MentorDetailProfile> = Object.from
       bio: mentor.bio,
       expertise: mentor.tags,
       experience: [{ role: mentor.role, company: mentor.company, period: "Present" }],
+      // Mentor 2 (Amina Yusuf) has no available slots to represent fully booked state in design
+      availableDates: mentor.id === "2" ? [] : upcomingDates(),
     },
   ])
 );

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Star } from "lucide-react";
+import { SegmentedTabs } from "@/components/ui/custom/segmented-tabs";
 import { MentorDetailProfile } from "./types";
 
 interface MentorProfileTabsProps {
@@ -19,30 +20,14 @@ export function MentorProfileTabs({
     <div className="flex flex-col gap-4">
       {/* Segmented Tab Bar */}
       <div>
-        <div className="inline-flex h-9 items-center gap-1 rounded-full border border-[#EAECF0]/70 bg-[#F7F8FB] p-1">
-          <button
-            type="button"
-            onClick={() => onTabChange("profile")}
-            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-150 ${
-              activeTab === "profile"
-                ? "bg-white font-semibold text-[#FF5500] shadow-2xs"
-                : "text-[#475467] hover:text-[#101828]"
-            }`}
-          >
-            Profile
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange("reviews")}
-            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-150 ${
-              activeTab === "reviews"
-                ? "bg-white font-semibold text-[#FF5500] shadow-2xs"
-                : "text-[#475467] hover:text-[#101828]"
-            }`}
-          >
-            Reviews
-          </button>
-        </div>
+        <SegmentedTabs
+          tabs={[
+            { value: "profile", label: "Profile" },
+            { value: "reviews", label: "Reviews" },
+          ]}
+          activeTab={activeTab}
+          onChange={onTabChange}
+        />
       </div>
 
       {/* Tab 1: Profile View (Bio, Expertise, Experience) */}
