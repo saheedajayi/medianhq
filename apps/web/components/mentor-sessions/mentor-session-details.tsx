@@ -109,13 +109,13 @@ export function MentorSessionDetails({
           {/* Metadata info bar - takes full width, h-[52px], rounded-xl, bg-[#F7F8FB] */}
           <div className="mt-5 w-full h-[52px] rounded-xl bg-[#F7F8FB] px-5 sm:px-6 flex items-center gap-6 sm:gap-10 text-xs font-medium text-[#475467]">
             <div>
-              Duration: <span className="font-medium text-[#101828]">{session.durationMinutes}mins</span>
+              Duration: <span className="font-semibold text-[#101828]">{session.durationMinutes}mins</span>
             </div>
             <div>
-              Price: <span className="font-medium text-[#101828]">{formattedPrice}</span>
+              Price: <span className="font-semibold text-[#101828]">{formattedPrice}</span>
             </div>
             <div>
-              Type: <span className="font-medium text-[#101828]">{sessionTypeLabel}</span>
+              Type: <span className="font-semibold text-[#101828]">{sessionTypeLabel}</span>
             </div>
           </div>
         </div>
