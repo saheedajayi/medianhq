@@ -1,7 +1,9 @@
 "use client";
 
 import { type FormEvent, type ReactNode, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -102,6 +104,16 @@ export function ResetPasswordPage() {
         >
           {isSubmitting ? "Sending..." : "Send email"}
         </Button>
+
+        <div className="mt-2 text-center">
+          <Link
+            href="/signin"
+            className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-[#FF5514] hover:underline"
+          >
+            <ArrowLeft className="size-4" />
+            Back to log in
+          </Link>
+        </div>
       </form>
     </>
   );

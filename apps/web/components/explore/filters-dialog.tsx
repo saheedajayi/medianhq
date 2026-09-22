@@ -48,7 +48,7 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
         onClick={onClose}
       />
       <aside
-        className="fixed inset-y-0 right-0 z-50 flex w-[min(360px,100vw)] flex-col border-l border-[#E9EAF0] bg-white shadow-xl lg:sticky lg:top-6 lg:z-auto lg:h-auto lg:max-h-[calc(100vh-6rem)] lg:w-[360px] lg:shrink-0 lg:rounded-2xl lg:border lg:border-[#EAECF0] lg:shadow-xs"
+        className="fixed inset-y-0 right-0 z-50 flex w-[min(360px,100vw)] flex-col border-l border-[#E9EAF0] bg-white shadow-xl lg:sticky lg:top-6 lg:z-auto lg:mb-8 lg:h-[min(890px,calc(100vh-6rem))] lg:max-h-[calc(100vh-6rem)] lg:w-[360px] lg:shrink-0 lg:rounded-2xl lg:border lg:border-[#EAECF0] lg:shadow-xs"
         aria-label="Filters"
       >
         <div className="flex items-center justify-between border-b border-[#EAECF0] px-6 py-5">
@@ -72,7 +72,7 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
           {section("Experience level", <p className="text-xs text-[#667085]">Experience levels are not available in this mentor directory yet.</p>)}
           {section("Gender", <p className="text-xs text-[#667085]">Gender preferences are not available in this mentor directory yet.</p>)}
         </div>
-        <div className="flex items-center justify-between border-t border-[#EAECF0] px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-t border-[#EAECF0] px-6 py-4">
           <button
             type="button"
             onClick={() => {

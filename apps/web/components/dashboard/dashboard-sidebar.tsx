@@ -6,9 +6,12 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Element4,
+  Element3,
   Global,
   Calendar,
+  CalendarTick,
+  FolderOpen,
+  Wallet,
   Messages2,
   MessageQuestion,
   Profile2User,
@@ -23,30 +26,36 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 interface NavItem {
   label: string;
   href: string;
-  icon: React.ComponentType<{ size?: number | string; color?: string; variant?: "Linear" | "Outline" | "Bold" | "Broken" | "Bulk" | "TwoTone"; className?: string }>;
-  variant?: "Outline" | "Linear";
+  icon: React.ComponentType<{
+    size?: number | string;
+    color?: string;
+    variant?: "Linear" | "Outline" | "Bold" | "Broken" | "Bulk" | "TwoTone";
+    className?: string;
+  }>;
+  variant?: "Outline" | "Linear" | "Bold" | "Bulk";
+  activeVariant?: "Outline" | "Linear" | "Bold" | "Bulk";
 }
 
 const menteeNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: Element4, variant: "Outline" },
-  { label: "Explore", href: "/mentee/explore", icon: Global, variant: "Outline" },
-  { label: "Sessions", href: "/mentee/bookings", icon: Calendar, variant: "Outline" },
-  { label: "Messages", href: "/mentee/messages", icon: Messages2, variant: "Outline" },
-  { label: "Async Q&A", href: "/mentee/async-qa", icon: MessageQuestion, variant: "Outline" },
-  { label: "Career Info", href: "/mentee/profile", icon: Profile2User, variant: "Outline" },
-  { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline" },
+  { label: "Dashboard", href: "/dashboard", icon: Element3, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Explore", href: "/mentee/explore", icon: Global, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Bookings", href: "/mentee/booking-session", icon: Calendar, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Messages", href: "/mentee/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
+  { label: "Async Q&A", href: "/mentee/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
+  { label: "Community", href: "/mentee/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },
 ];
 
 const mentorNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: Element4, variant: "Outline" },
-  { label: "Sessions", href: "/mentor/sessions", icon: Calendar, variant: "Outline" },
-  { label: "Bookings", href: "/mentor/bookings", icon: Calendar, variant: "Outline" },
-  { label: "Availability", href: "/mentor/availability", icon: Calendar, variant: "Outline" },
-  { label: "Messages", href: "/mentor/messages", icon: Messages2, variant: "Outline" },
-  { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline" },
-  { label: "Earnings", href: "/mentor/earnings", icon: MedalStar, variant: "Outline" },
-  { label: "Community", href: "/mentor/community", icon: Profile2User, variant: "Outline" },
-  { label: "Achievements", href: "/mentor/achievements", icon: MedalStar, variant: "Outline" },
+  { label: "Dashboard", href: "/dashboard", icon: Element3, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Sessions", href: "/mentor/sessions", icon: FolderOpen, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Bookings", href: "/mentor/bookings", icon: Calendar, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Availability", href: "/mentor/availability", icon: CalendarTick, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Messages", href: "/mentor/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
+  { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
+  { label: "Earnings", href: "/mentor/earnings", icon: Wallet, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Community", href: "/mentor/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Achievements", href: "/mentor/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },
 ];
 
 interface DashboardSidebarProps {
@@ -111,7 +120,12 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
             const isActive =
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname?.startsWith(item.href)) ||
-              (item.label === "Explore" && (pathname === "/explore" || pathname?.startsWith("/mentors/") || pathname?.startsWith("/mentee/mentors/")));
+              (item.label === "Explore" && (pathname === "/explore" || pathname?.startsWith("/mentors/") || pathname?.startsWith("/mentee/mentors/"))) ||
+              (item.label === "Bookings" && (pathname === "/bookings" || pathname?.startsWith("/mentee/booking-session") || pathname?.startsWith("/mentee/bookings")));
+
+            const currentVariant = isActive
+              ? (item.activeVariant || "Bulk")
+              : (item.variant || "Outline");
 
             return (
               <Link
@@ -120,14 +134,14 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
                 onClick={onMobileClose}
                 className={`flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-[#FFF0EB] text-[#FF5500] font-semibold"
+                    ? "bg-[#FFEEE8] text-[#FF5514] font-semibold"
                     : "text-[#475467] hover:bg-[#F9FAFB] hover:text-[#101828]"
                 }`}
               >
                 <Icon
                   size="18"
-                  variant={item.variant || "Outline"}
-                  color={isActive ? "#FF5500" : "#667085"}
+                  variant={currentVariant}
+                  color={isActive ? "#FF5514" : "#667085"}
                   className="shrink-0"
                 />
                 <span>{item.label}</span>
@@ -142,9 +156,18 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
         <Link
           href="/settings"
           onClick={onMobileClose}
-          className="flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#475467] transition-all hover:bg-[#F9FAFB] hover:text-[#101828]"
+          className={`flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
+            pathname?.startsWith("/settings")
+              ? "bg-[#FFEEE8] text-[#FF5514] font-semibold"
+              : "text-[#475467] hover:bg-[#F9FAFB] hover:text-[#101828]"
+          }`}
         >
-          <Setting2 size="18" variant="Outline" color="#667085" className="shrink-0" />
+          <Setting2
+            size="18"
+            variant={pathname?.startsWith("/settings") ? "Bulk" : "Outline"}
+            color={pathname?.startsWith("/settings") ? "#FF5514" : "#667085"}
+            className="shrink-0"
+          />
           <span>Settings</span>
         </Link>
         <button
@@ -153,7 +176,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
           disabled={isLoggingOut}
           className="flex w-full items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#D92D20] transition-all hover:bg-[#FEF3F2] disabled:opacity-50"
         >
-          <Logout size="18" variant="Linear" color="#D92D20" className="shrink-0" />
+          <Logout size="18" variant="Outline" color="#D92D20" className="shrink-0" />
           <span>{isLoggingOut ? "Logging out..." : "Log Out"}</span>
         </button>
       </div>

@@ -1,41 +1,400 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Pencil, Trash2, Plus, X, UploadCloud, CheckCircle2, AlertCircle } from "lucide-react";
-import { mentorSessionsService, type MentorSessionDto, type AvailabilityInput } from "@/services/mentor-sessions";
-
-type Session = { id: string; title: string; description: string; duration: string; price: string; type: "1:1" | "Group"; live: boolean; };
-const initialSessions: Session[] = [];
-const fromApi = (session: MentorSessionDto): Session => ({ id: session.id, title: session.title, description: session.description, duration: `${session.durationMinutes} minutes`, price: session.price ? `₦${session.price.toLocaleString()}` : "Free", type: session.type === "GROUP" ? "Group" : "1:1", live: session.isLive });
-const priceNumber = (price: string) => Number(price.replace(/[^0-9]/g, "")) || 0;
+import * as React from "react";
+import { useState, useEffect } from "react";
+import { Plus, Link2, Check, AlertCircle, Calendar } from "lucide-react";
+import {
+  mentorSessionsService,
+  type MentorSessionDto,
+  type MentorSessionInput,
+} from "@/services/mentor-sessions";
+import { MentorSessionDrawer } from "./mentor-session-drawer";
+import { MentorSessionDetails } from "./mentor-session-details";
+import {
+  DeleteSessionModal,
+  SessionSuccessModal,
+} from "./mentor-session-modals";
 
 export function MentorSessionsView() {
-  const [sessions, setSessions] = useState(initialSessions);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [tab, setTab] = useState<"sessions" | "weekly">("sessions");
-  const [modal, setModal] = useState<"create" | "edit" | "delete" | "live" | "updated" | null>(null);
-  const [editing, setEditing] = useState<Session | null>(null);
-  const [form, setForm] = useState({ title: "Get to Know Me", duration: "15 minutes", price: "Free", description: "A quick intro chat to see if we're a good fit before booking longer sessions.", type: "1:1" as "1:1" | "Group" });
+  const [sessions, setSessions] = useState<MentorSessionDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [schedule, setSchedule] = useState<AvailabilityInput[]>([]);
-  const [scheduleSaved, setScheduleSaved] = useState(false);
-  useEffect(() => { Promise.all([mentorSessionsService.list(), mentorSessionsService.getAvailability()]).then(([sessionResponse, availabilityResponse]) => { setSessions(sessionResponse.data.map(fromApi)); setSchedule(availabilityResponse.data); }).catch(() => setError("We couldn't load your sessions. Please try again.")).finally(() => setIsLoading(false)); }, []);
-  const defaultSchedule = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((_, index) => schedule.find((slot) => slot.dayOfWeek === index + 1) ?? ({ dayOfWeek: index + 1, startTime: "09:00 AM", endTime: "05:00 PM", isActive: true }));
-  const openCreate = () => { setEditing(null); setForm({ title: "", duration: "15 minutes", price: "Free", description: "", type: "1:1" }); setModal("create"); };
-  const openEdit = (s: Session) => { setEditing(s); setForm({ title: s.title, duration: s.duration, price: s.price, description: s.description, type: s.type }); setModal("edit"); };
-  const save = async () => { if (!form.title.trim()) return; const payload = { title: form.title, description: form.description, durationMinutes: Number.parseInt(form.duration, 10), price: priceNumber(form.price), type: form.type === "Group" ? "GROUP" as const : "ONE_ON_ONE" as const }; try { const response = editing ? await mentorSessionsService.update(editing.id, payload) : await mentorSessionsService.create(payload); const saved = fromApi(response.data); setSessions((items) => editing ? items.map((s) => s.id === editing.id ? saved : s) : [...items, saved]); setModal(editing ? "updated" : "live"); } catch { setError("We couldn't save that session. Please try again."); } };
-  const remove = async () => { if (editing) { try { await mentorSessionsService.remove(editing.id); setSessions((items) => items.filter((s) => s.id !== editing.id)); setSelectedSession(null); } catch { setError("We couldn't delete that session. Please try again."); } } setModal(null); };
-  if (isLoading) return <div className="rounded-2xl border border-[#EAECF0] bg-white p-12 text-sm text-[#667085]">Loading sessions…</div>;
-  if (error) return <div className="rounded-2xl border border-[#FECACA] bg-white p-12 text-sm text-[#B42318]">{error}</div>;
-  if (selectedSession && tab === "sessions") return <div className="min-h-[calc(100vh-3rem)] rounded-2xl border border-[#EAECF0] bg-white px-5 py-6 sm:px-8"><div className="flex items-center gap-2 text-xs text-[#667085]"><button onClick={() => setSelectedSession(null)}>Sessions</button><span>›</span><span className="text-[#FF5500]">{selectedSession.title}</span></div><div className="mt-6 flex items-start justify-between"><div><h1 className="text-2xl font-semibold text-[#101828]">{selectedSession.title} <span className="rounded-full bg-[#E6F9EF] px-2 py-1 text-[10px] font-medium text-[#12B76A]">● Live</span></h1><h2 className="mt-5 text-lg font-semibold text-[#101828]">Session Overview</h2><p className="mt-1 max-w-xl text-sm text-[#667085]">{selectedSession.description}</p><div className="mt-5 flex flex-wrap gap-2 rounded-xl bg-[#F7F8FB] p-4 text-xs text-[#475467]"><span>Duration: {selectedSession.duration}</span><span>Price: {selectedSession.price}</span><span>Type: {selectedSession.type}</span></div></div><div className="flex gap-2"><button className="rounded-full border border-[#EAECF0] px-4 py-2 text-xs">↗ Share</button><button onClick={() => openEdit(selectedSession)} className="rounded-full border border-[#EAECF0] px-4 py-2 text-xs">✎ Edit</button></div></div><div className="mt-8 grid grid-cols-2 gap-2 rounded-2xl bg-[#8D210B] p-2 sm:grid-cols-4"><Stat label="Total Earnings" value="₦180,000" detail="12 Sessions" /><Stat label="Total Bookings" value="12" /><Stat label="Completed" value="8" /><Stat label="Pending" value="2" /></div><div className="mt-10 flex items-center justify-between text-xs text-[#667085]"><span>Created Today, 10:00 AM</span><button onClick={() => setModal("delete")} className="text-[#F04438]">Delete session</button></div>{modal && <Modal title="Delete this Session?" onClose={() => setModal(null)}><p className="text-center text-xs text-[#667085]">This session will be made unavailable for new bookings. You will still need to complete your pending bookings before it is fully deactivated.</p><button onClick={remove} className="mt-5 w-full rounded-full bg-[#F04438] py-3 text-xs font-semibold text-white">Delete session</button><button onClick={() => setModal(null)} className="mt-2 w-full rounded-full border border-[#EAECF0] py-3 text-xs">Keep session</button></Modal>}</div>;
-  return <div className="min-h-[calc(100vh-3rem)] rounded-2xl border border-[#EAECF0] bg-white px-5 py-6 sm:px-8">
-    <div className="flex items-center justify-between"><div><div className="mb-4 flex gap-6 text-xs font-medium"><button onClick={() => setTab("sessions")} className={tab === "sessions" ? "border-b-2 border-[#FF5500] pb-2 text-[#FF5500]" : "pb-2 text-[#667085]"}>Sessions</button><button onClick={() => setTab("weekly")} className={tab === "weekly" ? "border-b-2 border-[#FF5500] pb-2 text-[#FF5500]" : "pb-2 text-[#667085]"}>Weekly Schedule</button></div><h1 className="text-2xl font-semibold text-[#101828]">{tab === "sessions" ? "Sessions" : "Weekly Schedule"}</h1><p className="text-sm text-[#667085]">{tab === "sessions" ? "Set up times when you're available for bookings during the week." : "Manage your recurring availability for sessions."}</p></div>{tab === "sessions" && <button onClick={openCreate} className="flex items-center gap-2 rounded-full bg-[#FF5500] px-4 py-2.5 text-xs font-semibold text-white"><Plus className="size-4" />Create session</button>}</div>
-    {tab === "weekly" ? <div className="mt-8 max-w-2xl space-y-3">{["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day, index) => { const slot = defaultSchedule[index]!; return <div key={day} className="flex items-center justify-between rounded-xl border border-[#EAECF0] p-4"><span className="text-sm font-semibold text-[#344054]">{day}</span><span className="text-sm text-[#667085]">{slot.startTime} — {slot.endTime}</span><input type="checkbox" checked={slot.isActive !== false} onChange={(event) => setSchedule((items) => [...items.filter((item) => item.dayOfWeek !== index + 1), { ...slot, dayOfWeek: index + 1, isActive: event.target.checked }])} className="accent-[#FF5500]" /></div>; })}<button onClick={async () => { await mentorSessionsService.saveAvailability(defaultSchedule); setScheduleSaved(true); }} className="rounded-full bg-[#FF5500] px-5 py-2.5 text-xs font-semibold text-white">Save schedule</button>{scheduleSaved && <span className="ml-3 text-xs text-[#12B76A]">Schedule updated</span>}</div> : sessions.length === 0 ? <Empty onCreate={openCreate} /> : <div className="mt-8 grid gap-4 lg:grid-cols-3">{sessions.map((s) => <article key={s.id} className="rounded-2xl border border-[#EAECF0] p-4"><div className="flex items-start justify-between"><span className="text-[10px] text-[#667085]">{s.type}</span><button onClick={async () => { const response = await mentorSessionsService.update(s.id, { isLive: !s.live }); const saved = fromApi(response.data); setSessions((items) => items.map((x) => x.id === s.id ? saved : x)); }} className={`h-4 w-7 rounded-full ${s.live ? "bg-[#FF5500]" : "bg-[#D0D5DD"}`}><span className={`block size-3 rounded-full bg-white transition ${s.live ? "translate-x-3.5" : "translate-x-0.5"}`} /></button></div><button onClick={() => setSelectedSession(s)} className="mt-3 text-left text-base font-semibold text-[#101828]">{s.title}</button><p className="mt-2 min-h-10 text-xs leading-relaxed text-[#667085]">{s.description}</p><div className="mt-3 flex items-center justify-between text-xs text-[#667085]"><span>{s.duration}</span><span className="font-semibold text-[#344054]">{s.price}</span></div><div className="mt-4 flex gap-2"><button onClick={() => setSelectedSession(s)} className="flex-1 rounded-full bg-[#FF5500] py-2 text-xs text-white">View details</button><button onClick={() => openEdit(s)} className="rounded-full border border-[#EAECF0] px-3 py-2 text-xs text-[#475467]"><Pencil className="size-3" /></button><button onClick={() => { setEditing(s); setModal("delete"); }} className="rounded-full border border-[#EAECF0] px-3 py-2 text-xs text-[#475467]"><Trash2 className="size-3" /></button></div></article>)}</div>}
-    {modal && <Modal title={modal === "delete" ? "Delete this Session?" : modal === "live" ? "Your session is live" : modal === "updated" ? "Session Updated" : modal === "edit" ? "Edit Session" : "Create a Session"} onClose={() => setModal(null)}>{modal === "delete" ? <><p className="text-center text-xs text-[#667085]">This session will be made unavailable for new bookings. You will still need to complete pending bookings before it is fully deactivated.</p><button onClick={remove} className="mt-5 w-full rounded-full bg-[#F04438] py-3 text-xs font-semibold text-white">Delete session</button><button onClick={() => setModal(null)} className="mt-2 w-full rounded-full border border-[#EAECF0] py-3 text-xs">Keep session</button></> : modal === "live" || modal === "updated" ? <><div className="flex justify-center"><CheckCircle2 className="size-10 text-[#FF5500]" /></div><p className="mt-3 text-center text-xs text-[#667085]">{modal === "live" ? "Mentors can now discover your session and book time with you." : "Your changes have been saved successfully."}</p><button onClick={() => setModal(null)} className="mt-5 w-full rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white">{modal === "live" ? "View session" : "Back to sessions"}</button></> : <Form form={form} setForm={setForm} onSave={save} editing={modal === "edit"} />}</Modal>}
-  </div>;
+
+  // Selected session for detail page view (Available Sessions-1.svg)
+  const [selectedSession, setSelectedSession] = useState<MentorSessionDto | null>(null);
+
+  // Drawer state for Create / Edit
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<MentorSessionDto | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Delete modal state
+  const [deletingSession, setDeletingSession] = useState<MentorSessionDto | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Success modal state ("live" | "updated" | null)
+  const [successModal, setSuccessModal] = useState<{
+    type: "live" | "updated";
+    session: MentorSessionDto;
+  } | null>(null);
+
+  // Copied session link feedback
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  const fetchSessions = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await mentorSessionsService.list();
+      setSessions(res.data || []);
+    } catch (err: any) {
+      console.error("Failed to load sessions:", err);
+      setError("We couldn't load your sessions. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateOpen = () => {
+    setEditingSession(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleEditOpen = (session: MentorSessionDto) => {
+    setEditingSession(session);
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveSession = async (payload: MentorSessionInput) => {
+    setIsSaving(true);
+    try {
+      if (editingSession) {
+        const res = await mentorSessionsService.update(editingSession.id, payload);
+        const updated = res.data;
+        setSessions((prev) =>
+          prev.map((s) => (s.id === updated.id ? updated : s))
+        );
+        if (selectedSession?.id === updated.id) {
+          setSelectedSession(updated);
+        }
+        setIsDrawerOpen(false);
+        setSuccessModal({ type: "updated", session: updated });
+      } else {
+        const res = await mentorSessionsService.create(payload);
+        const created = res.data;
+        // Newly created session is set to live per design flow
+        await mentorSessionsService.update(created.id, { isLive: true });
+        const liveCreated = { ...created, isLive: true };
+        setSessions((prev) => [liveCreated, ...prev]);
+        setIsDrawerOpen(false);
+        setSuccessModal({ type: "live", session: liveCreated });
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save session. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggleLive = async (session: MentorSessionDto) => {
+    const nextLive = !session.isLive;
+    // Optimistic UI update
+    setSessions((prev) =>
+      prev.map((s) => (s.id === session.id ? { ...s, isLive: nextLive } : s))
+    );
+    if (selectedSession?.id === session.id) {
+      setSelectedSession({ ...session, isLive: nextLive });
+    }
+
+    try {
+      await mentorSessionsService.update(session.id, { isLive: nextLive });
+    } catch {
+      // Revert on error
+      setSessions((prev) =>
+        prev.map((s) => (s.id === session.id ? { ...s, isLive: !nextLive } : s))
+      );
+      if (selectedSession?.id === session.id) {
+        setSelectedSession({ ...session, isLive: !nextLive });
+      }
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingSession) return;
+    setIsDeleting(true);
+    try {
+      await mentorSessionsService.remove(deletingSession.id);
+      setSessions((prev) => prev.filter((s) => s.id !== deletingSession.id));
+      if (selectedSession?.id === deletingSession.id) {
+        setSelectedSession(null);
+      }
+      setDeletingSession(null);
+    } catch {
+      alert("Failed to delete session. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCopyLink = (session: MentorSessionDto, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (typeof window !== "undefined") {
+      const url = `${window.location.origin}/sessions/${session.id}`;
+      navigator.clipboard.writeText(url);
+      setCopiedId(session.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  // If viewing details of a specific session (Available Sessions-1.svg)
+  if (selectedSession) {
+    return (
+      <div className="w-full flex-1 flex flex-col min-h-full">
+        <MentorSessionDetails
+          session={selectedSession}
+          onBack={() => setSelectedSession(null)}
+          onEdit={(s) => handleEditOpen(s)}
+          onDelete={(s) => setDeletingSession(s)}
+        />
+
+        <MentorSessionDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          onSave={handleSaveSession}
+          editingSession={editingSession}
+          isSaving={isSaving}
+        />
+
+        <DeleteSessionModal
+          isOpen={Boolean(deletingSession)}
+          onClose={() => setDeletingSession(null)}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={isDeleting}
+          sessionTitle={deletingSession?.title}
+        />
+
+        <SessionSuccessModal
+          isOpen={Boolean(successModal)}
+          onClose={() => setSuccessModal(null)}
+          type={successModal?.type || "live"}
+          onViewSession={() => {
+            if (successModal?.session) {
+              setSelectedSession(successModal.session);
+            }
+            setSuccessModal(null);
+          }}
+          onSecondaryAction={() => {
+            setSuccessModal(null);
+            if (successModal?.type === "live") {
+              handleCreateOpen();
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {isLoading ? (
+        <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center text-sm font-medium text-[#667085]">
+          Loading sessions...
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-[#FDA29B] bg-[#FEF3F2] p-8 text-center text-sm text-[#B42318]">
+          <AlertCircle className="mx-auto mb-2 size-6" />
+          <p className="font-medium">{error}</p>
+          <button
+            onClick={fetchSessions}
+            className="mt-4 rounded-full bg-[#B42318] px-5 py-2 text-xs font-semibold text-white hover:bg-[#912018] transition"
+          >
+            Retry
+          </button>
+        </div>
+      ) : sessions.length === 0 ? (
+        /* Empty State exactly matching Session not set.svg */
+        <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-4 text-center">
+          <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF1ED] text-[#FF5514] shadow-xs mb-4">
+            <Calendar className="size-6" />
+          </div>
+
+          <h2 className="text-xl font-bold text-[#101828]">
+            No sessions created yet
+          </h2>
+
+          <p className="mt-2.5 max-w-md text-sm text-[#475467] leading-relaxed">
+            Create your first session offering so mentees can book time with you.
+            You can offer free intro calls, paid sessions, or both.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleCreateOpen}
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#FF5514] px-6 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E0480F]"
+          >
+            <Plus className="size-4" />
+            <span>Create session</span>
+          </button>
+        </div>
+      ) : (
+        /* Populated Sessions Grid exactly matching Available Sessions.svg */
+        <div>
+          {/* Header Row: Title & Subtitle on Left, + Create session Button on Right */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-[#101828]">Sessions</h1>
+              <p className="mt-1 text-sm text-[#475467]">
+                Set up times when you're available for bookings during the week.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCreateOpen}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#FF5514] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E0480F] shrink-0"
+            >
+              <Plus className="size-4" />
+              <span>Create session</span>
+            </button>
+          </div>
+
+          {/* Cards Grid: 3 columns matching Figma */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">
+            {sessions.map((session) => {
+              const formattedPrice =
+                session.price && session.price > 0
+                  ? `₦${session.price.toLocaleString()}`
+                  : "Free";
+              const isCopied = copiedId === session.id;
+
+              return (
+                <article
+                  key={session.id}
+                  className="flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 shadow-xs transition hover:border-[#D0D5DD] hover:shadow-md"
+                >
+                  <div>
+                    {/* Top Row: Duration badge, Price badge, Live Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-[#F7F8FB] px-3.5 py-1 text-xs font-semibold text-[#344054]">
+                          {session.durationMinutes}mins
+                        </span>
+                        <span className="rounded-full bg-[#F7F8FB] px-3.5 py-1 text-xs font-semibold text-[#344054]">
+                          {formattedPrice}
+                        </span>
+                      </div>
+
+                      {/* Live Toggle Switch */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLive(session)}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                          session.isLive ? "bg-[#FF5514]" : "bg-[#EAECF0]"
+                        }`}
+                        role="switch"
+                        aria-checked={session.isLive}
+                        title={session.isLive ? "Session is Live" : "Session is Inactive"}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                            session.isLive ? "translate-x-4" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Title with Copy Link Button */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <h3
+                        onClick={() => setSelectedSession(session)}
+                        className="text-lg font-bold text-[#101828] hover:text-[#FF5514] cursor-pointer transition line-clamp-1"
+                      >
+                        {session.title}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyLink(session, e)}
+                        className="text-[#667085] hover:text-[#FF5514] transition p-1"
+                        title={isCopied ? "Link copied!" : "Copy session link"}
+                      >
+                        {isCopied ? (
+                          <Check className="size-4 text-[#12B76A]" />
+                        ) : (
+                          <Link2 className="size-4" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Description preview */}
+                    <p className="mt-2 text-sm leading-relaxed text-[#475467] line-clamp-2 min-h-10">
+                      {session.description || "No description provided."}
+                    </p>
+                  </div>
+
+                  {/* Card Action Buttons */}
+                  <div className="mt-6 flex items-center justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEditOpen(session)}
+                      className="h-9 px-5 rounded-full border border-[#D0D5DD] bg-white text-xs font-semibold text-[#344054] hover:bg-[#F9FAFB] transition shadow-2xs text-center"
+                    >
+                      Edit session
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSession(session)}
+                      className="h-9 px-5 rounded-full bg-[#FF5514] text-xs font-semibold text-white hover:bg-[#E0480F] transition shadow-2xs text-center"
+                    >
+                      View details
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Modals & Drawer */}
+      <MentorSessionDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSave={handleSaveSession}
+        editingSession={editingSession}
+        isSaving={isSaving}
+      />
+
+      <DeleteSessionModal
+        isOpen={Boolean(deletingSession)}
+        onClose={() => setDeletingSession(null)}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={isDeleting}
+        sessionTitle={deletingSession?.title}
+      />
+
+      <SessionSuccessModal
+        isOpen={Boolean(successModal)}
+        onClose={() => setSuccessModal(null)}
+        type={successModal?.type || "live"}
+        onViewSession={() => {
+          if (successModal?.session) {
+            setSelectedSession(successModal.session);
+          }
+          setSuccessModal(null);
+        }}
+        onSecondaryAction={() => {
+          setSuccessModal(null);
+          if (successModal?.type === "live") {
+            handleCreateOpen();
+          }
+        }}
+      />
+    </div>
+  );
 }
-function Stat({ label, value, detail }: { label: string; value: string; detail?: string }) { return <div className="rounded-xl bg-white p-3"><div className="flex justify-between text-[10px] text-[#667085]"><span>{label}</span>{detail && <span>{detail}</span>}</div><strong className="mt-2 block text-xl text-[#55241B]">{value}</strong></div>; }
-function Empty({ onCreate }: { onCreate: () => void }) { return <div className="flex flex-col items-center py-48 text-center"><AlertCircle className="size-8 text-[#FFB39A]" /><h2 className="mt-3 text-sm font-semibold">No sessions created yet</h2><p className="mt-1 max-w-xs text-xs text-[#667085]">Create your first session offering for members to book time with you.</p><button onClick={onCreate} className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold text-white">Create session</button></div>; }
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-base font-bold text-[#55241B]">{title}</h2><button onClick={onClose}><X className="size-4 text-[#667085" /></button></div>{children}</div></div>; }
-function Form({ form, setForm, onSave, editing }: { form: { title: string; duration: string; price: string; description: string; type: "1:1" | "Group" }; setForm: (f: typeof form) => void; onSave: () => void; editing: boolean }) { return <div className="mt-4 space-y-3"><div className="flex rounded-full bg-[#F7F8FB] p-1">{["1:1", "Group"].map((type) => <button key={type} onClick={() => setForm({ ...form, type: type as "1:1" | "Group" })} className={`flex-1 rounded-full py-2 text-xs ${form.type === type ? "bg-white text-[#FF5500] shadow-xs" : "text-[#667085]"}`}>{type === "1:1" ? "1 on 1 Session" : "Group Session"}</button>)}</div><label className="block text-xs text-[#344054]">Session Title<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1 w-full rounded-lg border border-[#EAECF0] p-2.5 text-xs" placeholder="e.g Get to Know Me" /></label><label className="block text-xs text-[#344054]">Duration<select value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="mt-1 w-full rounded-lg border border-[#EAECF0] p-2.5 text-xs"><option>15 minutes</option><option>30 minutes</option><option>60 minutes</option></select></label><label className="block text-xs text-[#344054]">Price<input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="mt-1 w-full rounded-lg border border-[#EAECF0] p-2.5 text-xs" placeholder="Free or ₦20,000" /></label>{form.type === "Group" && <><label className="block text-xs text-[#344054]">Session flyer<div className="mt-1 rounded-lg border border-dashed border-[#EAECF0] p-4 text-center text-xs text-[#667085]"><UploadCloud className="mx-auto mb-1 size-5" />Click to upload or drag and drop</div></label><label className="block text-xs text-[#344054]">Max Capacity<input className="mt-1 w-full rounded-lg border border-[#EAECF0] p-2.5 text-xs" defaultValue="15" /></label></>}<label className="block text-xs text-[#344054]">Description<textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1 h-20 w-full resize-none rounded-lg border border-[#EAECF0] p-2.5 text-xs" placeholder="Describe what mentees can expect from this session" /></label><button onClick={onSave} className="w-full rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white">{editing ? "Save changes" : "Create session"}</button></div>; }

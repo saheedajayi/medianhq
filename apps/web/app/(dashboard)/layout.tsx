@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, HambergerMenu, Notification, User } from "iconsax-react";
+import { HambergerMenu, Notification, User } from "iconsax-react";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { authService } from "@/services/auth";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -86,8 +86,8 @@ export default function DashboardLayout({
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col h-screen overflow-hidden lg:pl-64">
-        {/* Top Header Bar */}
-        <header className={`flex h-16 sm:h-18 shrink-0 items-center justify-between border-b border-[#EAECF0] bg-white px-4 sm:px-8 ${isExploreRoute ? "lg:hidden" : ""}`}>
+        {/* Top Header Bar (Mobile & Tablet only, hidden on desktop) */}
+        <header className="flex h-16 sm:h-18 shrink-0 items-center justify-between border-b border-[#EAECF0] bg-white px-4 sm:px-8 lg:hidden">
           {/* Mobile Header (< 640px): Logo on Left, Bell + Avatar + Hamburger on Right */}
           <div className="flex w-full items-center justify-between sm:hidden">
             <Link href="/dashboard" className="flex items-center">
@@ -157,23 +157,11 @@ export default function DashboardLayout({
             </Link>
           </div>
 
-          {/* Right Action on Tablet and Desktop: Book a Session button */}
-          <div className="hidden sm:flex items-center gap-4 ml-auto">
-            {!isMentor && (
-            <Link
-              href="/mentee/bookings/new"
-              className="inline-flex items-center gap-2 rounded-full bg-[#FF5500] px-5 py-2.5 text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
-            >
-              <Calendar size="18" variant="Bulk" color="#FFFFFF" className="shrink-0" />
-              <span className="text-white">Book a session</span>
-            </Link>
-            )}
-          </div>
         </header>
 
         {/* Dynamic Dashboard Page Content */}
-        <main className={`flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 ${isExploreRoute ? "lg:px-6 lg:py-6" : "lg:px-10"}`}>
-          <div className="mx-auto max-w-7xl">{children}</div>
+        <main className={`flex-1 overflow-y-auto flex flex-col px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 ${isExploreRoute ? "lg:px-6 lg:py-6" : "lg:px-10"}`}>
+          <div className="mx-auto w-full max-w-7xl flex-1 flex flex-col min-h-full">{children}</div>
         </main>
       </div>
     </div>

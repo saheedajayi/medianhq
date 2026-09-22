@@ -52,7 +52,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
           </div>
 
           <div className="flex items-center gap-1">
-            <Messages size="15" variant="Outline" color="#667085" className="shrink-0" />
+            <Messages size="15" variant="Linear" color="#667085" className="shrink-0" />
             <span>{mentor.sessionCount} Session</span>
           </div>
 
@@ -100,7 +100,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
 
         <Link
           href={`/mentors/${mentor.id}`}
-          className="inline-flex items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2 text-sm font-medium text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+          className="inline-flex items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2 text-sm font-medium !text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
         >
           View Profile
         </Link>

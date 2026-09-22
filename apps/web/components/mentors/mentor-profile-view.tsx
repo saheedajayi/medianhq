@@ -21,8 +21,19 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
   };
 
   const initialPackage = mentor.packages[0] || defaultMentorProfile.packages[0]!;
-  const initialDate = mentor.availableDates[0] || defaultMentorProfile.availableDates[0]!;
-  const initialTime = initialDate.times[0] || "03:00PM";
+  const emptyDateSlot: AvailableDateSlot = {
+    dateString: "",
+    dayOfWeek: "",
+    dayNumber: "",
+    month: "",
+    slotsCount: 0,
+    times: [],
+  };
+  const initialDate =
+    mentor.availableDates && mentor.availableDates.length > 0
+      ? mentor.availableDates[0]!
+      : emptyDateSlot;
+  const initialTime = initialDate.times[0] || "";
 
   // State management
   const [activeTab, setActiveTab] = useState<"profile" | "reviews">("profile");
@@ -36,18 +47,28 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
   // Formatted date string for modals
-  const dateSlotDisplay = new Date(`${selectedDate.dateString}T12:00:00`).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const dateSlotDisplay = selectedDate.dateString
+    ? new Date(`${selectedDate.dateString}T12:00:00`).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
   const dateTimeDisplay = `${dateSlotDisplay} - ${selectedTime} WAT`;
 
   // Step 1: User completes session goals & submits
-  const handleConfirmSessionSubmit = () => {
+  const handleConfirmSessionSubmit = (data: {
+    scope: string;
+    goals: string;
+    isFree: boolean;
+    packageToUse?: SessionPackage;
+  }) => {
     setIsConfirmOpen(false);
-    if (selectedPackage.numericPrice === 0) {
+    if (data.packageToUse) {
+      setSelectedPackage(data.packageToUse);
+    }
+    if (data.isFree) {
       // Free booking -> straight to success
       setIsSuccessOpen(true);
     } else {
@@ -97,6 +118,7 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         mentorName={mentor.name}
+        packages={mentor.packages}
         selectedPackage={selectedPackage}
         dateTimeDisplay={dateTimeDisplay}
         onConfirm={handleConfirmSessionSubmit}

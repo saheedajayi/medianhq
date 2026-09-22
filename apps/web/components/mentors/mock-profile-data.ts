@@ -161,6 +161,8 @@ export const mentorsDirectory: Record<string, MentorDetailProfile> = Object.from
       bio: mentor.bio,
       expertise: mentor.tags,
       experience: [{ role: mentor.role, company: mentor.company, period: "Present" }],
+      // Mentor 2 (Amina Yusuf) has no available slots to represent fully booked state in design
+      availableDates: mentor.id === "2" ? [] : upcomingDates(),
     },
   ])
 );

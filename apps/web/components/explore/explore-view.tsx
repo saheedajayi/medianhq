@@ -13,7 +13,7 @@ import { CategoryPills } from "./category-pills";
 import { FeaturedMentorsSection } from "./featured-mentors-section";
 import { MentorsGridSection } from "./mentors-grid-section";
 import { FiltersDialog } from "./filters-dialog";
-import { SearchX } from "lucide-react";
+import { SearchNormal } from "iconsax-react";
 
 interface ExploreViewProps {
   initialMentors?: ExploreMentor[];
@@ -160,8 +160,8 @@ export function ExploreView({
             <div className="flex flex-col gap-8">
               {/* Empty search notice */}
               <div className="flex flex-col items-center justify-center py-4 text-center">
-                <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF0EB] text-[#FF5500]">
-                  <SearchX className="size-6" />
+                <div className="flex size-14 items-center justify-center rounded-full bg-[#FFEEE8]">
+                  <SearchNormal size="28" variant="Bulk" color="#FF5500" />
                 </div>
                 <h3 className="mt-3 text-lg font-semibold text-[#101828]">
                   No mentors found

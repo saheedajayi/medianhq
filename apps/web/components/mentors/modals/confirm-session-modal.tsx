@@ -1,47 +1,138 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/base/dialog";
-import { ArrowDown2 } from "iconsax-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/base/select";
 import { SessionPackage } from "../types";
+
+export interface ScopeOption {
+  id: string;
+  label: string;
+  isFree: boolean;
+  priceDisplay: string;
+  packageMatcher: string;
+}
+
+export const conversationScopes: ScopeOption[] = [
+  {
+    id: "career-growth",
+    label: "Career growth & promotions",
+    isFree: false,
+    priceDisplay: "₦15,000",
+    packageMatcher: "career",
+  },
+  {
+    id: "cv-portfolio",
+    label: "CV & Portfolio critique",
+    isFree: false,
+    priceDisplay: "₦20,000",
+    packageMatcher: "cv",
+  },
+  {
+    id: "fintech-strategy",
+    label: "Fintech strategy & system design",
+    isFree: false,
+    priceDisplay: "₦20,000",
+    packageMatcher: "strategy",
+  },
+  {
+    id: "leadership-coaching",
+    label: "Leadership & management coaching",
+    isFree: false,
+    priceDisplay: "₦20,000",
+    packageMatcher: "leadership",
+  },
+  {
+    id: "general-intro",
+    label: "General intro & mentorship",
+    isFree: true,
+    priceDisplay: "Free",
+    packageMatcher: "know",
+  },
+];
 
 interface ConfirmSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
   mentorName: string;
+  packages?: SessionPackage[];
   selectedPackage: SessionPackage;
   dateTimeDisplay: string;
-  onConfirm: (data: { scope: string; goals: string }) => void;
+  onConfirm: (data: {
+    scope: string;
+    goals: string;
+    isFree: boolean;
+    packageToUse?: SessionPackage;
+  }) => void;
 }
-
-const scopes = [
-  "Career growth & promotions",
-  "CV & Portfolio critique",
-  "Fintech strategy & system design",
-  "Leadership & management coaching",
-  "General intro & mentorship",
-];
 
 export function ConfirmSessionModal({
   isOpen,
   onClose,
+  packages,
   selectedPackage,
   dateTimeDisplay,
   onConfirm,
 }: ConfirmSessionModalProps) {
-  const [scope, setScope] = useState(scopes[0] || "Career growth & promotions");
+  const [scope, setScope] = useState<string>("Career growth & promotions");
   const [goals, setGoals] = useState("");
 
-  const isFree = selectedPackage.numericPrice === 0;
+  // Sync initial scope with the package selected on the mentor profile page
+  useEffect(() => {
+    if (isOpen) {
+      if (selectedPackage.numericPrice === 0) {
+        setScope("General intro & mentorship");
+      } else if (selectedPackage.title.toLowerCase().includes("cv")) {
+        setScope("CV & Portfolio critique");
+      } else if (selectedPackage.title.toLowerCase().includes("career")) {
+        setScope("Career growth & promotions");
+      } else {
+        setScope("Career growth & promotions");
+      }
+    }
+  }, [isOpen, selectedPackage]);
+
+  // Determine free vs paid dynamically based on the currently selected conversation scope
+  const selectedScopeObj =
+    conversationScopes.find((s) => s.label === scope) || conversationScopes[0]!;
+  const isFree = selectedScopeObj.isFree;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm({ scope, goals });
+
+    // Map to matching package if available
+    let packageToUse = selectedPackage;
+    if (packages && packages.length > 0) {
+      if (selectedScopeObj.isFree) {
+        packageToUse =
+          packages.find((p) => p.numericPrice === 0) || selectedPackage;
+      } else {
+        packageToUse =
+          packages.find((p) =>
+            p.title.toLowerCase().includes(selectedScopeObj.packageMatcher)
+          ) ||
+          packages.find((p) => p.numericPrice > 0) ||
+          selectedPackage;
+      }
+    }
+
+    onConfirm({
+      scope,
+      goals,
+      isFree,
+      packageToUse,
+    });
   };
 
   return (
@@ -62,25 +153,31 @@ export function ConfirmSessionModal({
             <label className="text-xs font-medium text-[#344054]">
               Conversation scope
             </label>
-            <div className="relative">
-              <select
-                value={scope}
-                onChange={(e) => setScope(e.target.value)}
-                className="h-11 w-full appearance-none rounded-xl border border-[#EAECF0] bg-white px-3.5 pr-9 text-xs text-[#101828] outline-hidden focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20"
-              >
-                {scopes.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
+            <Select value={scope} onValueChange={setScope}>
+              <SelectTrigger className="h-11 w-full rounded-xl border border-[#EAECF0] bg-white px-3.5 text-xs text-[#101828] shadow-none outline-hidden focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20">
+                <SelectValue placeholder="Select conversation scope" />
+              </SelectTrigger>
+              <SelectContent className="z-[60] rounded-xl border border-[#EAECF0] bg-white p-1 shadow-lg">
+                {conversationScopes.map((s) => (
+                  <SelectItem
+                    key={s.id}
+                    value={s.label}
+                    className="cursor-pointer rounded-lg py-2.5 px-3 text-xs text-[#101828] focus:bg-[#FFF0EB] focus:text-[#FF5500]"
+                  >
+                    <div className="flex w-full items-center justify-between gap-4">
+                      <span>{s.label}</span>
+                      <span
+                        className={`text-[11px] font-semibold ${
+                          s.isFree ? "text-[#FF5500]" : "text-[#667085]"
+                        }`}
+                      >
+                        {s.isFree ? "Free" : s.priceDisplay}
+                      </span>
+                    </div>
+                  </SelectItem>
                 ))}
-              </select>
-              <ArrowDown2
-                size="14"
-                variant="Linear"
-                color="#667085"
-                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
-              />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Details & Goals Textarea */}
@@ -97,10 +194,10 @@ export function ConfirmSessionModal({
             />
           </div>
 
-          {/* CTA Submit Button */}
+          {/* CTA Submit Button (Dynamically changes with conversation scope) */}
           <button
             type="submit"
-            className="mt-2 w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00] active:scale-[0.99]"
+            className="mt-2 w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-[#E04B00] active:scale-[0.99]"
           >
             {isFree ? "Confirm booking" : "Proceed to payment"}
           </button>

@@ -1,11 +1,5 @@
-import { EmptyState } from "@/components/ui/custom/empty-state";
+import { redirect } from "next/navigation";
 
 export default function MenteeProfilePage() {
-  return (
-    <EmptyState
-      eyebrow="Mentee"
-      title="Mentee profile"
-      description="Mentees will manage goals, career stage, and account preferences here."
-    />
-  );
+  redirect("/mentee/community");
 }
