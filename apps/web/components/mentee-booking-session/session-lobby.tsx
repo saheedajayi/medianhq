@@ -2,18 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Mic, MicOff, Video, VideoOff, Clock, X, ArrowLeft } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, Clock, X, Volume2, ChevronDown } from "lucide-react";
 import { Booking, RecordingOption } from "./types";
 
 interface SessionLobbyProps {
   booking: Booking;
-  onBack: () => void;
+  onBack?: () => void;
   onEnterMeeting: (recordingOption: RecordingOption, initialMicOn: boolean, initialCameraOn: boolean) => void;
 }
 
 export function SessionLobby({
   booking,
-  onBack,
+  onBack: _onBack,
   onEnterMeeting,
 }: SessionLobbyProps) {
   const [isMicOn, setIsMicOn] = useState(true);
@@ -68,33 +68,24 @@ export function SessionLobby({
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] rounded-[24px] border border-[#EAECF0] bg-white p-6 sm:p-10">
-      {/* Back button */}
-      <div className="mb-6 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-[#475467] transition hover:bg-[#F9FAFB] hover:text-[#101828]"
-        >
-          <ArrowLeft className="size-4" />
-          Back to Bookings
-        </button>
+    <div className="w-full rounded-[20px] border border-[#EAECF0] bg-white p-6 sm:p-8 flex flex-col shadow-xs">
+      {/* Header Row */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#101828]">Session lobby</h1>
+          <p className="mt-1 text-sm text-[#475467]">
+            Set up times when you&apos;re available for bookings during the week.
+          </p>
+        </div>
 
-        <span className="rounded-full bg-[#ECFDF3] px-3 py-1 text-xs font-semibold text-[#027A48]">
-          Ready to join
-        </span>
-      </div>
-
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-[#101828]">Session lobby</h1>
-        <p className="mt-1 text-sm text-[#667085]">
-          Set up times when you&apos;re available for bookings during the week.
-        </p>
+        <div className="inline-flex items-center gap-2 rounded-full bg-[#FFEEE8] px-3.5 py-1 text-xs font-semibold text-[#FF5514] w-fit">
+          <span className="size-2 rounded-full bg-[#FF5514]" />
+          <span>Mentee is waiting</span>
+        </div>
       </div>
 
       {/* Main Video Stage */}
-      <div className="relative mx-auto aspect-[16/10] max-h-[580px] w-full overflow-hidden rounded-[20px] bg-[#101828]">
+      <div className="relative mx-auto aspect-[16/9] max-h-[580px] w-full overflow-hidden rounded-xl bg-[#1D2939]">
         {isCameraOn ? (
           hasCameraStream ? (
             <video
@@ -117,74 +108,88 @@ export function SessionLobby({
           )
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center text-center text-white">
-            <div className="flex size-20 items-center justify-center rounded-full bg-[#1D2939] text-[#98A2B3]">
-              <VideoOff className="size-10" />
+            <div className="flex size-16 items-center justify-center rounded-full bg-[#101828] text-[#98A2B3]">
+              <VideoOff className="size-8" />
             </div>
-            <p className="mt-4 text-base font-semibold">Camera is turned off</p>
-            <p className="mt-1 text-xs text-[#98A2B3]">Click &quot;Camera On&quot; below to turn it on</p>
+            <p className="mt-3 text-sm font-semibold">Camera is turned off</p>
+            <p className="mt-1 text-xs text-[#98A2B3]">Click &quot;Camera on&quot; below to turn it on</p>
           </div>
         )}
 
         {/* Floating User Badge */}
-        <div className="absolute bottom-4 left-4 z-10 rounded-lg bg-[#101828]/80 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-          {booking.mentorName} (You)
+        <div className="absolute bottom-4 left-4 z-10 rounded-lg bg-[#101828]/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
+          Abdullah Mumuni (You)
         </div>
       </div>
 
-      {/* Media Controls */}
-      <div className="mt-6 flex items-center justify-between">
+      {/* Media Controls Bar directly below video */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {/* Mic Toggle Button */}
           <button
             type="button"
             onClick={() => setIsMicOn((prev) => !prev)}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+            className={`h-[43px] inline-flex items-center gap-2 rounded-full px-5 text-xs font-semibold transition cursor-pointer ${
               isMicOn
                 ? "border border-[#FFCAB6] bg-[#FDF9F6] text-[#E84D12] hover:bg-[#FEE4E2]/40"
-                : "border border-[#D0D5DD] bg-white text-[#667085] hover:bg-[#F9FAFB]"
+                : "border border-[#D0D5DD] bg-white text-[#344054] hover:bg-[#F9FAFB]"
             }`}
           >
-            {isMicOn ? <Mic className="size-4 text-[#FF5514]" /> : <MicOff className="size-4" />}
-            {isMicOn ? "Mic On" : "Mic Off"}
+            {isMicOn ? <Mic className="size-4 text-[#FF5514]" /> : <MicOff className="size-4 text-[#667085]" />}
+            <span>{isMicOn ? "Mic on" : "Mic off"}</span>
           </button>
 
           {/* Camera Toggle Button */}
           <button
             type="button"
             onClick={() => setIsCameraOn((prev) => !prev)}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+            className={`h-[43px] inline-flex items-center gap-2 rounded-full px-5 text-xs font-semibold transition cursor-pointer ${
               isCameraOn
                 ? "border border-[#FFCAB6] bg-[#FDF9F6] text-[#E84D12] hover:bg-[#FEE4E2]/40"
-                : "border border-[#D0D5DD] bg-white text-[#667085] hover:bg-[#F9FAFB]"
+                : "border border-[#D0D5DD] bg-white text-[#344054] hover:bg-[#F9FAFB]"
             }`}
           >
-            {isCameraOn ? <Video className="size-4 text-[#FF5514]" /> : <VideoOff className="size-4" />}
-            {isCameraOn ? "Camera On" : "Camera Off"}
+            {isCameraOn ? <Video className="size-4 text-[#FF5514]" /> : <VideoOff className="size-4 text-[#667085]" />}
+            <span>{isCameraOn ? "Camera on" : "Camera off"}</span>
           </button>
         </div>
 
-        {/* Join CTA */}
+        {/* Speaker / Device Selector */}
+        <div className="relative">
+          <button
+            type="button"
+            className="h-[43px] rounded-lg border border-[#D0D5DD] bg-white px-4 text-xs font-medium text-[#344054] inline-flex items-center gap-2.5 hover:bg-[#F9FAFB] transition cursor-pointer"
+          >
+            <Volume2 className="size-4 text-[#667085]" />
+            <span>Default Speakers</span>
+            <ChevronDown className="size-3.5 text-[#667085]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Session Details & Join CTA Row */}
+      <div className="mt-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#101828]">
+            Review with {booking.mentorName}
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-[#475467]">
+            Reviewing portfolio and job application tips.
+          </p>
+          <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#FF5514]">
+            <Clock className="size-4 text-[#FF5514]" />
+            <span>{booking.durationMinutes} Mins Duration</span>
+          </div>
+        </div>
+
         <button
           type="button"
           onClick={handleStartJoin}
-          className="rounded-full bg-[#FF5514] px-8 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E04406] active:scale-[0.98]"
+          className="h-[43px] rounded-full bg-[#FF5514] px-6 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer w-fit"
         >
-          Join meeting
+          <span>Join session</span>
+          <ChevronDown className="size-3.5 text-white" />
         </button>
-      </div>
-
-      {/* Session Details Footer */}
-      <div className="mt-8 border-t border-[#EAECF0] pt-6">
-        <h2 className="text-xl font-bold tracking-tight text-[#101828]">
-          {booking.title} with {booking.mentorName}
-        </h2>
-        <p className="mt-1 text-sm text-[#667085]">
-          Reviewing CV and portfolio for Senior Product Management roles in FinTech.
-        </p>
-        <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#475467]">
-          <Clock className="size-4 text-[#FF5514]" />
-          <span>{booking.durationMinutes} Minutes Duration</span>
-        </div>
       </div>
 
       {/* Recording Consent Modal (Join Session - Lobby-1.svg) */}
