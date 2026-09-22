@@ -212,7 +212,7 @@ export function MenteeBookingSessionView() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] rounded-[24px] border border-[#EAECF0] bg-white p-6 sm:p-10">
+    <div className="relative w-full flex-1 flex flex-col">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[#101828] px-4 py-3 text-xs font-semibold text-white shadow-xl animate-in slide-in-from-bottom-4">

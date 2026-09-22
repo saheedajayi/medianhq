@@ -68,7 +68,7 @@ export function SessionLobby({
   };
 
   return (
-    <div className="w-full rounded-[20px] border border-[#EAECF0] bg-white p-6 sm:p-8 flex flex-col shadow-xs">
+    <div className="w-full flex-1 flex flex-col">
       {/* Header Row */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

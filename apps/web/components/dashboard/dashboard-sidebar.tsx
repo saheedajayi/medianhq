@@ -135,7 +135,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
                 className={`flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
                   isActive
                     ? "bg-[#FFEEE8] text-[#FF5514] font-semibold"
-                    : "text-[#475467] hover:bg-[#F9FAFB] hover:text-[#101828]"
+                    : "text-[#475467] hover:bg-[#F2F4F7] hover:text-[#101828]"
                 }`}
               >
                 <Icon
@@ -159,7 +159,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
           className={`flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
             pathname?.startsWith("/settings")
               ? "bg-[#FFEEE8] text-[#FF5514] font-semibold"
-              : "text-[#475467] hover:bg-[#F9FAFB] hover:text-[#101828]"
+              : "text-[#475467] hover:bg-[#F2F4F7] hover:text-[#101828]"
           }`}
         >
           <Setting2
@@ -186,7 +186,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
   return (
     <>
       {/* Desktop Fixed Sidebar (visible from lg: 1024px and up) */}
-      <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-64 flex-col border-r border-[#EAECF0] bg-white px-5 py-6">
+      <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-60 flex-col bg-[#F9FAFB] px-5 py-6">
         {navContent}
       </aside>
 
@@ -201,7 +201,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
           />
 
           {/* Sliding Drawer Container */}
-          <aside className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col border-r border-[#EAECF0] bg-white px-5 py-6 shadow-2xl transition-transform animate-in slide-in-from-left duration-200">
+          <aside className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col bg-[#F9FAFB] px-5 py-6 shadow-2xl transition-transform animate-in slide-in-from-left duration-200">
             {navContent}
           </aside>
         </div>

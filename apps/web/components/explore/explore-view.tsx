@@ -124,7 +124,7 @@ export function ExploreView({
   };
 
   return (
-    <div className="relative flex flex-col gap-6 rounded-2xl border border-[#EAECF0] bg-white px-5 py-6 pb-12 sm:px-7 lg:px-8">
+    <div className="relative w-full flex-1 flex flex-col gap-6 pb-12">
       {/* 1. Header: Page title and subtitle */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">

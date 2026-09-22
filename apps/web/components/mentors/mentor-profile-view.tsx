@@ -84,7 +84,7 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-[#EAECF0] bg-white p-5 pb-16 sm:p-7">
+    <div className="w-full flex-1 flex flex-col pb-16">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
           <MentorHeroCard mentor={mentor} />
