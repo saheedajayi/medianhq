@@ -24,6 +24,22 @@ function decodeJwtPayload(token: string): {
   }
 }
 
+const AUTH_ROUTES = new Set(["/signin", "/signup", "/login"]);
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/mentor",
+  "/mentee",
+  "/bookings",
+  "/settings",
+] as const;
+
+const ONBOARDING_REDIRECTS: Record<string, string> = {
+  EMAIL_VERIFICATION: "/email-verification",
+  ROLE_SELECTION: "/role-selection",
+  MENTEE_ONBOARDING: "/mentee-onboarding",
+  MENTOR_ONBOARDING: "/mentor-onboarding",
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -41,11 +57,7 @@ export function middleware(request: NextRequest) {
   );
 
   const isAuthenticated = isAccessValid || isRefreshValid;
-
-  const isAuthPage =
-    pathname === "/signin" ||
-    pathname === "/signup" ||
-    pathname === "/login";
+  const isAuthPage = AUTH_ROUTES.has(pathname);
 
   // If already authenticated and visiting login/signup, redirect to dashboard
   if (isAuthPage && isAccessValid) {
@@ -55,12 +67,9 @@ export function middleware(request: NextRequest) {
   }
 
   // Protected dashboard routes
-  const isProtectedRoute =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/mentor") ||
-    pathname.startsWith("/mentee") ||
-    pathname.startsWith("/bookings") ||
-    pathname.startsWith("/settings");
+  const isProtectedRoute = PROTECTED_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
 
   if (!isProtectedRoute) {
     return NextResponse.next();
@@ -75,23 +84,13 @@ export function middleware(request: NextRequest) {
 
   // If access token is valid, enforce role-based route protection at the edge (<1ms)
   if (isAccessValid && sessionPayload) {
-    const role = sessionPayload.role;
-    const stage = sessionPayload.accountStage;
+    const { role, accountStage } = sessionPayload;
 
     // Enforce onboarding steps if not yet ready
-    if (stage && stage !== "READY" && stage !== "MENTOR_PENDING") {
-      if (stage === "EMAIL_VERIFICATION") {
-        return NextResponse.redirect(new URL("/email-verification", request.url));
-      }
-      if (stage === "ROLE_SELECTION") {
-        return NextResponse.redirect(new URL("/role-selection", request.url));
-      }
-      if (stage === "MENTEE_ONBOARDING") {
-        return NextResponse.redirect(new URL("/mentee-onboarding", request.url));
-      }
-      if (stage === "MENTOR_ONBOARDING") {
-        return NextResponse.redirect(new URL("/mentor-onboarding", request.url));
-      }
+    if (accountStage && ONBOARDING_REDIRECTS[accountStage]) {
+      return NextResponse.redirect(
+        new URL(ONBOARDING_REDIRECTS[accountStage], request.url),
+      );
     }
 
     // Role-specific route boundaries
