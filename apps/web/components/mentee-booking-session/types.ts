@@ -45,6 +45,10 @@ export interface Booking {
   refundAmount?: string;
   absentee?: string;
   isNoShow?: boolean;
+  /** LiveKit wss:// server URL — populated when "Join session" is clicked */
+  livekitUrl?: string;
+  /** Short-lived LiveKit JWT for this participant */
+  livekitToken?: string;
 }
 
 export type MeetingFlowState =

@@ -42,6 +42,9 @@ export function MenteeBookingSessionView() {
   const [recordingChoice, setRecordingChoice] = useState<RecordingOption>("do_not_record");
   const [initialMicOn, setInitialMicOn] = useState(true);
   const [initialCameraOn, setInitialCameraOn] = useState(true);
+  // LiveKit session credentials
+  const [livekitToken, setLivekitToken] = useState<string | null>(null);
+  const [livekitServerUrl, setLivekitServerUrl] = useState<string | null>(null);
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -64,11 +67,15 @@ export function MenteeBookingSessionView() {
   const handleEnterMeeting = (
     recChoice: RecordingOption,
     micOn: boolean,
-    cameraOn: boolean
+    cameraOn: boolean,
+    token: string,
+    serverUrl: string
   ) => {
     setRecordingChoice(recChoice);
     setInitialMicOn(micOn);
     setInitialCameraOn(cameraOn);
+    setLivekitToken(token);
+    setLivekitServerUrl(serverUrl);
     setMeetingFlow("live_room");
   };
 
@@ -199,13 +206,13 @@ export function MenteeBookingSessionView() {
   }
 
   // If in live video session room:
-  if (meetingFlow === "live_room" && meetingBooking) {
+  if (meetingFlow === "live_room" && meetingBooking && livekitToken && livekitServerUrl) {
     return (
       <LiveVideoSessionRoom
         booking={meetingBooking}
         recordingOption={recordingChoice}
-        initialMicOn={initialMicOn}
-        initialCameraOn={initialCameraOn}
+        livekitToken={livekitToken}
+        livekitServerUrl={livekitServerUrl}
         onEndCall={handleEndCall}
       />
     );
