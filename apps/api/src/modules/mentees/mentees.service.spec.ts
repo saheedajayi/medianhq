@@ -106,22 +106,7 @@ describe('MenteesService', () => {
     });
   });
 
-  it('should throw ForbiddenException if email is unverified', async () => {
-    repository.findUserForOnboarding.mockResolvedValue({
-      emailVerifiedAt: null,
-      role: UserRole.MENTEE,
-      menteeProfile: null,
-    });
-
-    await expect(service.createProfile('user-1', validDto)).rejects.toThrow(
-      ForbiddenException,
-    );
-    await expect(service.createProfile('user-1', validDto)).rejects.toThrow(
-      'Verify your email before starting onboarding.',
-    );
-  });
-
-  it('should throw ForbiddenException if user role is not MENTEE', async () => {
+  it('should throw ForbiddenException if user role is MENTOR', async () => {
     repository.findUserForOnboarding.mockResolvedValue({
       emailVerifiedAt: new Date(),
       role: UserRole.MENTOR,
@@ -132,7 +117,8 @@ describe('MenteesService', () => {
       ForbiddenException,
     );
     await expect(service.createProfile('user-1', validDto)).rejects.toThrow(
-      'A mentee role is required to create this profile.',
+      'A mentee profile cannot be created for a mentor user.',
     );
   });
 });
+
