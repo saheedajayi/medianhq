@@ -10,16 +10,28 @@ function decodeJwtPayload(token: string): {
 } | null {
   try {
     const parts = token.split(".");
-    const payloadPart = parts[1];
-    if (!payloadPart) return null;
-    const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonStr = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(""),
-    );
-    return JSON.parse(jsonStr);
+    // For 2-part tokens (payload.signature), payload is at index 0.
+    // For 3-part standard JWTs (header.payload.signature), payload is at index 1.
+    const candidates = parts.length === 2 ? [parts[0], parts[1]] : [parts[1], parts[0]];
+    for (const part of candidates) {
+      if (!part) continue;
+      try {
+        const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonStr = decodeURIComponent(
+          atob(base64)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join(""),
+        );
+        const parsed = JSON.parse(jsonStr);
+        if (parsed && typeof parsed === "object" && ("sub" in parsed || "exp" in parsed)) {
+          return parsed;
+        }
+      } catch {
+        // try next candidate
+      }
+    }
+    return null;
   } catch {
     return null;
   }

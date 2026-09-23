@@ -115,19 +115,16 @@ export function LoginPage() {
           description: `Welcome back.`,
         });
         const stage = response.data.user.accountStage;
-        if (
+        const targetUrl =
           (stage === "READY" || stage === "MENTOR_PENDING") &&
           redirectParam &&
           redirectParam.startsWith("/")
-        ) {
-          router.replace(redirectParam);
-          return;
-        }
-        router.replace(
-          getAuthDestination(response.data.user, {
-            retryEmail: response.data.emailSent === false,
-          }),
-        );
+            ? redirectParam
+            : getAuthDestination(response.data.user, {
+                retryEmail: response.data.emailSent === false,
+              });
+
+        window.location.href = targetUrl;
       })
       .catch((error: unknown) => {
         const submittedEmail = result.data.email;
