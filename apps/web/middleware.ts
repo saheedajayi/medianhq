@@ -9,7 +9,8 @@ function decodeJwtPayload(token: string): {
   type?: string;
 } | null {
   try {
-    const [payloadPart] = token.split(".");
+    const parts = token.split(".");
+    const payloadPart = parts[1];
     if (!payloadPart) return null;
     const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
     const jsonStr = decodeURIComponent(
@@ -98,10 +99,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    if (
-      (pathname.startsWith("/mentee/") || pathname === "/explore") &&
-      role === "MENTOR"
-    ) {
+    if (pathname.startsWith("/mentee/") && role === "MENTOR") {
       return NextResponse.redirect(new URL("/mentor/sessions", request.url));
     }
   }

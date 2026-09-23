@@ -50,7 +50,7 @@ export default function DashboardLayout({
           router.replace("/dashboard");
           return;
         }
-        const menteeRoute = pathname?.startsWith("/mentee/") || pathname === "/explore";
+        const menteeRoute = pathname?.startsWith("/mentee/");
         if (menteeRoute && response.data.role === "MENTOR") {
           router.replace("/mentor/sessions");
           return;

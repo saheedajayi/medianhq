@@ -8,7 +8,7 @@ import {
   useTransition,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -39,6 +39,8 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
   const [isNavigatingToReset, startTransition] = useTransition();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,6 +55,15 @@ export function LoginPage() {
       .me()
       .then((response) => {
         if (isCancelled) return;
+        const stage = response.data.accountStage;
+        if (
+          (stage === "READY" || stage === "MENTOR_PENDING") &&
+          redirectParam &&
+          redirectParam.startsWith("/")
+        ) {
+          router.replace(redirectParam);
+          return;
+        }
         const destination = getAuthDestination(response.data);
         router.replace(destination);
       })
@@ -65,7 +76,7 @@ export function LoginPage() {
     return () => {
       isCancelled = true;
     };
-  }, [router]);
+  }, [redirectParam, router]);
 
   if (isCheckingAuth) {
     return (
@@ -103,17 +114,50 @@ export function LoginPage() {
         toast.success("Logged in", {
           description: `Welcome back.`,
         });
+        const stage = response.data.user.accountStage;
+        if (
+          (stage === "READY" || stage === "MENTOR_PENDING") &&
+          redirectParam &&
+          redirectParam.startsWith("/")
+        ) {
+          router.replace(redirectParam);
+          return;
+        }
         router.replace(
           getAuthDestination(response.data.user, {
             retryEmail: response.data.emailSent === false,
           }),
         );
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         const submittedEmail = result.data.email;
         const emailQuery = submittedEmail
           ? `?email=${encodeURIComponent(submittedEmail)}`
           : "";
+
+        const status = (error as Partial<ApiError>)?.status;
+        const rawMessage = ((error as Partial<ApiError>)?.message ?? "").toLowerCase();
+        const isNetworkError =
+          status === 0 ||
+          rawMessage.includes("network") ||
+          rawMessage.includes("timeout") ||
+          rawMessage.includes("failed to fetch") ||
+          (error as { code?: string })?.code === "ERR_NETWORK";
+        const isServerError = typeof status === "number" && status >= 500;
+
+        if (isNetworkError) {
+          toast.error("Network Error", {
+            description: "Unable to connect to the server. Please check your internet connection and try again.",
+          });
+          return;
+        }
+
+        if (isServerError) {
+          toast.error("Server Error", {
+            description: "Our services are temporarily unavailable. Please try again in a few moments.",
+          });
+          return;
+        }
 
         toast.error("Unable to log in", {
           description: (
