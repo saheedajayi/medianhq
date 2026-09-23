@@ -72,7 +72,7 @@ export function LandingHero({
           </div>
         </div>
 
-        <CompanyCarousel />
+        {/* <CompanyCarousel /> */}
       </div>
     </section>
   );
