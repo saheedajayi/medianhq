@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import type { AuthUser } from '../auth/dto/auth.dto';
 
@@ -38,6 +38,9 @@ export class MessagesService {
     return userConvs.map((uc) => {
       const other = uc.conversation.participants.find((p) => p.userId !== user.id)?.user;
       const lastMessage = uc.conversation.messages[0];
+
+      const unreadCount = 0; // Placeholder — add unread tracking field if needed
+
       return {
         id: uc.conversationId,
         participant: other
@@ -48,7 +51,10 @@ export class MessagesService {
               role: other.mentorProfile?.jobTitle || other.menteeProfile?.currentRole || 'User',
             }
           : null,
-        lastMessage: lastMessage ? { content: lastMessage.content, createdAt: lastMessage.createdAt } : null,
+        lastMessage: lastMessage
+          ? { content: lastMessage.content, createdAt: lastMessage.createdAt, senderId: lastMessage.senderId }
+          : null,
+        unreadCount,
         updatedAt: uc.conversation.updatedAt,
       };
     });
@@ -115,4 +121,58 @@ export class MessagesService {
 
     return message;
   }
+
+  async editMessage(user: AuthUser, messageId: string, dto: { content: string }) {
+    if (!dto.content?.trim()) {
+      throw new BadRequestException('Message content cannot be empty.');
+    }
+
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found.');
+    if (message.senderId !== user.id) throw new ForbiddenException('You can only edit your own messages.');
+
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { content: dto.content.trim() },
+    });
+  }
+
+  async deleteMessage(user: AuthUser, messageId: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found.');
+    if (message.senderId !== user.id) throw new ForbiddenException('You can only delete your own messages.');
+
+    await this.prisma.message.delete({ where: { id: messageId } });
+    return { success: true };
+  }
+
+  async markConversationRead(user: AuthUser, conversationId: string) {
+    const isParticipant = await this.prisma.conversationUser.findUnique({
+      where: { conversationId_userId: { conversationId, userId: user.id } },
+    });
+
+    if (!isParticipant) throw new NotFoundException('Conversation not found or access denied.');
+
+    await this.prisma.message.updateMany({
+      where: { conversationId, senderId: { not: user.id }, isRead: false },
+      data: { isRead: true },
+    });
+
+    return { success: true };
+  }
+
+  async reportMessage(user: AuthUser, dto: { messageId: string; reason: string; note?: string }) {
+    if (!dto.messageId || !dto.reason) {
+      throw new BadRequestException('messageId and reason are required.');
+    }
+
+    const message = await this.prisma.message.findUnique({ where: { id: dto.messageId } });
+    if (!message) throw new NotFoundException('Message not found.');
+
+    // Log the report — in a full implementation this would save to a Report model
+    console.log(`[MessageReport] User ${user.id} reported message ${dto.messageId}. Reason: ${dto.reason}. Note: ${dto.note ?? 'N/A'}`);
+
+    return { success: true };
+  }
 }
+

@@ -22,6 +22,9 @@ export default function DashboardLayout({
     pathname === "/mentee/explore" ||
     pathname?.startsWith("/mentors/") ||
     pathname?.startsWith("/mentee/mentors/");
+  const isMessagesRoute =
+    pathname?.startsWith("/mentee/messages") ||
+    pathname?.startsWith("/mentor/messages");
   const { data: user } = useCurrentUser();
   const [role, setRole] = useState<"MENTEE" | "MENTOR" | "ADMIN" | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -154,11 +157,18 @@ export default function DashboardLayout({
 
         {/* Dynamic Dashboard Page Content enclosed in the single curved white canvas */}
         <div className="flex-1 flex flex-col min-h-0 lg:my-2 lg:mr-2 lg:rounded-[20px] lg:border lg:border-[#EAECF0] bg-white overflow-hidden shadow-xs">
-          <main className="flex-1 overflow-y-auto p-5 sm:p-7 md:p-8">
-            <div className="mx-auto w-full max-w-7xl flex-1 flex flex-col min-h-full">
+          {isMessagesRoute ? (
+            /* Messages uses its own internal scroll; no outer padding */
+            <main className="flex flex-1 flex-col min-h-0 overflow-hidden p-3 sm:p-4">
               {children}
-            </div>
-          </main>
+            </main>
+          ) : (
+            <main className="flex-1 overflow-y-auto p-5 sm:p-7 md:p-8">
+              <div className="mx-auto w-full max-w-7xl flex-1 flex flex-col min-h-full">
+                {children}
+              </div>
+            </main>
+          )}
         </div>
       </div>
     </div>

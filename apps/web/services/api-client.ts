@@ -9,6 +9,7 @@ export const API_URL = `${API_BASE_URL}${API_BASE_PATH}`;
 export interface ApiError {
   status: number;
   message: string;
+  code?: string;
   details?: unknown;
 }
 
@@ -44,8 +45,23 @@ const getErrorMessage = (payload: unknown, fallback: string) => {
     return source.message;
   }
 
+  if (
+    Array.isArray(source.message) &&
+    typeof source.message[0] === "string" &&
+    source.message[0].trim()
+  ) {
+    return source.message[0];
+  }
+
   if (typeof source.error === "string" && source.error.trim()) {
     return source.error;
+  }
+
+  if (typeof source.error === "object" && source.error !== null) {
+    const errorObj = source.error as { message?: unknown };
+    if (typeof errorObj.message === "string" && errorObj.message.trim()) {
+      return errorObj.message;
+    }
   }
 
   return fallback;
@@ -142,6 +158,7 @@ apiClient.interceptors.response.use(
             (refreshErr as AxiosError).response?.data,
             "Session expired. Please sign in again.",
           ),
+          code: (refreshErr as AxiosError).code,
           details: (refreshErr as AxiosError).response?.data,
         };
 
@@ -154,6 +171,7 @@ apiClient.interceptors.response.use(
     const apiError: ApiError = {
       status,
       message: getErrorMessage(error.response?.data, error.message),
+      code: error.code,
       details: error.response?.data,
     };
 

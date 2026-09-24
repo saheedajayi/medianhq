@@ -132,46 +132,93 @@ export function LoginPage() {
           ? `?email=${encodeURIComponent(submittedEmail)}`
           : "";
 
-        const status = (error as Partial<ApiError>)?.status;
-        const rawMessage = ((error as Partial<ApiError>)?.message ?? "").toLowerCase();
-        const isNetworkError =
-          status === 0 ||
-          rawMessage.includes("network") ||
-          rawMessage.includes("timeout") ||
-          rawMessage.includes("failed to fetch") ||
-          (error as { code?: string })?.code === "ERR_NETWORK";
-        const isServerError = typeof status === "number" && status >= 500;
+        const apiError = error as Partial<ApiError>;
+        const status = apiError?.status;
+        const code = apiError?.code;
+        const message = apiError?.message?.trim() || "";
+        const lowerMessage = message.toLowerCase();
 
-        if (isNetworkError) {
-          toast.error("Network Error", {
-            description: "Unable to connect to the server. Please check your internet connection and try again.",
+        const isOffline =
+          typeof window !== "undefined" &&
+          typeof navigator !== "undefined" &&
+          !navigator.onLine;
+
+        const isNetworkOrConnectionError =
+          isOffline ||
+          status === 0 ||
+          status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          code === "ERR_NETWORK" ||
+          code === "ECONNABORTED" ||
+          code === "ETIMEDOUT" ||
+          code === "ECONNREFUSED" ||
+          code === "ENOTFOUND" ||
+          code === "ERR_CONNECTION_REFUSED" ||
+          lowerMessage.includes("network") ||
+          lowerMessage.includes("timeout") ||
+          lowerMessage.includes("econnrefused") ||
+          lowerMessage.includes("failed to fetch") ||
+          lowerMessage.includes("connection refused") ||
+          lowerMessage.includes("bad gateway") ||
+          lowerMessage.includes("gateway timeout");
+
+        if (isNetworkOrConnectionError) {
+          toast.error("Connection Error", {
+            description: isOffline
+              ? "You appear to be offline. Please check your internet connection and try again."
+              : "Unable to connect to the server. Please check your internet connection and try again.",
           });
           return;
         }
 
-        if (isServerError) {
+        if (status === 429) {
+          toast.error("Too Many Requests", {
+            description:
+              message ||
+              "Too many login attempts. Please wait a few moments before trying again.",
+          });
+          return;
+        }
+
+        if (typeof status === "number" && status >= 500) {
+          const isGenericServerMessage =
+            !message ||
+            lowerMessage === "internal server error." ||
+            lowerMessage === "internal server error" ||
+            lowerMessage.includes("request failed");
+
           toast.error("Server Error", {
-            description: "Our services are temporarily unavailable. Please try again in a few moments.",
+            description: isGenericServerMessage
+              ? "Something went wrong on our end. Please try again later, or contact support if the issue persists."
+              : `${message} If this persists, please contact support.`,
+          });
+          return;
+        }
+
+        if (status === 401) {
+          toast.error("Unable to log in", {
+            description: (
+              <span className="block leading-snug">
+                <span>Invalid email or password.</span>
+                <span className="mt-1 block">
+                  New to Median?{" "}
+                  <Link
+                    href={`/signup${emailQuery}`}
+                    className="font-medium underline hover:opacity-80"
+                    style={{ color: "#ff5514" }}
+                  >
+                    Create account
+                  </Link>
+                </span>
+              </span>
+            ),
           });
           return;
         }
 
         toast.error("Unable to log in", {
-          description: (
-            <span className="block leading-snug">
-              <span>Invalid email or password.</span>
-              <span className="mt-1 block">
-                New to Median?{" "}
-                <Link
-                  href={`/signup${emailQuery}`}
-                  className="font-medium underline hover:opacity-80"
-                  style={{ color: "#ff5514" }}
-                >
-                  Create account
-                </Link>
-              </span>
-            </span>
-          ),
+          description: message || "Please check your entered details and try again.",
         });
       })
       .finally(() => setIsSubmitting(false));
