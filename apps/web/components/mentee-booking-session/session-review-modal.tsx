@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Star, Plus, X, Check } from "lucide-react";
+import { Star, Plus, X, Check, Trash2 } from "lucide-react";
 import { Booking, ActionItem } from "./types";
 
 interface SessionReviewModalProps {
@@ -40,6 +40,11 @@ export function SessionReviewModal({
         item.id === id ? { ...item, completed: !item.completed } : item
       )
     );
+  };
+
+  const handleRemoveActionItem = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActionItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleAddActionItem = () => {
@@ -157,22 +162,40 @@ export function SessionReviewModal({
                 <div
                   key={item.id}
                   onClick={() => handleToggleItem(item.id)}
-                  className="flex cursor-pointer items-center gap-3 rounded-[8px] border border-[#D0D5DD] bg-white px-3.5 py-2.5 transition hover:border-[#98A2B3] hover:bg-[#F9FAFB]/50"
+                  className="group flex cursor-pointer items-center justify-between gap-3 rounded-[8px] border border-[#D0D5DD] bg-white px-3.5 py-2.5 transition hover:border-[#98A2B3] hover:bg-[#F9FAFB]/50"
                 >
-                  <div
-                    className={`flex size-[18px] shrink-0 items-center justify-center rounded-[4px] transition ${
-                      item.completed
-                        ? "bg-[#FF5514] text-white"
-                        : "border-[1.5px] border-[#D0D5DD] bg-white"
-                    }`}
-                  >
-                    {item.completed && <Check className="size-3 stroke-[3]" />}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div
+                      className={`flex size-[18px] shrink-0 items-center justify-center rounded-[4px] transition ${
+                        item.completed
+                          ? "bg-[#FF5514] text-white"
+                          : "border-[1.5px] border-[#D0D5DD] bg-white"
+                      }`}
+                    >
+                      {item.completed && <Check className="size-3 stroke-[3]" />}
+                    </div>
+                    <span className="text-xs font-normal text-[#101828]">
+                      {item.text}
+                    </span>
                   </div>
-                  <span className="text-xs font-normal text-[#101828]">
-                    {item.text}
-                  </span>
+
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleRemoveActionItem(item.id, e)}
+                    className="shrink-0 rounded p-1 text-[#98A2B3] transition-colors hover:bg-[#FEE4E2]/50 hover:text-[#D92D20] opacity-70 group-hover:opacity-100"
+                    aria-label={`Remove action item: ${item.text}`}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
                 </div>
               ))}
+
+              {actionItems.length === 0 && (
+                <p className="py-2 text-xs italic text-[#98A2B3]">
+                  No action items added yet. Click below to add one.
+                </p>
+              )}
             </div>
 
             {/* Add action items button or input form */}

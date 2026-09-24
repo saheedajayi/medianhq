@@ -43,8 +43,10 @@ const PROTECTED_PREFIXES = [
   "/mentor",
   "/mentee",
   "/bookings",
+  "/messages",
   "/settings",
 ] as const;
+
 
 const ONBOARDING_REDIRECTS: Record<string, string> = {
   EMAIL_VERIFICATION: "/email-verification",
@@ -125,9 +127,11 @@ export const config = {
     "/mentor/:path*",
     "/mentee/:path*",
     "/bookings/:path*",
+    "/messages/:path*",
     "/settings/:path*",
     "/signin",
     "/signup",
     "/login",
   ],
 };
+

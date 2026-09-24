@@ -49,6 +49,13 @@ export interface ReportMessagePayload {
 }
 
 export const messagesService = {
+  /** Get LiveKit realtime token for current user's inbox room */
+  getLiveKitToken() {
+    return apiClient
+      .get<{ token: string; roomName: string; serverUrl: string }>(`${MESSAGES_PATH}/token`)
+      .then((r) => r.data);
+  },
+
   /** List all conversations for the current user */
   listConversations() {
     return apiClient

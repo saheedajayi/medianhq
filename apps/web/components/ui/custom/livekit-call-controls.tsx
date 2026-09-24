@@ -15,6 +15,7 @@
 import { useCallback, useState } from "react";
 import { useLocalParticipant, useRoomContext } from "@livekit/components-react";
 import { Mic, MicOff, Video, VideoOff, ScreenShare, PhoneOff } from "lucide-react";
+import { stopAllMediaTracks } from "@/components/mentee-booking-session/media-utils";
 
 interface LiveKitCallControlsProps {
   /** Called when the user clicks "End call" — caller handles modal/routing */
@@ -54,9 +55,32 @@ export function LiveKitCallControls({
   }, [localParticipant, isScreenSharing]);
 
   const handleLeave = useCallback(async () => {
-    await room.disconnect();
-    onLeave();
-  }, [room, onLeave]);
+    try {
+      // 1. Explicitly turn off devices in LiveKit so hardware release is triggered
+      await localParticipant.setCameraEnabled(false).catch(() => {});
+      await localParticipant.setMicrophoneEnabled(false).catch(() => {});
+      await localParticipant.setScreenShareEnabled(false).catch(() => {});
+
+      // 2. Stop all published local tracks directly
+      localParticipant.trackPublications.forEach((pub) => {
+        try {
+          pub.track?.stop();
+          if (pub.track && "mediaStreamTrack" in pub.track) {
+            (pub.track as any).mediaStreamTrack?.stop();
+          }
+        } catch {}
+      });
+
+      // 3. Disconnect from room with stopTracks = true
+      await room.disconnect(true);
+    } catch (err) {
+      console.warn("Error releasing media tracks on leave:", err);
+    } finally {
+      // 4. Force browser DOM cleanup to immediately shut down webcam light
+      stopAllMediaTracks();
+      onLeave();
+    }
+  }, [localParticipant, room, onLeave]);
 
   return (
     <div className="flex items-center gap-3 sm:gap-4">

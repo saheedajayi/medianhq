@@ -145,7 +145,9 @@ apiClient.interceptors.response.use(
             pathname.startsWith("/mentor") ||
             pathname.startsWith("/mentee") ||
             pathname.startsWith("/bookings") ||
+            pathname.startsWith("/messages") ||
             pathname.startsWith("/settings");
+
 
           if (isDashboard) {
             window.location.href = `/signin?redirect=${encodeURIComponent(pathname)}`;

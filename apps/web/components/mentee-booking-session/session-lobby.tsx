@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Booking, RecordingOption } from "./types";
+import { stopAllMediaTracks } from "./media-utils";
 
 interface SessionLobbyProps {
   booking: Booking;
@@ -72,6 +73,13 @@ export function SessionLobby({
     return () => {
       vid?.stop();
       aud?.stop();
+      if (vid && "mediaStreamTrack" in vid) {
+        try { (vid as any).mediaStreamTrack?.stop(); } catch {}
+      }
+      if (aud && "mediaStreamTrack" in aud) {
+        try { (aud as any).mediaStreamTrack?.stop(); } catch {}
+      }
+      stopAllMediaTracks();
     };
   }, []);
 
@@ -136,6 +144,15 @@ export function SessionLobby({
       // Stop preview tracks before the real room publishes its own
       videoTrack?.stop();
       audioTrack?.stop();
+      if (videoTrack && "mediaStreamTrack" in videoTrack) {
+        try { (videoTrack as any).mediaStreamTrack?.stop(); } catch {}
+      }
+      if (audioTrack && "mediaStreamTrack" in audioTrack) {
+        try { (audioTrack as any).mediaStreamTrack?.stop(); } catch {}
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
 
       setShowRecordingModal(false);
       onEnterMeeting(recordingChoice, isMicOn, isCameraOn, token, serverUrl);
@@ -148,7 +165,7 @@ export function SessionLobby({
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col">
+    <div className="w-full flex-1 flex flex-col pb-12 sm:pb-16">
       {/* Header Row */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -251,7 +268,7 @@ export function SessionLobby({
       </div>
 
       {/* Session Details & Join CTA */}
-      <div className="mt-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="mt-8 mb-8 sm:mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#101828]">
             Session with {booking.mentorName}

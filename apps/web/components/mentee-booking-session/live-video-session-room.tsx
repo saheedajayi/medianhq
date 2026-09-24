@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Clock } from "iconsax-react";
 import { useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
 import { Booking, RecordingOption } from "./types";
 import { LiveKitRoomProvider } from "@/components/ui/custom/livekit-room-provider";
 import { LiveKitVideoTile } from "@/components/ui/custom/livekit-video-tile";
 import { LiveKitCallControls } from "@/components/ui/custom/livekit-call-controls";
+import { stopAllMediaTracks } from "./media-utils";
 
 // --------------------------------------------------------------------------
 // Inner room — must be rendered inside <LiveKitRoomProvider>
@@ -32,6 +35,25 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
     return () => clearInterval(timer);
   }, []);
 
+  // Ensure all media tracks and camera hardware are released on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        localParticipant.setCameraEnabled(false).catch(() => {});
+        localParticipant.setMicrophoneEnabled(false).catch(() => {});
+        localParticipant.trackPublications.forEach((pub) => {
+          try {
+            pub.track?.stop();
+            if (pub.track && "mediaStreamTrack" in pub.track) {
+              (pub.track as any).mediaStreamTrack?.stop();
+            }
+          } catch {}
+        });
+      } catch {}
+      stopAllMediaTracks();
+    };
+  }, [localParticipant]);
+
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -46,13 +68,15 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
       {/* Top Navigation Bar */}
       <header className="flex h-18 shrink-0 items-center justify-between px-6 sm:px-10">
         {/* Median Brand */}
-        <div className="flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-[#FF5514]">
-            <span className="font-black text-white text-base">m</span>
-          </div>
-          <span className="text-xl font-bold tracking-tight text-white">
-            median
-          </span>
+        <div className="flex items-center">
+          <Image
+            src="/median-logo-light.svg"
+            alt="Median Logo"
+            width={115}
+            height={28}
+            className="h-7 w-auto object-contain"
+            priority
+          />
         </div>
 
         {/* Center / Right: Session Title & Timer */}
@@ -87,7 +111,7 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
             // Waiting for mentor to join
             <div className="flex h-full w-full flex-col items-center justify-center gap-3">
               <div className="flex size-16 items-center justify-center rounded-full bg-[#1D2939]">
-                <span className="text-2xl">⏳</span>
+                <Clock size="28" variant="Outline" color="#98A2B3" />
               </div>
               <p className="text-sm font-medium text-[#98A2B3]">
                 Waiting for {booking.mentorName} to join…

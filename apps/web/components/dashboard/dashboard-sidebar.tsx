@@ -121,7 +121,9 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname?.startsWith(item.href)) ||
               (item.label === "Explore" && (pathname === "/explore" || pathname?.startsWith("/mentors/") || pathname?.startsWith("/mentee/mentors/"))) ||
-              (item.label === "Bookings" && (pathname === "/bookings" || pathname?.startsWith("/mentee/booking-session") || pathname?.startsWith("/mentee/bookings")));
+              (item.label === "Bookings" && (pathname === "/bookings" || pathname?.startsWith("/mentee/booking-session") || pathname?.startsWith("/mentee/bookings"))) ||
+              (item.label === "Messages" && (pathname === "/messages" || pathname?.startsWith("/mentee/messages") || pathname?.startsWith("/mentor/messages") || pathname?.startsWith("/messages/")));
+
 
             const currentVariant = isActive
               ? (item.activeVariant || "Bulk")

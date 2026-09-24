@@ -21,6 +21,7 @@ import { SessionCompletedModal } from "./session-completed-modal";
 import { SegmentedTabs, SegmentedTabItem } from "@/components/ui/custom/segmented-tabs";
 import { bookingsService } from "@/services/bookings";
 import { reviewsService } from "@/services/reviews";
+import { stopAllMediaTracks } from "./media-utils";
 
 const tabs: SegmentedTabItem<BookingTab>[] = [
   { value: "upcoming", label: "Upcoming" },
@@ -99,6 +100,7 @@ export function MenteeBookingSessionView() {
   };
 
   const handleEndCall = () => {
+    stopAllMediaTracks();
     setMeetingFlow("review");
   };
 
@@ -238,6 +240,7 @@ export function MenteeBookingSessionView() {
       <SessionLobby
         booking={meetingBooking}
         onBack={() => {
+          stopAllMediaTracks();
           setMeetingFlow("none");
           setMeetingBooking(null);
         }}

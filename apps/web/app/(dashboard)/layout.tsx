@@ -9,6 +9,7 @@ import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { authService } from "@/services/auth";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { getAuthDestination } from "@/lib/auth-routing";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
@@ -23,8 +24,11 @@ export default function DashboardLayout({
     pathname?.startsWith("/mentors/") ||
     pathname?.startsWith("/mentee/mentors/");
   const isMessagesRoute =
-    pathname?.startsWith("/mentee/messages") ||
-    pathname?.startsWith("/mentor/messages");
+    pathname === "/messages" ||
+    pathname === "/mentee/messages" ||
+    pathname === "/mentor/messages" ||
+    pathname?.startsWith("/messages/");
+
   const { data: user } = useCurrentUser();
   const [role, setRole] = useState<"MENTEE" | "MENTOR" | "ADMIN" | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -157,19 +161,25 @@ export default function DashboardLayout({
 
         {/* Dynamic Dashboard Page Content enclosed in the single curved white canvas */}
         <div className="flex-1 flex flex-col min-h-0 lg:my-2 lg:mr-2 lg:rounded-[20px] lg:border lg:border-[#EAECF0] bg-white overflow-hidden shadow-xs">
-          {isMessagesRoute ? (
-            /* Messages uses its own internal scroll; no outer padding */
-            <main className="flex flex-1 flex-col min-h-0 overflow-hidden p-3 sm:p-4">
+          <main
+            className={cn(
+              "flex-1 flex flex-col min-h-0",
+              isMessagesRoute
+                ? "p-4 sm:p-6 lg:p-7 overflow-hidden"
+                : "overflow-y-auto p-5 sm:p-7 md:p-8"
+            )}
+          >
+            <div
+              className={cn(
+                "w-full flex-1 flex flex-col min-h-0",
+                isMessagesRoute ? "max-w-none" : "mx-auto max-w-7xl min-h-full"
+              )}
+            >
               {children}
-            </main>
-          ) : (
-            <main className="flex-1 overflow-y-auto p-5 sm:p-7 md:p-8">
-              <div className="mx-auto w-full max-w-7xl flex-1 flex flex-col min-h-full">
-                {children}
-              </div>
-            </main>
-          )}
+            </div>
+          </main>
         </div>
+
       </div>
     </div>
   );

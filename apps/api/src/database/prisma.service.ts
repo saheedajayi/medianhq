@@ -6,6 +6,11 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  constructor() {
+    const url = process.env.DATABASE_URL;
+    super(url ? { datasources: { db: { url } } } : undefined);
+  }
+
   async onModuleInit() {
     await this.$connect();
   }
@@ -14,3 +19,4 @@ export class PrismaService
     await this.$disconnect();
   }
 }
+

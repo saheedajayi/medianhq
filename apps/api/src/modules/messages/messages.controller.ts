@@ -6,7 +6,13 @@ import type { AuthUser } from '../auth/dto/auth.dto';
 
 @Controller('messages')
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(private readonly messagesService: MessagesService) { }
+
+  @UseGuards(AuthGuard)
+  @Get('token')
+  getLiveKitToken(@CurrentUser() user: AuthUser) {
+    return this.messagesService.getLiveKitToken(user);
+  }
 
   @UseGuards(AuthGuard)
   @Get('conversations')
@@ -44,10 +50,7 @@ export class MessagesController {
 
   @UseGuards(AuthGuard)
   @Post(':conversationId/read')
-  markConversationRead(
-    @CurrentUser() user: AuthUser,
-    @Param('conversationId') conversationId: string,
-  ) {
+  markConversationRead(@CurrentUser() user: AuthUser, @Param('conversationId') conversationId: string) {
     return this.messagesService.markConversationRead(user, conversationId);
   }
 
