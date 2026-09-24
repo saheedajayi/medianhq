@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { mockExploreMentors } from "./mock-mentors";
 import {
   ExploreCategory,
@@ -14,6 +14,7 @@ import { FeaturedMentorsSection } from "./featured-mentors-section";
 import { MentorsGridSection } from "./mentors-grid-section";
 import { FiltersDialog } from "./filters-dialog";
 import { SearchNormal } from "iconsax-react";
+import { mentorsService } from "@/services/mentors";
 
 interface ExploreViewProps {
   initialMentors?: ExploreMentor[];
@@ -22,6 +23,32 @@ interface ExploreViewProps {
 export function ExploreView({
   initialMentors = mockExploreMentors,
 }: ExploreViewProps) {
+  const [mentors, setMentors] = useState<ExploreMentor[]>(initialMentors);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    mentorsService
+      .explore({ limit: 50 })
+      .then((res: any) => {
+        if (!isMounted) return;
+        const apiMentors = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        if (apiMentors.length > 0) {
+          setMentors(apiMentors);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load mentors from backend API, using fallback data:", err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   const [filters, setFilters] = useState<ExploreFilterState>({
     search: "",
     category: "All",
@@ -44,7 +71,7 @@ export function ExploreView({
 
   // Filtered dataset
   const filteredMentors = useMemo(() => {
-    let result = [...initialMentors];
+    let result = [...mentors];
 
     // 1. Search filter (name, role, company, bio, tags)
     if (filters.search.trim()) {
@@ -104,12 +131,12 @@ export function ExploreView({
     }
 
     return result;
-  }, [initialMentors, filters]);
+  }, [mentors, filters]);
 
   // Featured mentors for top carousel
   const featuredMentors = useMemo(() => {
-    return initialMentors.filter((m) => m.isFeatured);
-  }, [initialMentors]);
+    return mentors.filter((m) => m.isFeatured);
+  }, [mentors]);
 
   // Reset all filters
   const handleResetFilters = () => {
@@ -124,7 +151,7 @@ export function ExploreView({
   };
 
   return (
-    <div className="relative flex flex-col gap-6 rounded-2xl border border-[#EAECF0] bg-white px-5 py-6 pb-12 sm:px-7 lg:px-8">
+    <div className="relative w-full flex-1 flex flex-col gap-6 pb-12">
       {/* 1. Header: Page title and subtitle */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">

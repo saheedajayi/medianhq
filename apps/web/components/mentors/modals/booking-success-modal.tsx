@@ -40,7 +40,7 @@ export function BookingSuccessModal({
     const details = encodeURIComponent(
       `Your mentorship session with ${mentorName} via MedianHQ.\nSession topic: ${selectedPackage.title}`
     );
-    const location = encodeURIComponent("MedianHQ Video Call (Daily.co)");
+    const location = encodeURIComponent("MedianHQ Video Call");
     const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`;
     window.open(gCalUrl, "_blank", "noopener,noreferrer");
   };

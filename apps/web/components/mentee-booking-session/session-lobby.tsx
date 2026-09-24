@@ -1,193 +1,298 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
-import { Mic, MicOff, Video, VideoOff, Clock, X, ArrowLeft } from "lucide-react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { createLocalTracks, Track } from "livekit-client";
+import type { LocalVideoTrack, LocalAudioTrack } from "livekit-client";
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  Clock,
+  X,
+  Volume2,
+  ChevronDown,
+  Loader2,
+} from "lucide-react";
 import { Booking, RecordingOption } from "./types";
+import { stopAllMediaTracks } from "./media-utils";
 
 interface SessionLobbyProps {
   booking: Booking;
-  onBack: () => void;
-  onEnterMeeting: (recordingOption: RecordingOption, initialMicOn: boolean, initialCameraOn: boolean) => void;
+  onBack?: () => void;
+  onEnterMeeting: (
+    recordingOption: RecordingOption,
+    initialMicOn: boolean,
+    initialCameraOn: boolean,
+    livekitToken: string,
+    livekitServerUrl: string
+  ) => void;
 }
 
 export function SessionLobby({
   booking,
-  onBack,
+  onBack: _onBack,
   onEnterMeeting,
 }: SessionLobbyProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoTrack, setVideoTrack] = useState<LocalVideoTrack | null>(null);
+  const [audioTrack, setAudioTrack] = useState<LocalAudioTrack | null>(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
+
   const [showRecordingModal, setShowRecordingModal] = useState(false);
-  const [recordingChoice, setRecordingChoice] = useState<RecordingOption>("do_not_record");
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [hasCameraStream, setHasCameraStream] = useState(false);
+  const [recordingChoice, setRecordingChoice] =
+    useState<RecordingOption>("do_not_record");
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [roomError, setRoomError] = useState<string | null>(null);
 
-  // Attempt real camera preview if available
+  // --------------------------------------------------------------------------
+  // Acquire local camera + mic on mount for preview — no room joined yet
+  // --------------------------------------------------------------------------
   useEffect(() => {
-    let stream: MediaStream | null = null;
-    let isCancelled = false;
+    let vid: LocalVideoTrack | null = null;
+    let aud: LocalAudioTrack | null = null;
 
-    if (isCameraOn && typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: false })
-        .then((s) => {
-          if (isCancelled) {
-            s.getTracks().forEach((t) => t.stop());
-            return;
+    createLocalTracks({ audio: true, video: true })
+      .then((tracks) => {
+        for (const track of tracks) {
+          if (track.kind === Track.Kind.Video) {
+            vid = track as LocalVideoTrack;
+            setVideoTrack(vid);
+            if (videoRef.current) vid.attach(videoRef.current);
+          } else if (track.kind === Track.Kind.Audio) {
+            aud = track as LocalAudioTrack;
+            setAudioTrack(aud);
           }
-          stream = s;
-          if (videoRef.current) {
-            videoRef.current.srcObject = s;
-            setHasCameraStream(true);
-          }
-        })
-        .catch(() => {
-          // Camera permission denied or not available; fallback to high-res photo preview
-          setHasCameraStream(false);
-        });
-    } else {
-      setHasCameraStream(false);
-    }
+        }
+      })
+      .catch(() => {
+        // Camera / mic unavailable — the placeholder will render instead
+      });
 
     return () => {
-      isCancelled = true;
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
+      vid?.stop();
+      aud?.stop();
+      if (vid && "mediaStreamTrack" in vid) {
+        try { (vid as any).mediaStreamTrack?.stop(); } catch {}
       }
+      if (aud && "mediaStreamTrack" in aud) {
+        try { (aud as any).mediaStreamTrack?.stop(); } catch {}
+      }
+      stopAllMediaTracks();
     };
-  }, [isCameraOn]);
+  }, []);
 
-  const handleStartJoin = () => {
-    setShowRecordingModal(true);
-  };
+  // --------------------------------------------------------------------------
+  // Mic & camera toggles (mute/unmute without stopping the track)
+  // --------------------------------------------------------------------------
+  const toggleMic = useCallback(() => {
+    if (!audioTrack) return;
+    if (isMicOn) {
+      void audioTrack.mute();
+      setIsMicOn(false);
+    } else {
+      void audioTrack.unmute();
+      setIsMicOn(true);
+    }
+  }, [audioTrack, isMicOn]);
 
-  const handleConfirmRecording = () => {
-    setShowRecordingModal(false);
-    onEnterMeeting(recordingChoice, isMicOn, isCameraOn);
+  const toggleCamera = useCallback(() => {
+    if (!videoTrack) return;
+    if (isCameraOn) {
+      void videoTrack.mute();
+      setIsCameraOn(false);
+    } else {
+      void videoTrack.unmute();
+      setIsCameraOn(true);
+    }
+  }, [videoTrack, isCameraOn]);
+
+  // --------------------------------------------------------------------------
+  // Step 1: open recording consent modal
+  // --------------------------------------------------------------------------
+  const handleStartJoin = () => setShowRecordingModal(true);
+
+  // --------------------------------------------------------------------------
+  // Step 2: get LiveKit token then hand off to the live room
+  // --------------------------------------------------------------------------
+  const handleConfirmRecording = async () => {
+    setIsCreatingRoom(true);
+    setRoomError(null);
+    try {
+      const res = await fetch("/api/livekit/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          participantName: "Mentee",
+          enableRecording: recordingChoice === "record",
+        }),
+      });
+
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        throw new Error(err.error ?? "Failed to get session token");
+      }
+
+      const { token, serverUrl } = (await res.json()) as {
+        token: string;
+        roomName: string;
+        serverUrl: string;
+      };
+
+      // Stop preview tracks before the real room publishes its own
+      videoTrack?.stop();
+      audioTrack?.stop();
+      if (videoTrack && "mediaStreamTrack" in videoTrack) {
+        try { (videoTrack as any).mediaStreamTrack?.stop(); } catch {}
+      }
+      if (audioTrack && "mediaStreamTrack" in audioTrack) {
+        try { (audioTrack as any).mediaStreamTrack?.stop(); } catch {}
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+
+      setShowRecordingModal(false);
+      onEnterMeeting(recordingChoice, isMicOn, isCameraOn, token, serverUrl);
+    } catch (err) {
+      setRoomError(
+        err instanceof Error ? err.message : "Something went wrong"
+      );
+      setIsCreatingRoom(false);
+    }
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] rounded-[24px] border border-[#EAECF0] bg-white p-6 sm:p-10">
-      {/* Back button */}
-      <div className="mb-6 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-[#475467] transition hover:bg-[#F9FAFB] hover:text-[#101828]"
-        >
-          <ArrowLeft className="size-4" />
-          Back to Bookings
-        </button>
+    <div className="w-full flex-1 flex flex-col pb-12 sm:pb-16">
+      {/* Header Row */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#101828]">
+            Session lobby
+          </h1>
+          <p className="mt-1 text-sm text-[#475467]">
+            Check your camera and microphone before joining.
+          </p>
+        </div>
 
-        <span className="rounded-full bg-[#ECFDF3] px-3 py-1 text-xs font-semibold text-[#027A48]">
-          Ready to join
-        </span>
+        <div className="inline-flex items-center gap-2 rounded-full bg-[#FFEEE8] px-3.5 py-1 text-xs font-semibold text-[#FF5514] w-fit">
+          <span className="size-2 rounded-full bg-[#FF5514]" />
+          <span>Session ready to join</span>
+        </div>
       </div>
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-[#101828]">Session lobby</h1>
-        <p className="mt-1 text-sm text-[#667085]">
-          Set up times when you&apos;re available for bookings during the week.
-        </p>
-      </div>
-
-      {/* Main Video Stage */}
-      <div className="relative mx-auto aspect-[16/10] max-h-[580px] w-full overflow-hidden rounded-[20px] bg-[#101828]">
+      {/* Main Video Stage — local preview via createLocalTracks */}
+      <div className="relative mx-auto aspect-[16/9] max-h-[580px] w-full overflow-hidden rounded-xl bg-[#1D2939]">
         {isCameraOn ? (
-          hasCameraStream ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="h-full w-full object-cover -scale-x-100"
-            />
-          ) : (
-            <div className="relative h-full w-full">
-              <Image
-                src="/sessions/lobby-preview.png"
-                alt="Camera Preview"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          )
+          // eslint-disable-next-line jsx-a11y/media-has-caption
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="h-full w-full object-cover -scale-x-100"
+          />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center text-center text-white">
-            <div className="flex size-20 items-center justify-center rounded-full bg-[#1D2939] text-[#98A2B3]">
-              <VideoOff className="size-10" />
+          <div className="flex h-full w-full flex-col items-center justify-center bg-[#1D2939]">
+            <div className="flex size-12 items-center justify-center rounded-full bg-[#101828]">
+              <VideoOff className="size-6 text-[#98A2B3]" />
             </div>
-            <p className="mt-4 text-base font-semibold">Camera is turned off</p>
-            <p className="mt-1 text-xs text-[#98A2B3]">Click &quot;Camera On&quot; below to turn it on</p>
+            <p className="mt-2 text-xs font-medium text-[#98A2B3]">
+              Camera is off
+            </p>
           </div>
         )}
 
-        {/* Floating User Badge */}
-        <div className="absolute bottom-4 left-4 z-10 rounded-lg bg-[#101828]/80 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-          {booking.mentorName} (You)
+        {/* Muted overlay badge */}
+        {!isMicOn && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-[#101828]/75 px-2.5 py-1 backdrop-blur-sm">
+            <MicOff className="size-3 text-white" />
+            <span className="text-[11px] font-medium text-white">Muted</span>
+          </div>
+        )}
+      </div>
+
+      {/* Media Controls Bar */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          {/* Mic Toggle */}
+          <button
+            type="button"
+            onClick={toggleMic}
+            className={`h-[43px] inline-flex items-center gap-2 rounded-full px-5 text-xs font-semibold transition cursor-pointer ${
+              isMicOn
+                ? "border border-[#FFCAB6] bg-[#FDF9F6] text-[#E84D12] hover:bg-[#FEE4E2]/40"
+                : "border border-[#D0D5DD] bg-white text-[#344054] hover:bg-[#F9FAFB]"
+            }`}
+          >
+            {isMicOn ? (
+              <Mic className="size-4 text-[#FF5514]" />
+            ) : (
+              <MicOff className="size-4 text-[#667085]" />
+            )}
+            <span>{isMicOn ? "Mic on" : "Mic off"}</span>
+          </button>
+
+          {/* Camera Toggle */}
+          <button
+            type="button"
+            onClick={toggleCamera}
+            className={`h-[43px] inline-flex items-center gap-2 rounded-full px-5 text-xs font-semibold transition cursor-pointer ${
+              isCameraOn
+                ? "border border-[#FFCAB6] bg-[#FDF9F6] text-[#E84D12] hover:bg-[#FEE4E2]/40"
+                : "border border-[#D0D5DD] bg-white text-[#344054] hover:bg-[#F9FAFB]"
+            }`}
+          >
+            {isCameraOn ? (
+              <Video className="size-4 text-[#FF5514]" />
+            ) : (
+              <VideoOff className="size-4 text-[#667085]" />
+            )}
+            <span>{isCameraOn ? "Camera on" : "Camera off"}</span>
+          </button>
+        </div>
+
+        {/* Speaker / Device Selector */}
+        <div className="relative">
+          <button
+            type="button"
+            className="h-[43px] rounded-lg border border-[#D0D5DD] bg-white px-4 text-xs font-medium text-[#344054] inline-flex items-center gap-2.5 hover:bg-[#F9FAFB] transition cursor-pointer"
+          >
+            <Volume2 className="size-4 text-[#667085]" />
+            <span>Default Speakers</span>
+            <ChevronDown className="size-3.5 text-[#667085]" />
+          </button>
         </div>
       </div>
 
-      {/* Media Controls */}
-      <div className="mt-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Mic Toggle Button */}
-          <button
-            type="button"
-            onClick={() => setIsMicOn((prev) => !prev)}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-              isMicOn
-                ? "border border-[#FFCAB6] bg-[#FDF9F6] text-[#E84D12] hover:bg-[#FEE4E2]/40"
-                : "border border-[#D0D5DD] bg-white text-[#667085] hover:bg-[#F9FAFB]"
-            }`}
-          >
-            {isMicOn ? <Mic className="size-4 text-[#FF5514]" /> : <MicOff className="size-4" />}
-            {isMicOn ? "Mic On" : "Mic Off"}
-          </button>
-
-          {/* Camera Toggle Button */}
-          <button
-            type="button"
-            onClick={() => setIsCameraOn((prev) => !prev)}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-              isCameraOn
-                ? "border border-[#FFCAB6] bg-[#FDF9F6] text-[#E84D12] hover:bg-[#FEE4E2]/40"
-                : "border border-[#D0D5DD] bg-white text-[#667085] hover:bg-[#F9FAFB]"
-            }`}
-          >
-            {isCameraOn ? <Video className="size-4 text-[#FF5514]" /> : <VideoOff className="size-4" />}
-            {isCameraOn ? "Camera On" : "Camera Off"}
-          </button>
+      {/* Session Details & Join CTA */}
+      <div className="mt-8 mb-8 sm:mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#101828]">
+            Session with {booking.mentorName}
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-[#475467]">
+            {booking.title}
+          </p>
+          <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#FF5514]">
+            <Clock className="size-4 text-[#FF5514]" />
+            <span>{booking.durationMinutes} Mins Duration</span>
+          </div>
         </div>
 
-        {/* Join CTA */}
         <button
           type="button"
           onClick={handleStartJoin}
-          className="rounded-full bg-[#FF5514] px-8 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E04406] active:scale-[0.98]"
+          className="h-[43px] rounded-full bg-[#FF5514] px-6 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer w-fit"
         >
-          Join meeting
+          <span>Join session</span>
+          <ChevronDown className="size-3.5 text-white" />
         </button>
       </div>
 
-      {/* Session Details Footer */}
-      <div className="mt-8 border-t border-[#EAECF0] pt-6">
-        <h2 className="text-xl font-bold tracking-tight text-[#101828]">
-          {booking.title} with {booking.mentorName}
-        </h2>
-        <p className="mt-1 text-sm text-[#667085]">
-          Reviewing CV and portfolio for Senior Product Management roles in FinTech.
-        </p>
-        <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#475467]">
-          <Clock className="size-4 text-[#FF5514]" />
-          <span>{booking.durationMinutes} Minutes Duration</span>
-        </div>
-      </div>
-
-      {/* Recording Consent Modal (Join Session - Lobby-1.svg) */}
+      {/* Recording Consent Modal */}
       {showRecordingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/50 p-4 backdrop-blur-xs">
           <div className="relative w-full max-w-lg rounded-[24px] bg-white p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
@@ -204,13 +309,14 @@ export function SessionLobby({
               Session Recording
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-[#667085]">
-              This session can be recorded for your reference. Both parties must consent to recording. The recording is encrypted and stored safely.
+              This session can be recorded for your reference. Both parties must
+              consent to recording. The recording is encrypted and stored safely.
             </p>
 
             {/* Options */}
             <div className="mt-6">
               <span className="text-[11px] font-bold tracking-wider text-[#667085] uppercase">
-                REASON
+                CHOOSE AN OPTION
               </span>
 
               <div className="mt-3 space-y-3">
@@ -261,20 +367,36 @@ export function SessionLobby({
                       Record this session
                     </strong>
                     <span className="mt-0.5 block text-xs text-[#667085]">
-                      Recording will be stored securely for 30 days, encrypted, and deletable anytime from your dashboard.
+                      Recording stored securely for 30 days, encrypted, and
+                      deletable anytime from your dashboard.
                     </span>
                   </div>
                 </label>
               </div>
             </div>
 
-            {/* Submit Action */}
+            {/* Error */}
+            {roomError && (
+              <p className="mt-4 rounded-lg bg-[#FEF3F2] px-4 py-2.5 text-xs font-medium text-[#B42318]">
+                {roomError}
+              </p>
+            )}
+
+            {/* Submit */}
             <button
               type="button"
-              onClick={handleConfirmRecording}
-              className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E04406] active:scale-[0.99]"
+              onClick={() => void handleConfirmRecording()}
+              disabled={isCreatingRoom}
+              className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E04406] active:scale-[0.99] disabled:opacity-60 inline-flex items-center justify-center gap-2"
             >
-              Continue to session
+              {isCreatingRoom ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Setting up session…
+                </>
+              ) : (
+                "Continue to session"
+              )}
             </button>
           </div>
         </div>

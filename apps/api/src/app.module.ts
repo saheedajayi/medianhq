@@ -16,6 +16,12 @@ import { UsersModule } from './modules/users/users.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { TaxonomyModule } from './modules/taxonomy/taxonomy.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { CommunityModule } from './modules/community/community.module';
+import { AchievementsModule } from './modules/achievements/achievements.module';
+import { AsyncQaModule } from './modules/async-qa/async-qa.module';
+import { EarningsModule } from './modules/earnings/earnings.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 const envFilePath = [
   'apps/api/.env.local',
@@ -41,6 +47,12 @@ const envFilePath = [
     WaitlistModule,
     TaxonomyModule,
     UploadsModule,
+    MessagesModule,
+    CommunityModule,
+    AchievementsModule,
+    AsyncQaModule,
+    EarningsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

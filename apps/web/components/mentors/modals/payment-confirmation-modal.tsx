@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/base/dialog";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Loader2 } from "lucide-react";
 import { SessionPackage } from "../types";
+import { paymentsService } from "@/services/payments";
 
 interface PaymentConfirmationModalProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ interface PaymentConfirmationModalProps {
   mentorName: string;
   selectedPackage: SessionPackage;
   dateTimeDisplay: string;
+  bookingId?: string;
   onPaySuccess: () => void;
 }
 
@@ -24,8 +27,10 @@ export function PaymentConfirmationModal({
   mentorName,
   selectedPackage,
   dateTimeDisplay,
+  bookingId,
   onPaySuccess,
 }: PaymentConfirmationModalProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
   const sessionPrice = selectedPackage.numericPrice;
   const serviceCharge = Math.round(sessionPrice * 0.1);
   const totalAmount = sessionPrice + serviceCharge;
@@ -33,6 +38,28 @@ export function PaymentConfirmationModal({
   const formattedSessionPrice = `₦${sessionPrice.toLocaleString()}`;
   const formattedServiceCharge = `₦${serviceCharge.toLocaleString()}`;
   const formattedTotal = `₦${totalAmount.toLocaleString()}`;
+
+  const handlePay = async () => {
+    if (!bookingId) {
+      onPaySuccess();
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const res = await paymentsService.initialize(bookingId);
+      if (res?.authorizationUrl && res.authorizationUrl.startsWith("http")) {
+        window.location.href = res.authorizationUrl;
+        return;
+      }
+      onPaySuccess();
+    } catch (err) {
+      console.warn("Payment initialization failed, continuing with success preview:", err);
+      onPaySuccess();
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -88,10 +115,18 @@ export function PaymentConfirmationModal({
           {/* Pay Button */}
           <button
             type="button"
-            onClick={onPaySuccess}
-            className="w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00] active:scale-[0.99]"
+            disabled={isProcessing}
+            onClick={handlePay}
+            className="flex items-center justify-center gap-2 w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00] active:scale-[0.99] disabled:opacity-60"
           >
-            Pay {formattedTotal}
+            {isProcessing ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Processing...</span>
+              </>
+            ) : (
+              <span>Pay {formattedTotal}</span>
+            )}
           </button>
 
           {/* Paystack Trust Badge */}

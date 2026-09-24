@@ -9,6 +9,7 @@ export const API_URL = `${API_BASE_URL}${API_BASE_PATH}`;
 export interface ApiError {
   status: number;
   message: string;
+  code?: string;
   details?: unknown;
 }
 
@@ -44,8 +45,23 @@ const getErrorMessage = (payload: unknown, fallback: string) => {
     return source.message;
   }
 
+  if (
+    Array.isArray(source.message) &&
+    typeof source.message[0] === "string" &&
+    source.message[0].trim()
+  ) {
+    return source.message[0];
+  }
+
   if (typeof source.error === "string" && source.error.trim()) {
     return source.error;
+  }
+
+  if (typeof source.error === "object" && source.error !== null) {
+    const errorObj = source.error as { message?: unknown };
+    if (typeof errorObj.message === "string" && errorObj.message.trim()) {
+      return errorObj.message;
+    }
   }
 
   return fallback;
@@ -61,6 +77,23 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+  failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
   (response) => {
     if (isApiEnvelope(response.data) && response.data.success) {
@@ -69,10 +102,78 @@ apiClient.interceptors.response.use(
 
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const originalRequest = error.config as (typeof error.config & { _retry?: boolean });
+    const status = error.response?.status ?? 0;
+    const url = originalRequest?.url ?? "";
+
+    const isAuthRoute =
+      url.includes("/auth/login") ||
+      url.includes("/auth/register") ||
+      url.includes("/auth/refresh") ||
+      url.includes("/auth/forgot-password") ||
+      url.includes("/auth/reset-password");
+
+    if (status === 401 && !isAuthRoute && originalRequest && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => apiClient(originalRequest))
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        await axios.post(
+          `${API_BASE_URL}${API_BASE_PATH}/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
+
+        processQueue(null);
+        return apiClient(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr);
+
+        if (typeof window !== "undefined") {
+          const pathname = window.location.pathname;
+          const isDashboard =
+            pathname.startsWith("/dashboard") ||
+            pathname.startsWith("/mentor") ||
+            pathname.startsWith("/mentee") ||
+            pathname.startsWith("/bookings") ||
+            pathname.startsWith("/messages") ||
+            pathname.startsWith("/settings");
+
+
+          if (isDashboard) {
+            window.location.href = `/signin?redirect=${encodeURIComponent(pathname)}`;
+          }
+        }
+
+        const apiError: ApiError = {
+          status: (refreshErr as AxiosError).response?.status ?? 401,
+          message: getErrorMessage(
+            (refreshErr as AxiosError).response?.data,
+            "Session expired. Please sign in again.",
+          ),
+          code: (refreshErr as AxiosError).code,
+          details: (refreshErr as AxiosError).response?.data,
+        };
+
+        return Promise.reject(apiError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     const apiError: ApiError = {
-      status: error.response?.status ?? 0,
+      status,
       message: getErrorMessage(error.response?.data, error.message),
+      code: error.code,
       details: error.response?.data,
     };
 

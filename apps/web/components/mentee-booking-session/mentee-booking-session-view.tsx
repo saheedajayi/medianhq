@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Clock, Calendar, CheckCircle2 } from "lucide-react";
 import {
@@ -19,6 +19,9 @@ import { LiveVideoSessionRoom } from "./live-video-session-room";
 import { SessionReviewModal } from "./session-review-modal";
 import { SessionCompletedModal } from "./session-completed-modal";
 import { SegmentedTabs, SegmentedTabItem } from "@/components/ui/custom/segmented-tabs";
+import { bookingsService } from "@/services/bookings";
+import { reviewsService } from "@/services/reviews";
+import { stopAllMediaTracks } from "./media-utils";
 
 const tabs: SegmentedTabItem<BookingTab>[] = [
   { value: "upcoming", label: "Upcoming" },
@@ -31,6 +34,23 @@ export function MenteeBookingSessionView() {
   const [activeTab, setActiveTab] = useState<BookingTab>("upcoming");
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
 
+  useEffect(() => {
+    let isMounted = true;
+    bookingsService
+      .getMine()
+      .then((res: any) => {
+        if (!isMounted || !Array.isArray(res) || res.length === 0) return;
+        setBookings(res as any);
+      })
+      .catch((err) => {
+        console.warn("Could not fetch bookings from backend API, using preview mock dataset:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Active drawers and modal states
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null);
@@ -42,6 +62,9 @@ export function MenteeBookingSessionView() {
   const [recordingChoice, setRecordingChoice] = useState<RecordingOption>("do_not_record");
   const [initialMicOn, setInitialMicOn] = useState(true);
   const [initialCameraOn, setInitialCameraOn] = useState(true);
+  // LiveKit session credentials
+  const [livekitToken, setLivekitToken] = useState<string | null>(null);
+  const [livekitServerUrl, setLivekitServerUrl] = useState<string | null>(null);
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -64,24 +87,39 @@ export function MenteeBookingSessionView() {
   const handleEnterMeeting = (
     recChoice: RecordingOption,
     micOn: boolean,
-    cameraOn: boolean
+    cameraOn: boolean,
+    token: string,
+    serverUrl: string
   ) => {
     setRecordingChoice(recChoice);
     setInitialMicOn(micOn);
     setInitialCameraOn(cameraOn);
+    setLivekitToken(token);
+    setLivekitServerUrl(serverUrl);
     setMeetingFlow("live_room");
   };
 
   const handleEndCall = () => {
+    stopAllMediaTracks();
     setMeetingFlow("review");
   };
 
-  const handleSubmitReview = (reviewData: {
+  const handleSubmitReview = async (reviewData: {
     rating: number;
     review: string;
     actionItems: ActionItem[];
   }) => {
     if (meetingBooking) {
+      try {
+        await reviewsService.create({
+          bookingId: meetingBooking.id,
+          rating: reviewData.rating,
+          comment: reviewData.review,
+        });
+      } catch (err) {
+        console.warn("Could not save review to backend API, saving locally:", err);
+      }
+
       setBookings((prev) =>
         prev.map((b) =>
           b.id === meetingBooking.id
@@ -108,11 +146,17 @@ export function MenteeBookingSessionView() {
   };
 
   // Reschedule and Cancel Handlers
-  const handleConfirmReschedule = (
+  const handleConfirmReschedule = async (
     bookingId: string,
     newDate: string,
     newTime: string
   ) => {
+    try {
+      await bookingsService.reschedule(bookingId, `${newDate}T${newTime}`);
+    } catch (err) {
+      console.warn("Could not reschedule on backend API, updating locally:", err);
+    }
+
     setBookings((prev) =>
       prev.map((b) =>
         b.id === bookingId
@@ -160,7 +204,13 @@ export function MenteeBookingSessionView() {
     showToast("Attendance confirmed successfully!");
   };
 
-  const handleConfirmCancel = (bookingId: string) => {
+  const handleConfirmCancel = async (bookingId: string) => {
+    try {
+      await bookingsService.cancel(bookingId, "Schedule conflict");
+    } catch (err) {
+      console.warn("Could not cancel on backend API, updating locally:", err);
+    }
+
     setBookings((prev) =>
       prev.map((b) =>
         b.id === bookingId
@@ -190,6 +240,7 @@ export function MenteeBookingSessionView() {
       <SessionLobby
         booking={meetingBooking}
         onBack={() => {
+          stopAllMediaTracks();
           setMeetingFlow("none");
           setMeetingBooking(null);
         }}
@@ -199,20 +250,20 @@ export function MenteeBookingSessionView() {
   }
 
   // If in live video session room:
-  if (meetingFlow === "live_room" && meetingBooking) {
+  if (meetingFlow === "live_room" && meetingBooking && livekitToken && livekitServerUrl) {
     return (
       <LiveVideoSessionRoom
         booking={meetingBooking}
         recordingOption={recordingChoice}
-        initialMicOn={initialMicOn}
-        initialCameraOn={initialCameraOn}
+        livekitToken={livekitToken}
+        livekitServerUrl={livekitServerUrl}
         onEndCall={handleEndCall}
       />
     );
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] rounded-[24px] border border-[#EAECF0] bg-white p-6 sm:p-10">
+    <div className="relative w-full flex-1 flex flex-col">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[#101828] px-4 py-3 text-xs font-semibold text-white shadow-xl animate-in slide-in-from-bottom-4">

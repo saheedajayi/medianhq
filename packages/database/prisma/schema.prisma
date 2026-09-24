@@ -58,6 +58,19 @@ model User {
   menteeBookings Booking[]      @relation("MenteeBookings")
   reviewsGiven   Review[]       @relation("ReviewsGiven")
 
+  settings           UserSettings?
+  conversations      ConversationUser[]
+  messagesSent       Message[]
+  communityPosts     CommunityPost[]
+  communityComments  CommunityComment[]
+  postLikes          PostLike[]
+  achievements       UserAchievement[]
+  questionsAsked     Question[]           @relation("QuestionsAsked")
+  questionsReceived  Question[]           @relation("QuestionsReceived")
+  answersGiven       Answer[]
+  mentorEarnings     MentorEarning[]
+  payoutRequests     PayoutRequest[]
+
   googleId       String?        @unique
   linkedinId     String?        @unique
 }
@@ -237,3 +250,145 @@ model VerificationToken {
   @@unique([email, type])
   @@index([token])
 }
+
+model UserSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications Boolean  @default(true)
+  marketingEmails    Boolean  @default(false)
+  timezone           String   @default("Africa/Lagos")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Conversation {
+  id           String             @id @default(cuid())
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  participants ConversationUser[]
+  messages     Message[]
+}
+
+model ConversationUser {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
+
+model CommunityPost {
+  id        String             @id @default(cuid())
+  authorId  String
+  author    User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title     String
+  content   String
+  category  String             @default("General")
+  tags      String[]
+  comments  CommunityComment[]
+  likes     PostLike[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model CommunityComment {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime      @default(now())
+}
+
+model PostLike {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([postId, userId])
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  title       String
+  description String
+  badgeUrl    String?
+  points      Int               @default(10)
+  users       UserAchievement[]
+  createdAt   DateTime          @default(now())
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  earnedAt      DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+model Question {
+  id        String    @id @default(cuid())
+  authorId  String
+  author    User      @relation("QuestionsAsked", fields: [authorId], references: [id], onDelete: Cascade)
+  mentorId  String
+  mentor    User      @relation("QuestionsReceived", fields: [mentorId], references: [id], onDelete: Cascade)
+  title     String
+  content   String
+  answers   Answer[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content    String
+  createdAt  DateTime @default(now())
+}
+
+model MentorEarning {
+  id        String   @id @default(cuid())
+  mentorId  String
+  mentor    User     @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  bookingId String?  @unique
+  amount    Int
+  currency  String   @default("NGN")
+  createdAt DateTime @default(now())
+}
+
+model PayoutRequest {
+  id            String   @id @default(cuid())
+  mentorId      String
+  mentor        User     @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  amount        Int
+  currency      String   @default("NGN")
+  status        String   @default("PENDING")
+  accountNumber String
+  bankCode      String
+  createdAt     DateTime @default(now())
+}
+
