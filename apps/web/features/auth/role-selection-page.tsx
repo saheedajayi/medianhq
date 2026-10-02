@@ -57,6 +57,7 @@ export function RoleSelectionPage() {
     usersService
       .updateRole({ role })
       .then(() => {
+        router.refresh();
         router.push(role === "MENTEE" ? "/mentee-onboarding" : "/mentor-onboarding");
       })
       .catch((error) => {

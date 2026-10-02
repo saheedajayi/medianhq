@@ -12,6 +12,7 @@ import { ScrollToWaitlistButton } from "./scroll-to-waitlist-button";
 import { WaitlistCountBadge } from "./waitlist-count-badge";
 import { WaitlistForm } from "./waitlist-form";
 import { LandingFounderNote } from "@/components/landing-page/home/founder-note";
+import { siteConfig } from "@/lib/site-config";
 
 const featureCards = [
   {
@@ -54,12 +55,7 @@ const featureCards = [
 
 const industries = ["Finance", "Technology", "Business", "Consulting"];
 
-const socialLinks = {
-  instagram: "https://www.instagram.com/median_hq",
-  twitter: "https://x.com/Median_HQ",
-  linkedin: "https://www.linkedin.com/company/median-hq/",
-  email: "mailto:hello@medianhq.co",
-};
+const socialLinks = siteConfig.links;
 
 const faqs = [
   {

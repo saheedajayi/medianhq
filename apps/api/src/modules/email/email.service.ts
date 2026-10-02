@@ -4,12 +4,10 @@ import { buildMenteeWaitlistConfirmationTemplate } from './templates/mentee-wait
 import { buildMentorWaitlistConfirmationTemplate } from './templates/mentor-waitlist-confirmation.template';
 import { buildEmailVerificationTemplate } from './templates/email-verification.template';
 import { buildResetPasswordTemplate } from './templates/reset-password.template';
+import { SOCIAL_LINKS } from '../../common/constants/social-links.constant';
 
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 const REQUEST_TIMEOUT_MS = 30_000;
-const DEFAULT_INSTAGRAM_URL = 'https://www.instagram.com/median_hq';
-const DEFAULT_TWITTER_URL = 'https://x.com/Median_HQ';
-const DEFAULT_LINKEDIN_URL = 'https://www.linkedin.com/company/median-hq/';
 
 type WaitlistConfirmationInput = {
   email: string;
@@ -139,9 +137,9 @@ export class EmailService {
     const waitlistUrl = process.env.WAITLIST_URL ?? `${siteUrl}/waitlist`;
     const unsubscribeUrl = process.env.EMAIL_UNSUBSCRIBE_URL ?? waitlistUrl;
     const assetUrl = this.getEmailAssetUrl(siteUrl);
-    const instagramUrl = process.env.INSTAGRAM_URL ?? DEFAULT_INSTAGRAM_URL;
-    const twitterUrl = process.env.TWITTER_URL ?? DEFAULT_TWITTER_URL;
-    const linkedinUrl = process.env.LINKEDIN_URL ?? DEFAULT_LINKEDIN_URL;
+    const instagramUrl = SOCIAL_LINKS.instagram;
+    const twitterUrl = SOCIAL_LINKS.twitter;
+    const linkedinUrl = SOCIAL_LINKS.linkedin;
     const templateInput = {
       firstName: input.firstName,
       audienceLabel,
@@ -176,9 +174,9 @@ export class EmailService {
     const replyTo = process.env.EMAIL_REPLY_TO;
     const siteUrl = this.getSiteUrl();
     const assetUrl = this.getEmailAssetUrl(siteUrl);
-    const instagramUrl = process.env.INSTAGRAM_URL ?? DEFAULT_INSTAGRAM_URL;
-    const twitterUrl = process.env.TWITTER_URL ?? DEFAULT_TWITTER_URL;
-    const linkedinUrl = process.env.LINKEDIN_URL ?? DEFAULT_LINKEDIN_URL;
+    const instagramUrl = SOCIAL_LINKS.instagram;
+    const twitterUrl = SOCIAL_LINKS.twitter;
+    const linkedinUrl = SOCIAL_LINKS.linkedin;
     
     const templateInput = {
       firstName: input.firstName,
@@ -210,9 +208,9 @@ export class EmailService {
     const replyTo = process.env.EMAIL_REPLY_TO;
     const siteUrl = this.getSiteUrl();
     const assetUrl = this.getEmailAssetUrl(siteUrl);
-    const instagramUrl = process.env.INSTAGRAM_URL ?? DEFAULT_INSTAGRAM_URL;
-    const twitterUrl = process.env.TWITTER_URL ?? DEFAULT_TWITTER_URL;
-    const linkedinUrl = process.env.LINKEDIN_URL ?? DEFAULT_LINKEDIN_URL;
+    const instagramUrl = SOCIAL_LINKS.instagram;
+    const twitterUrl = SOCIAL_LINKS.twitter;
+    const linkedinUrl = SOCIAL_LINKS.linkedin;
     
     const templateInput = {
       firstName: input.firstName,

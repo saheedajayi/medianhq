@@ -52,6 +52,12 @@ export const authService = {
   resetPassword(payload: ResetPasswordPayload) {
     return apiClient.post<{ message: string }>(`${AUTH_PATH}/reset-password`, payload);
   },
+
+  validateResetToken(token: string) {
+    return apiClient.get<{ valid: boolean }>(`${AUTH_PATH}/reset-password/validate`, {
+      params: { token },
+    });
+  },
 };
 
 export type {

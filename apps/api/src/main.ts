@@ -10,7 +10,7 @@ for (const envPath of [
   resolve(process.cwd(), '.env'),
 ]) {
   if (existsSync(envPath)) {
-    dotenv.config({ path: envPath });
+    dotenv.config({ path: envPath, override: true });
   }
 }
 
@@ -25,7 +25,11 @@ import { ApiResponseInterceptor } from './common/api-response.interceptor';
 function getAllowedOrigins() {
   const origins = process.env.WEB_ORIGINS ?? process.env.WEB_ORIGIN;
 
-  return (origins ?? 'http://localhost:3000')
+  if (!origins) {
+    throw new Error('Environment variable WEB_ORIGINS or WEB_ORIGIN must be defined.');
+  }
+
+  return origins
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);

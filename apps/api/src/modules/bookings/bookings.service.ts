@@ -4,8 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { BookingStatus, PaymentStatus } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service';
+import { AccessToken } from 'livekit-server-sdk';
+import { BookingsRepository } from './bookings.repository';
 import type { AuthUser } from '../auth/dto/auth.dto';
 import type { CreateBookingDto } from './dto/create-booking.dto';
 
@@ -17,7 +19,10 @@ export type ExtendedCreateBookingDto = CreateBookingDto & {
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly bookingsRepository: BookingsRepository,
+    private readonly configService: ConfigService,
+  ) {}
 
   async create(user: AuthUser, dto: ExtendedCreateBookingDto) {
     if (!dto.mentorId) {
@@ -25,16 +30,10 @@ export class BookingsService {
     }
 
     // Resolve mentor user ID (whether ID is a MentorProfile ID or User ID)
-    let mentorUser = await this.prisma.user.findUnique({
-      where: { id: dto.mentorId },
-      include: { mentorProfile: true },
-    });
+    let mentorUser = await this.bookingsRepository.findUserWithMentorProfile(dto.mentorId);
 
     if (!mentorUser) {
-      const profile = await this.prisma.mentorProfile.findUnique({
-        where: { id: dto.mentorId },
-        include: { user: true },
-      });
+      const profile = await this.bookingsRepository.findMentorProfileWithUser(dto.mentorId);
       if (profile?.user) {
         mentorUser = { ...profile.user, mentorProfile: profile };
       }
@@ -63,8 +62,8 @@ export class BookingsService {
       notesText += ` (Goals: ${dto.goals.join(', ')})`;
     }
 
-    const booking = await this.prisma.booking.create({
-      data: {
+    const { booking, payment } = await this.bookingsRepository.createBookingWithPayment(
+      {
         mentorId: mentorUser.id,
         menteeId: user.id,
         startsAt: startsAtDate,
@@ -73,39 +72,15 @@ export class BookingsService {
         notes: notesText,
         meetingUrl: `/mentee/booking-session`,
       },
-      include: {
-        mentor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            mentorProfile: true,
-          },
-        },
-        mentee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            menteeProfile: true,
-          },
-        },
-      },
-    });
-
-    // Create payment record if paid
-    let payment = null;
-    if (!isFree) {
-      payment = await this.prisma.payment.create({
-        data: {
-          bookingId: booking.id,
-          amount: price,
-          currency: mentorUser.mentorProfile?.currency || 'NGN',
-          status: PaymentStatus.PENDING,
-          provider: 'PAYSTACK',
-        },
-      });
-    }
+      !isFree
+        ? {
+            amount: price,
+            currency: mentorUser.mentorProfile?.currency || 'NGN',
+            status: PaymentStatus.PENDING,
+            provider: 'PAYSTACK',
+          }
+        : undefined,
+    );
 
     return {
       success: true,
@@ -117,35 +92,7 @@ export class BookingsService {
   }
 
   async mine(user: AuthUser) {
-    const rawBookings = await this.prisma.booking.findMany({
-      where: {
-        OR: [{ menteeId: user.id }, { mentorId: user.id }],
-      },
-      include: {
-        mentor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            mentorProfile: true,
-          },
-        },
-        mentee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            menteeProfile: true,
-          },
-        },
-        payment: true,
-        review: true,
-        session: true,
-      },
-      orderBy: {
-        startsAt: 'desc',
-      },
-    });
+    const rawBookings = await this.bookingsRepository.findUserBookings(user.id);
 
     const now = new Date();
 
@@ -165,28 +112,75 @@ export class BookingsService {
         tab = 'past';
       }
 
-      const mentorName = `${b.mentor.firstName} ${b.mentor.lastName}`.trim() || 'Mentor';
-      const mentorRole = `${b.mentor.mentorProfile?.jobTitle || 'Mentor'} @ ${b.mentor.mentorProfile?.company || 'Median'}`;
-      const priceFormatted = b.payment?.amount ? `₦${b.payment.amount.toLocaleString()}` : 'Free';
+      const startsAtFormatted = startsAt.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      const timeFormatted = startsAt.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      const endsAt = new Date(startsAt.getTime() + b.durationMinutes * 60000);
+      const endsAtFormatted = endsAt.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      const diffTime = startsAt.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      let relativeDate = startsAtFormatted;
+      if (diffDays === 0) relativeDate = 'Today';
+      else if (diffDays === 1) relativeDate = 'Tomorrow';
+      else if (diffDays === -1) relativeDate = 'Yesterday';
+      else if (diffDays > 1 && diffDays < 7) relativeDate = `In ${diffDays} days`;
+
+      const otherUser = isMentee ? b.mentor : b.mentee;
+      const otherRole = isMentee ? (b.mentor.mentorProfile?.headline || 'Mentor') : 'Mentee';
+      const otherAvatar = isMentee
+        ? `https://i.pravatar.cc/150?u=${b.mentor.id}`
+        : (b.mentee.menteeProfile?.avatarUrl || '');
+
+      let title = 'Mentorship Session';
+      let note = b.notes || '';
+      const titleMatch = note.match(/^\[(.*?)\]\s*(.*)/);
+      if (titleMatch) {
+        title = titleMatch[1];
+        note = titleMatch[2];
+      }
+
+      const amount = b.payment?.amount ?? b.mentor.mentorProfile?.pricePerSession ?? 0;
+      const currency = b.payment?.currency ?? b.mentor.mentorProfile?.currency ?? 'NGN';
+      const priceFormatted = amount === 0 ? 'Free' : `${currency} ${amount.toLocaleString()}`;
+
+      const readyThresholdMinutes = 15;
+      const minutesUntilStart = (startsAt.getTime() - now.getTime()) / 60000;
+      const isReadyToJoin =
+        b.status === BookingStatus.CONFIRMED &&
+        minutesUntilStart <= readyThresholdMinutes &&
+        now < endsAt;
 
       return {
         id: b.id,
-        title: b.notes?.startsWith('[') ? b.notes.slice(1, b.notes.indexOf(']')) : '1:1 Mentorship Session',
-        mentorName,
-        mentorRole,
-        mentorAvatar: `https://i.pravatar.cc/150?u=${b.mentor.id}`,
-        linkedinUrl: b.mentor.mentorProfile?.linkedinUrl,
-        timeFormatted: startsAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-        relativeDate: startsAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        fullDateTime: `${startsAt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })} · ${startsAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
-        duration: `${b.durationMinutes}mins`,
+        title,
+        mentorName: `${otherUser.firstName} ${otherUser.lastName}`.trim(),
+        mentorRole: otherRole,
+        mentorAvatar: otherAvatar,
+        linkedinUrl: isMentee ? b.mentor.mentorProfile?.linkedinUrl : undefined,
+        timeFormatted: `${timeFormatted} - ${endsAtFormatted}`,
+        relativeDate,
+        fullDateTime: `${startsAtFormatted} · ${timeFormatted} - ${endsAtFormatted}`,
+        duration: `${b.durationMinutes} mins`,
         durationMinutes: b.durationMinutes,
         price: priceFormatted,
-        status: b.status.toLowerCase(),
+        status: b.status,
         tab,
-        note: b.notes,
+        note,
         meetingUrl: b.meetingUrl,
-        isReadyToJoin: !isCancelled && !isPast && !isPending,
+        isReadyToJoin,
         rating: b.review?.rating,
         review: b.review?.comment,
         hasMenteeReviewed: !!b.review,
@@ -197,30 +191,7 @@ export class BookingsService {
   }
 
   async getById(user: AuthUser, id: string) {
-    const booking = await this.prisma.booking.findUnique({
-      where: { id },
-      include: {
-        mentor: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            mentorProfile: true,
-          },
-        },
-        mentee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            menteeProfile: true,
-          },
-        },
-        payment: true,
-        review: true,
-        session: true,
-      },
-    });
+    const booking = await this.bookingsRepository.findBookingById(id);
 
     if (!booking) {
       throw new NotFoundException(`Booking with ID '${id}' not found.`);
@@ -233,15 +204,63 @@ export class BookingsService {
     return booking;
   }
 
+  async getRoomToken(user: AuthUser, id: string) {
+    const booking = await this.bookingsRepository.findBookingById(id);
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with ID '${id}' not found.`);
+    }
+
+    if (booking.mentorId !== user.id && booking.menteeId !== user.id) {
+      throw new ForbiddenException('You do not have permission to join this session.');
+    }
+
+    if (booking.status === BookingStatus.CANCELLED) {
+      throw new BadRequestException('Cannot join a cancelled booking.');
+    }
+
+    if (booking.status === BookingStatus.PENDING_PAYMENT) {
+      throw new BadRequestException('Booking is pending payment. Please complete payment first.');
+    }
+
+    const key = this.configService.getOrThrow<string>('LIVEKIT_API_KEY');
+    const secret = this.configService.getOrThrow<string>('LIVEKIT_API_SECRET');
+    const serverUrl = this.configService.getOrThrow<string>('LIVEKIT_URL');
+
+    const participantName =
+      `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
+      (user.id === booking.mentorId ? 'Mentor' : 'Mentee');
+    const roomName = `median-session-${booking.id}`;
+
+    const at = new AccessToken(key, secret, {
+      identity: user.id,
+      name: participantName,
+      ttl: '3h',
+    });
+
+    at.addGrant({
+      roomJoin: true,
+      room: roomName,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+    });
+
+    const token = await at.toJwt();
+
+    return {
+      token,
+      roomName,
+      serverUrl,
+    };
+  }
+
   async cancel(user: AuthUser, id: string, reason?: string) {
     const booking = await this.getById(user, id);
 
-    const updated = await this.prisma.booking.update({
-      where: { id },
-      data: {
-        status: BookingStatus.CANCELLED,
-        notes: reason ? `${booking.notes || ''} [Cancelled: ${reason}]`.trim() : booking.notes,
-      },
+    const updated = await this.bookingsRepository.updateBooking(id, {
+      status: BookingStatus.CANCELLED,
+      notes: reason ? `${booking.notes || ''} [Cancelled: ${reason}]`.trim() : booking.notes,
     });
 
     return {
@@ -253,11 +272,8 @@ export class BookingsService {
   async reschedule(user: AuthUser, id: string, newStartsAt: string) {
     await this.getById(user, id);
 
-    const updated = await this.prisma.booking.update({
-      where: { id },
-      data: {
-        startsAt: new Date(newStartsAt),
-      },
+    const updated = await this.bookingsRepository.updateBooking(id, {
+      startsAt: new Date(newStartsAt),
     });
 
     return {

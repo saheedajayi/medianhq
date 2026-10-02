@@ -53,4 +53,13 @@ export class BookingsController {
   ) {
     return this.bookingsService.reschedule(user, id, startsAt);
   }
+
+  @UseGuards(AuthGuard)
+  @Post(':id/room-token')
+  getRoomToken(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
+    return this.bookingsService.getRoomToken(user, id);
+  }
 }

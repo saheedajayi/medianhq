@@ -24,6 +24,7 @@ import {
   formInputClassName,
 } from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
+import { SocialAuthButtons } from "./social-auth-buttons";
 import { getAuthDestination } from "@/lib/auth-routing";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth";
@@ -41,12 +42,21 @@ export function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect");
+  const errorParam = searchParams.get("error");
   const [isNavigatingToReset, startTransition] = useTransition();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {},
   );
+
+  useEffect(() => {
+    if (errorParam) {
+      toast.error("Authentication error", {
+        description: errorParam,
+      });
+    }
+  }, [errorParam]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -234,18 +244,7 @@ export function LoginPage() {
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
-        <a
-          href={authService.getOAuthUrl("linkedin")}
-          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
-        >
-          Log in with LinkedIn
-        </a>
-        <a
-          href={authService.getOAuthUrl("google")}
-          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
-        >
-          Log in with Google
-        </a>
+        <SocialAuthButtons mode="signin" />
 
         <div className="flex items-center gap-3 py-1 text-sm text-[#98A2B3]">
           <span className="h-px flex-1 bg-[#EAECF0]" />

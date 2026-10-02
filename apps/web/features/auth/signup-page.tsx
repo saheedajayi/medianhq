@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
 import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
+import { SocialAuthButtons } from "./social-auth-buttons";
 import { getAuthDestination } from "@/lib/auth-routing";
 import { passwordSchema } from "@/lib/validations";
 import { authService } from "@/services/auth";
@@ -41,6 +42,7 @@ export function SignupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultEmail = searchParams.get("email") ?? "";
+  const errorParam = searchParams.get("error");
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +52,14 @@ export function SignupPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (errorParam) {
+      toast.error("Authentication error", {
+        description: errorParam,
+      });
+    }
+  }, [errorParam]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -144,18 +154,7 @@ export function SignupPage() {
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-3.5">
-        <a
-          href={authService.getOAuthUrl("linkedin")}
-          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
-        >
-          Continue with LinkedIn
-        </a>
-        <a
-          href={authService.getOAuthUrl("google")}
-          className="flex h-11 cursor-pointer items-center justify-center rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
-        >
-          Continue with Google
-        </a>
+        <SocialAuthButtons mode="signup" />
 
         <div className="flex items-center gap-3 py-1 text-sm text-[#98A2B3]">
           <span className="h-px flex-1 bg-[#EAECF0]" />
