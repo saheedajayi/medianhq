@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { authService } from "@/services/auth";
 
 export function GoogleIcon({ className = "size-5" }: { className?: string }) {
@@ -31,29 +34,73 @@ export function LinkedInIcon({ className = "size-5" }: { className?: string }) {
   );
 }
 
+function Spinner() {
+  return (
+    <svg
+      className="size-4 animate-spin text-[#98A2B3]"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+      />
+    </svg>
+  );
+}
+
 interface SocialAuthButtonsProps {
   mode?: "signin" | "signup";
 }
 
 export function SocialAuthButtons({ mode = "signin" }: SocialAuthButtonsProps) {
   const prefix = mode === "signin" ? "Log in" : "Continue";
+  const [loading, setLoading] = useState<"google" | "linkedin" | null>(null);
+
+  // Reset loading state when user navigates back (bfcache restore or tab regains focus)
+  useEffect(() => {
+    const reset = () => setLoading(null);
+
+    // pageshow fires on bfcache restore (back/forward button)
+    window.addEventListener("pageshow", reset);
+    // visibilitychange catches cases where the tab regains visibility
+    document.addEventListener("visibilitychange", reset);
+
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      document.removeEventListener("visibilitychange", reset);
+    };
+  }, []);
+
+  const handleClick = (provider: "google" | "linkedin") => {
+    setLoading(provider);
+    window.location.href = authService.getOAuthUrl(provider);
+  };
 
   return (
     <div className="grid gap-3">
-      <a
-        href={authService.getOAuthUrl("linkedin")}
-        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
+      <button
+        type="button"
+        disabled={loading !== null}
+        onClick={() => handleClick("linkedin")}
+        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <LinkedInIcon className="size-5 shrink-0" />
-        <span>{prefix} with LinkedIn</span>
-      </a>
-      <a
-        href={authService.getOAuthUrl("google")}
-        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99]"
+        {loading === "linkedin" ? <Spinner /> : <LinkedInIcon className="size-5 shrink-0" />}
+        <span>{loading === "linkedin" ? "Redirecting…" : `${prefix} with LinkedIn`}</span>
+      </button>
+      <button
+        type="button"
+        disabled={loading !== null}
+        onClick={() => handleClick("google")}
+        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <GoogleIcon className="size-5 shrink-0" />
-        <span>{prefix} with Google</span>
-      </a>
+        {loading === "google" ? <Spinner /> : <GoogleIcon className="size-5 shrink-0" />}
+        <span>{loading === "google" ? "Redirecting…" : `${prefix} with Google`}</span>
+      </button>
     </div>
   );
 }
