@@ -15,35 +15,33 @@ export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
   }
 
   userProfile(accessToken: string, done: (err?: any, profile?: any) => void) {
-    (this as any)._oauth2.get(
-      'https://api.linkedin.com/v2/userinfo',
-      accessToken,
-      (err: any, body: any) => {
-        if (err) {
-          return done(err);
+    fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          return done(
+            new Error(`LinkedIn userinfo error ${res.status}: ${text}`),
+          );
         }
-
-        try {
-          const json = typeof body === 'string' ? JSON.parse(body) : body;
-          const profile = {
-            provider: 'linkedin',
-            id: json.sub,
-            displayName: json.name,
-            name: {
-              givenName: json.given_name,
-              familyName: json.family_name,
-            },
-            emails: json.email ? [{ value: json.email }] : [],
-            photos: json.picture ? [{ value: json.picture }] : [],
-            _raw: body,
-            _json: json,
-          };
-          done(null, profile);
-        } catch (e) {
-          done(e);
-        }
-      },
-    );
+        const json = await res.json();
+        const profile = {
+          provider: 'linkedin',
+          id: json.sub,
+          displayName: json.name,
+          name: {
+            givenName: json.given_name,
+            familyName: json.family_name,
+          },
+          emails: json.email ? [{ value: json.email }] : [],
+          photos: json.picture ? [{ value: json.picture }] : [],
+          _raw: JSON.stringify(json),
+          _json: json,
+        };
+        done(null, profile);
+      })
+      .catch((err: Error) => done(err));
   }
 
   async validate(accessToken: string, refreshToken: string, profile: any, done: (err: any, user: any, info?: any) => void): Promise<any> {

@@ -20,11 +20,14 @@ export class OAuthExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const baseUrl = this.configService.getOrThrow<string>('WEB_ORIGIN');
 
-    this.logger.warn(
-      `OAuth error encountered on ${request.url}: ${
-        exception instanceof Error ? exception.message : exception
-      }`,
-    );
+    const formattedError =
+      exception instanceof Error
+        ? exception.stack || exception.message
+        : typeof exception === 'object' && exception !== null
+          ? JSON.stringify(exception)
+          : String(exception);
+
+    this.logger.warn(`OAuth error encountered on ${request.url}: ${formattedError}`);
 
     const queryError = (request.query?.error as string) || '';
     const queryErrorDesc = (request.query?.error_description as string) || '';
