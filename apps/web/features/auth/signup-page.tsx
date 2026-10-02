@@ -41,6 +41,7 @@ export function SignupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultEmail = searchParams.get("email") ?? "";
+  const errorParam = searchParams.get("error");
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +51,14 @@ export function SignupPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (errorParam) {
+      toast.error("Authentication error", {
+        description: errorParam,
+      });
+    }
+  }, [errorParam]);
 
   useEffect(() => {
     let isCancelled = false;

@@ -5,7 +5,8 @@ import {
   UnauthorizedException,
   Logger,
 } from '@nestjs/common';
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
+import type { Response } from 'express';
+import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from 'crypto';
 import { UserRole, type User } from '@prisma/client';
 import { AuthRepository } from './auth.repository';
 import { EmailService } from '../email/email.service';
@@ -19,6 +20,11 @@ import type {
   ForgotPasswordDto,
   ResetPasswordDto,
 } from './dto/auth.dto';
+
+export const AUTH_COOKIE_NAME = 'median_session';
+export const REFRESH_COOKIE_NAME = 'median_refresh_token';
+export const ACCESS_COOKIE_MAX_AGE_MS = 1000 * 60 * 15; // 15 mins
+export const REFRESH_COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 type AuthPayload = {
   sessionToken: string;
@@ -86,7 +92,7 @@ export class AuthService {
   private async generateAndSendVerificationEmail(
     user: Pick<User, 'email' | 'firstName'>,
   ) {
-    const code = randomBytes(3).toString('hex').toUpperCase(); // 6 chars like A1B2C3
+    const code = randomInt(100000, 1000000).toString(); // 6 digits like '839201'
 
     await this.authRepository.upsertVerificationToken({
       email: user.email,
@@ -152,14 +158,15 @@ export class AuthService {
 
   async oauthLogin(profile: any): Promise<AuthPayload> {
     const { providerId, email, firstName, lastName, provider } = profile;
+    const normalizedEmail = email ? this.normalizeEmail(email) : undefined;
 
     // Check if user exists by OAuth ID
     let user = await this.authRepository.findByOAuthId(provider, providerId);
 
     if (!user) {
       // Check if user exists by email to link account
-      if (email) {
-        user = (await this.authRepository.findByEmail(email)) as any;
+      if (normalizedEmail) {
+        user = (await this.authRepository.findByEmail(normalizedEmail)) as any;
       }
 
       if (user) {
@@ -173,7 +180,7 @@ export class AuthService {
       } else {
         // Create new user without password and role
         const createData = {
-          email: email || `${providerId}@${provider}.com`, // Fallback email
+          email: normalizedEmail || `${providerId}@${provider}.com`, // Fallback email
           firstName: firstName || 'User',
           lastName: lastName || '',
           emailVerifiedAt: new Date(), // Implicitly verified by OAuth
@@ -192,12 +199,15 @@ export class AuthService {
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
+    const normalizedEmail = this.normalizeEmail(dto.email);
+    const normalizedCode = dto.code?.trim().toUpperCase();
+
     const tokenRecord = await this.authRepository.findVerificationToken(
-      dto.email,
+      normalizedEmail,
       'EMAIL_VERIFICATION',
     );
 
-    if (!tokenRecord || tokenRecord.token !== dto.code) {
+    if (!tokenRecord || tokenRecord.token !== normalizedCode) {
       throw new BadRequestException('Invalid verification code.');
     }
 
@@ -205,7 +215,7 @@ export class AuthService {
       throw new BadRequestException('Verification code has expired.');
     }
 
-    const user = await this.authRepository.findByEmail(dto.email);
+    const user = await this.authRepository.findByEmail(normalizedEmail);
     if (!user) {
       throw new BadRequestException('User not found.');
     }
@@ -229,7 +239,8 @@ export class AuthService {
   }
 
   async resendVerification(dto: ResendVerificationDto) {
-    const user = await this.authRepository.findByEmail(dto.email);
+    const normalizedEmail = this.normalizeEmail(dto.email);
+    const user = await this.authRepository.findByEmail(normalizedEmail);
     if (!user) {
       // Don't leak existence
       return { success: true, message: 'Verification code sent.' };
@@ -245,7 +256,8 @@ export class AuthService {
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await this.authRepository.findByEmail(dto.email);
+    const normalizedEmail = this.normalizeEmail(dto.email);
+    const user = await this.authRepository.findByEmail(normalizedEmail);
     if (!user) {
       // Do not leak user existence
       return {
@@ -274,6 +286,31 @@ export class AuthService {
       success: true,
       message: 'If the email exists, a reset link will be sent.',
     };
+  }
+
+  async validateResetToken(token: string) {
+    if (!token || typeof token !== 'string') {
+      throw new BadRequestException('Reset token is required.');
+    }
+
+    const tokenRecord = await this.authRepository.findVerificationTokenByToken(
+      token,
+      'PASSWORD_RESET',
+    );
+
+    if (!tokenRecord) {
+      throw new BadRequestException(
+        'This password reset link is invalid or has already been used.',
+      );
+    }
+
+    if (tokenRecord.expiresAt < new Date()) {
+      throw new BadRequestException(
+        'This password reset link has expired. Please request a new one.',
+      );
+    }
+
+    return { valid: true };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
@@ -410,6 +447,60 @@ export class AuthService {
       sessionToken: this.signAccessToken(user),
       refreshToken: this.signRefreshToken(user),
       user: this.toAuthUser(user),
+    };
+  }
+
+  async issueTokensForUser(userId: string): Promise<{
+    sessionToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  }> {
+    const user = await this.authRepository.findById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    return {
+      sessionToken: this.signAccessToken(user),
+      refreshToken: this.signRefreshToken(user),
+      user: this.toAuthUser(user),
+    };
+  }
+
+  setAuthCookies(
+    response: Response,
+    tokens: { sessionToken: string; refreshToken: string },
+  ) {
+    const options = this.getCookieOptions();
+
+    response.cookie(AUTH_COOKIE_NAME, tokens.sessionToken, {
+      ...options,
+      maxAge: ACCESS_COOKIE_MAX_AGE_MS,
+    });
+
+    response.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
+      ...options,
+      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+    });
+  }
+
+  clearAuthCookies(response: Response) {
+    const options = this.getCookieOptions();
+    response.clearCookie(AUTH_COOKIE_NAME, options);
+    response.clearCookie(REFRESH_COOKIE_NAME, options);
+  }
+
+  private getCookieOptions() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
+    return {
+      httpOnly: true,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      secure: isProduction,
+      path: '/',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     };
   }
 

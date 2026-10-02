@@ -31,9 +31,35 @@ export function EmailVerificationPage({
   retryEmail?: boolean;
 }) {
   const router = useRouter();
+  const [currentEmail, setCurrentEmail] = useState(email?.trim() || "");
+  const [isLoadingUser, setIsLoadingUser] = useState(!email?.trim());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(COOLDOWN_INITIAL_SECONDS);
   const hasRetried = useRef(false);
+
+  useEffect(() => {
+    if (email?.trim()) {
+      setCurrentEmail(email.trim());
+      setIsLoadingUser(false);
+      return;
+    }
+
+    authService
+      .me()
+      .then((res) => {
+        if (res.data?.email) {
+          setCurrentEmail(res.data.email);
+        } else {
+          router.replace("/signin");
+        }
+      })
+      .catch(() => {
+        router.replace("/signin");
+      })
+      .finally(() => {
+        setIsLoadingUser(false);
+      });
+  }, [email, router]);
 
   useEffect(() => {
     if (cooldownSeconds <= 0) return;
@@ -44,10 +70,10 @@ export function EmailVerificationPage({
   }, [cooldownSeconds]);
 
   useEffect(() => {
-    if (retryEmail && !hasRetried.current) {
+    if (retryEmail && currentEmail && !hasRetried.current) {
       hasRetried.current = true;
       authService
-        .resendVerification({ email })
+        .resendVerification({ email: currentEmail })
         .then(() => {
           setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);
         })
@@ -59,18 +85,26 @@ export function EmailVerificationPage({
           });
         });
     }
-  }, [retryEmail, email]);
+  }, [retryEmail, currentEmail]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!currentEmail) {
+      toast.error("Missing email", {
+        description: "Unable to identify your account email. Please sign in again.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const code = String(formData.get("verificationCode"));
+    const code = String(formData.get("verificationCode")).trim().toUpperCase();
 
     authService
-      .verifyEmail({ email, code })
+      .verifyEmail({ email: currentEmail, code })
       .then((response) => {
+        router.refresh();
         const dest = getAuthDestination(response.data.user);
         if (response.data.user.accountStage === "READY") {
           toast.success("Welcome to Median!", {
@@ -90,9 +124,9 @@ export function EmailVerificationPage({
   }
 
   function handleResend() {
-    if (cooldownSeconds > 0) return;
+    if (cooldownSeconds > 0 || !currentEmail) return;
 
-    toast.promise(authService.resendVerification({ email }), {
+    toast.promise(authService.resendVerification({ email: currentEmail }), {
       loading: "Sending new code...",
       success: () => {
         setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);
@@ -116,7 +150,9 @@ export function EmailVerificationPage({
         </h1>
         <p className="mt-2 text-base leading-6 text-[#344054]">
           Enter the verification code we sent to
-          <strong className="block font-semibold text-[#141c2e] mt-0.5">{email}</strong>
+          <strong className="block font-semibold text-[#141c2e] mt-0.5">
+            {currentEmail || (isLoadingUser ? "your email..." : "your email address")}
+          </strong>
         </p>
         <p className="mt-5 text-xs font-normal text-[#667085]">
           Code expires in <span className="font-semibold text-[#344054]">15 minutes</span>.
@@ -129,6 +165,8 @@ export function EmailVerificationPage({
             maxLength={6}
             name="verificationCode"
             id="verificationCode"
+            inputMode="text"
+            autoCapitalize="characters"
             containerClassName="w-full flex justify-between"
           >
             <InputOTPGroup className="flex w-full justify-between gap-2 sm:gap-3">

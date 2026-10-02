@@ -38,6 +38,14 @@ function decodeJwtPayload(token: string): {
 }
 
 const AUTH_ROUTES = new Set(["/signin", "/signup", "/login"]);
+const ONBOARDING_ROUTES = new Set([
+  "/role-selection",
+  "/mentee-onboarding",
+  "/mentor-onboarding",
+  "/mentor-matches",
+  "/mentor-submitted",
+  "/email-verification",
+]);
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/mentor",
@@ -46,7 +54,6 @@ const PROTECTED_PREFIXES = [
   "/messages",
   "/settings",
 ] as const;
-
 
 const ONBOARDING_REDIRECTS: Record<string, string> = {
   EMAIL_VERIFICATION: "/email-verification",
@@ -73,12 +80,20 @@ export function middleware(request: NextRequest) {
 
   const isAuthenticated = isAccessValid || isRefreshValid;
   const isAuthPage = AUTH_ROUTES.has(pathname);
+  const isOnboardingPage = ONBOARDING_ROUTES.has(pathname);
 
   // If already authenticated and visiting login/signup, redirect to dashboard
   if (isAuthPage && isAccessValid) {
     const destination =
       sessionPayload?.role === "MENTOR" ? "/mentor/sessions" : "/dashboard";
     return NextResponse.redirect(new URL(destination, request.url));
+  }
+
+  // If unauthenticated on onboarding route, redirect to signin
+  if (isOnboardingPage && !isAuthenticated) {
+    const signinUrl = new URL("/signin", request.url);
+    signinUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(signinUrl);
   }
 
   // Protected dashboard routes
@@ -129,6 +144,12 @@ export const config = {
     "/bookings/:path*",
     "/messages/:path*",
     "/settings/:path*",
+    "/role-selection",
+    "/mentee-onboarding",
+    "/mentor-onboarding",
+    "/mentor-matches",
+    "/mentor-submitted",
+    "/email-verification",
     "/signin",
     "/signup",
     "/login",

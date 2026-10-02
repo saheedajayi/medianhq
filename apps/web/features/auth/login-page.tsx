@@ -41,12 +41,21 @@ export function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect");
+  const errorParam = searchParams.get("error");
   const [isNavigatingToReset, startTransition] = useTransition();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {},
   );
+
+  useEffect(() => {
+    if (errorParam) {
+      toast.error("Authentication error", {
+        description: errorParam,
+      });
+    }
+  }, [errorParam]);
 
   useEffect(() => {
     let isCancelled = false;

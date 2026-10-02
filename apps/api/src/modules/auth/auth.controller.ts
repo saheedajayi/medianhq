@@ -3,11 +3,14 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   Res,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { GoogleOAuthGuard, LinkedInOAuthGuard } from './guards/oauth.guard';
+import { OAuthExceptionFilter } from './filters/oauth-exception.filter';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import type {
@@ -19,11 +22,10 @@ import type {
   ForgotPasswordDto,
   ResetPasswordDto,
 } from './dto/auth.dto';
-
-const AUTH_COOKIE_NAME = 'median_session';
-const REFRESH_COOKIE_NAME = 'median_refresh_token';
-const ACCESS_COOKIE_MAX_AGE_MS = 1000 * 60 * 15; // 15 mins
-const REFRESH_COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+import {
+  AUTH_COOKIE_NAME,
+  REFRESH_COOKIE_NAME,
+} from './auth.service';
 
 @Controller('auth')
 export class AuthController {
@@ -97,13 +99,15 @@ export class AuthController {
   }
 
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleOAuthGuard)
+  @UseFilters(OAuthExceptionFilter)
   async googleAuth() {
     // Initiates Google OAuth
   }
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleOAuthGuard)
+  @UseFilters(OAuthExceptionFilter)
   async googleAuthRedirect(@Req() req: any, @Res() res: Response) {
     const payload = await this.authService.oauthLogin(req.user);
     this.setAuthCookies(res, payload);
@@ -113,13 +117,15 @@ export class AuthController {
   }
 
   @Get('linkedin')
-  @UseGuards(AuthGuard('linkedin'))
+  @UseGuards(LinkedInOAuthGuard)
+  @UseFilters(OAuthExceptionFilter)
   async linkedinAuth() {
     // Initiates LinkedIn OAuth
   }
 
   @Get('linkedin/callback')
-  @UseGuards(AuthGuard('linkedin'))
+  @UseGuards(LinkedInOAuthGuard)
+  @UseFilters(OAuthExceptionFilter)
   async linkedinAuthRedirect(@Req() req: any, @Res() res: Response) {
     const payload = await this.authService.oauthLogin(req.user);
     this.setAuthCookies(res, payload);
@@ -149,6 +155,11 @@ export class AuthController {
     return this.authService.forgotPassword(dto);
   }
 
+  @Get('reset-password/validate')
+  validateResetToken(@Query('token') token: string) {
+    return this.authService.validateResetToken(token);
+  }
+
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
@@ -158,36 +169,11 @@ export class AuthController {
     response: Response,
     tokens: { sessionToken: string; refreshToken: string },
   ) {
-    const options = this.getCookieOptions();
-
-    response.cookie(AUTH_COOKIE_NAME, tokens.sessionToken, {
-      ...options,
-      maxAge: ACCESS_COOKIE_MAX_AGE_MS,
-    });
-
-    response.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
-      ...options,
-      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
-    });
+    this.authService.setAuthCookies(response, tokens);
   }
 
   private clearAuthCookies(response: Response) {
-    const options = this.getCookieOptions();
-    response.clearCookie(AUTH_COOKIE_NAME, options);
-    response.clearCookie(REFRESH_COOKIE_NAME, options);
-  }
-
-  private getCookieOptions() {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
-
-    return {
-      httpOnly: true,
-      sameSite: isProduction ? ('none' as const) : ('lax' as const),
-      secure: isProduction,
-      path: '/',
-      ...(cookieDomain ? { domain: cookieDomain } : {}),
-    };
+    this.authService.clearAuthCookies(response);
   }
 
   private getCookieValue(cookieHeader: string | undefined, name: string) {
@@ -214,7 +200,6 @@ export class AuthController {
       case 'MENTOR_ONBOARDING':
         return '/mentor-onboarding';
       case 'MENTOR_PENDING':
-        return '/mentor-submitted';
       case 'READY':
         return '/dashboard';
     }

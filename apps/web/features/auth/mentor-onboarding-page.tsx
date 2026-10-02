@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FileText, X, Loader2 } from "lucide-react";
@@ -40,6 +40,8 @@ const experienceYears = [
   "10+ years",
 ];
 
+const MENTOR_DRAFT_KEY = "median_mentor_onboarding_draft";
+
 export function MentorOnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,6 +59,26 @@ export function MentorOnboardingPage() {
   const [cvUrl, setCvUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Restore draft state from sessionStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = sessionStorage.getItem(MENTOR_DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.currentRole) setCurrentRole(parsed.currentRole);
+        if (parsed.company) setCompany(parsed.company);
+        if (parsed.industry) setIndustry(parsed.industry);
+        if (parsed.experience) setExperience(parsed.experience);
+        if (parsed.location) setLocation(parsed.location);
+        if (parsed.bio) setBio(parsed.bio);
+      } else if (currentSubStep === 2) {
+        // Visited step 2 directly without step 1 data
+        router.replace("/mentor-onboarding");
+      }
+    } catch {}
+  }, [currentSubStep, router]);
 
   const { data: taxonomyData, refetch: refetchTaxonomy } = useQuery({
     queryKey: ["taxonomy"],
@@ -99,6 +121,16 @@ export function MentorOnboardingPage() {
       });
       return;
     }
+
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(
+          MENTOR_DRAFT_KEY,
+          JSON.stringify({ currentRole, company, industry, experience, location, bio }),
+        );
+      } catch {}
+    }
+
     router.push("/mentor-onboarding?step=2");
   }
 
@@ -136,6 +168,13 @@ export function MentorOnboardingPage() {
         cvUrl: finalCvUrl || undefined,
       });
 
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem(MENTOR_DRAFT_KEY);
+        } catch {}
+      }
+
+      router.refresh();
       toast.success("Welcome to Median!", {
         description: "Your application has been submitted.",
       });
