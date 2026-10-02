@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { LandingAudience } from "../audience";
+import { siteConfig } from "@/lib/site-config";
 
 export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audience: LandingAudience) => void }) {
   return (
@@ -95,7 +96,7 @@ export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audien
             <div className="mt-5 flex items-center gap-3">
               {/* LinkedIn */}
               <a
-                href="https://www.linkedin.com/company/median-hq/"
+                href={siteConfig.links.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
@@ -108,7 +109,7 @@ export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audien
 
               {/* X / Twitter */}
               <a
-                href="https://x.com/Median_HQ"
+                href={siteConfig.links.twitter}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="X"
@@ -121,7 +122,7 @@ export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audien
 
               {/* Instagram */}
               <a
-                href="https://www.instagram.com/median_hq"
+                href={siteConfig.links.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"

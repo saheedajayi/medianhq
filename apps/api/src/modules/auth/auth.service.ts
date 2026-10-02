@@ -274,7 +274,12 @@ export class AuthService {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hour
     });
 
-    const resetLink = `${process.env.WEB_ORIGIN || 'http://localhost:3000'}/reset-password/${token}`;
+    const webOrigin = process.env.WEB_ORIGIN;
+    if (!webOrigin) {
+      throw new Error('WEB_ORIGIN environment variable is required.');
+    }
+
+    const resetLink = `${webOrigin}/reset-password/${token}`;
 
     await this.emailService.sendPasswordResetEmail({
       email: user.email,

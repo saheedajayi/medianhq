@@ -66,4 +66,11 @@ export const bookingsService = {
       .patch<{ success: boolean; booking: any }>(`${BOOKINGS_PATH}/${id}/reschedule`, { startsAt })
       .then((r) => r.data);
   },
+  getRoomToken(bookingId: string) {
+    return apiClient
+      .post<{ token: string; roomName: string; serverUrl: string }>(
+        `${BOOKINGS_PATH}/${bookingId}/room-token`,
+      )
+      .then((r) => r.data);
+  },
 };

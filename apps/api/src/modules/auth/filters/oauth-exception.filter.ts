@@ -18,8 +18,7 @@ export class OAuthExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const baseUrl =
-      this.configService.get<string>('WEB_ORIGIN') || 'http://localhost:3000';
+    const baseUrl = this.configService.getOrThrow<string>('WEB_ORIGIN');
 
     this.logger.warn(
       `OAuth error encountered on ${request.url}: ${

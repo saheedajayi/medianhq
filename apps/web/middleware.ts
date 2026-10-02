@@ -48,8 +48,8 @@ const ONBOARDING_ROUTES = new Set([
 ]);
 const PROTECTED_PREFIXES = [
   "/dashboard",
-  "/mentor",
-  "/mentee",
+  "/mentor/",
+  "/mentee/",
   "/bookings",
   "/messages",
   "/settings",
@@ -82,23 +82,31 @@ export function middleware(request: NextRequest) {
   const isAuthPage = AUTH_ROUTES.has(pathname);
   const isOnboardingPage = ONBOARDING_ROUTES.has(pathname);
 
-  // If already authenticated and visiting login/signup, redirect to dashboard
+  // If already authenticated and visiting login/signup, redirect to stage or dashboard
   if (isAuthPage && isAccessValid) {
+    const stageRedirect = sessionPayload?.accountStage
+      ? ONBOARDING_REDIRECTS[sessionPayload.accountStage]
+      : null;
     const destination =
-      sessionPayload?.role === "MENTOR" ? "/mentor/sessions" : "/dashboard";
+      stageRedirect ||
+      (sessionPayload?.role === "MENTOR" ? "/mentor/sessions" : "/dashboard");
     return NextResponse.redirect(new URL(destination, request.url));
   }
 
   // If unauthenticated on onboarding route, redirect to signin
-  if (isOnboardingPage && !isAuthenticated) {
-    const signinUrl = new URL("/signin", request.url);
-    signinUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(signinUrl);
+  if (isOnboardingPage) {
+    if (!isAuthenticated) {
+      const signinUrl = new URL("/signin", request.url);
+      signinUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(signinUrl);
+    }
+    // Allow authenticated users through to onboarding pages without redirect loops
+    return NextResponse.next();
   }
 
   // Protected dashboard routes
   const isProtectedRoute = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix),
+    pathname === prefix || pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`),
   );
 
   if (!isProtectedRoute) {
@@ -117,7 +125,11 @@ export function middleware(request: NextRequest) {
     const { role, accountStage } = sessionPayload;
 
     // Enforce onboarding steps if not yet ready
-    if (accountStage && ONBOARDING_REDIRECTS[accountStage]) {
+    if (
+      accountStage &&
+      ONBOARDING_REDIRECTS[accountStage] &&
+      pathname !== ONBOARDING_REDIRECTS[accountStage]
+    ) {
       return NextResponse.redirect(
         new URL(ONBOARDING_REDIRECTS[accountStage], request.url),
       );

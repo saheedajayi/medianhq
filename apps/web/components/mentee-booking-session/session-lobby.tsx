@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Booking, RecordingOption } from "./types";
 import { stopAllMediaTracks } from "./media-utils";
+import { bookingsService } from "@/services/bookings";
 
 interface SessionLobbyProps {
   booking: Booking;
@@ -120,26 +121,7 @@ export function SessionLobby({
     setIsCreatingRoom(true);
     setRoomError(null);
     try {
-      const res = await fetch("/api/livekit/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: booking.id,
-          participantName: "Mentee",
-          enableRecording: recordingChoice === "record",
-        }),
-      });
-
-      if (!res.ok) {
-        const err = (await res.json()) as { error?: string };
-        throw new Error(err.error ?? "Failed to get session token");
-      }
-
-      const { token, serverUrl } = (await res.json()) as {
-        token: string;
-        roomName: string;
-        serverUrl: string;
-      };
+      const { token, serverUrl } = await bookingsService.getRoomToken(booking.id);
 
       // Stop preview tracks before the real room publishes its own
       videoTrack?.stop();

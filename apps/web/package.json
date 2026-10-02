@@ -28,7 +28,6 @@
     "iconsax-react": "^0.0.8",
     "input-otp": "^1.4.2",
     "livekit-client": "^2.22.3",
-    "livekit-server-sdk": "^2.19.1",
     "lucide-react": "^1.14.0",
     "next": "16.2.0",
     "radix-ui": "^1.4.3",

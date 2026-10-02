@@ -2,30 +2,22 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { BookingStatus, PaymentStatus } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service';
+import { PaymentsRepository } from './payments.repository';
 import type { AuthUser } from '../auth/dto/auth.dto';
 
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly paymentsRepository: PaymentsRepository) {}
 
   async initialize(user: AuthUser, bookingId: string) {
-    const booking = await this.prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        mentor: {
-          include: { mentorProfile: true },
-        },
-        mentee: true,
-        payment: true,
-      },
-    });
+    const booking = await this.paymentsRepository.findBookingById(bookingId);
 
     if (!booking) {
       throw new NotFoundException(`Booking with ID '${bookingId}' not found.`);
@@ -47,10 +39,10 @@ export class PaymentsService {
     const amount = booking.payment?.amount || booking.mentor.mentorProfile?.pricePerSession || 0;
     if (amount <= 0) {
       // Free session - confirm immediately
-      await this.prisma.booking.update({
-        where: { id: bookingId },
-        data: { status: BookingStatus.CONFIRMED },
-      });
+      await this.paymentsRepository.updateBookingStatus(
+        bookingId,
+        BookingStatus.CONFIRMED,
+      );
       return {
         message: 'Free session confirmed successfully.',
         status: 'CONFIRMED',
@@ -59,62 +51,67 @@ export class PaymentsService {
     }
 
     const reference = `MEDIAN_${bookingId}_${Date.now()}`;
-    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
-    const webOrigin = process.env.WEB_ORIGIN || 'http://localhost:3000';
+    const webOrigin = process.env.WEB_ORIGIN;
+    if (!webOrigin) {
+      throw new Error('WEB_ORIGIN environment variable is required.');
+    }
     const callbackUrl = `${webOrigin}/mentee/booking-session?payment=success&bookingId=${bookingId}&reference=${reference}`;
 
-    let authorizationUrl = `${webOrigin}/mentee/booking-session?payment=mock_success&bookingId=${bookingId}&reference=${reference}`;
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecret) {
+      throw new InternalServerErrorException(
+        'PAYSTACK_SECRET_KEY environment variable is required to initialize payments.',
+      );
+    }
 
-    if (paystackSecret && !paystackSecret.includes('placeholder')) {
-      try {
-        const response = await fetch('https://api.paystack.co/transaction/initialize', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${paystackSecret}`,
-            'Content-Type': 'application/json',
+    let authorizationUrl: string;
+    try {
+      const response = await fetch('https://api.paystack.co/transaction/initialize', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${paystackSecret}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          amount: amount * 100, // Paystack operates in kobo
+          reference,
+          callback_url: callbackUrl,
+          metadata: {
+            bookingId,
+            mentorId: booking.mentorId,
+            menteeId: booking.menteeId,
           },
-          body: JSON.stringify({
-            email: user.email,
-            amount: amount * 100, // Paystack operates in kobo
-            reference,
-            callback_url: callbackUrl,
-            metadata: {
-              bookingId,
-              mentorId: booking.mentorId,
-              menteeId: booking.menteeId,
-            },
-          }),
-        });
+        }),
+      });
 
-        const data: any = await response.json();
-        if (data.status && data.data?.authorization_url) {
-          authorizationUrl = data.data.authorization_url;
-        } else {
-          this.logger.warn(`Paystack initialize returned unexpected response: ${JSON.stringify(data)}`);
-        }
-      } catch (err) {
-        this.logger.error('Failed to communicate with Paystack API', err);
+      const data: any = await response.json();
+      if (!response.ok || !data.status || !data.data?.authorization_url) {
+        this.logger.error(`Paystack initialize returned error: ${JSON.stringify(data)}`);
+        throw new BadRequestException(
+          data.message || 'Payment initialization with Paystack failed.',
+        );
       }
+
+      authorizationUrl = data.data.authorization_url;
+    } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+      this.logger.error('Failed to communicate with Paystack API', err);
+      throw new InternalServerErrorException(
+        'Unable to connect to Paystack payment gateway. Please try again.',
+      );
     }
 
     // Save payment record in DB
-    const payment = await this.prisma.payment.upsert({
-      where: { bookingId },
-      create: {
-        bookingId,
-        amount,
-        currency: booking.mentor.mentorProfile?.currency || 'NGN',
-        status: PaymentStatus.PENDING,
-        provider: 'PAYSTACK',
-        providerReference: reference,
-        authorizationUrl,
-      },
-      update: {
-        amount,
-        providerReference: reference,
-        authorizationUrl,
-        status: PaymentStatus.PENDING,
-      },
+    const payment = await this.paymentsRepository.upsertPayment(bookingId, {
+      amount,
+      currency: booking.mentor.mentorProfile?.currency || 'NGN',
+      status: PaymentStatus.PENDING,
+      provider: 'PAYSTACK',
+      providerReference: reference,
+      authorizationUrl,
     });
 
     return {
@@ -128,30 +125,18 @@ export class PaymentsService {
   }
 
   async verify(reference: string) {
-    const payment = await this.prisma.payment.findFirst({
-      where: {
-        OR: [{ providerReference: reference }, { bookingId: reference }],
-      },
-      include: {
-        booking: true,
-      },
-    });
+    const payment = await this.paymentsRepository.findPaymentByReference(reference);
 
     if (!payment) {
       throw new NotFoundException(`Payment with reference '${reference}' not found.`);
     }
 
     // Update payment and booking
-    const [updatedPayment, updatedBooking] = await this.prisma.$transaction([
-      this.prisma.payment.update({
-        where: { id: payment.id },
-        data: { status: PaymentStatus.SUCCESSFUL },
-      }),
-      this.prisma.booking.update({
-        where: { id: payment.bookingId },
-        data: { status: BookingStatus.CONFIRMED },
-      }),
-    ]);
+    const [updatedPayment, updatedBooking] =
+      await this.paymentsRepository.confirmPaymentAndBooking(
+        payment.id,
+        payment.bookingId,
+      );
 
     return {
       success: true,

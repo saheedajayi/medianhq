@@ -1,3 +1,5 @@
+import { SOCIAL_LINKS } from "@median/shared";
+
 const defaultSiteUrl = "https://www.medianhq.co";
 
 const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -10,6 +12,7 @@ export const siteConfig = {
   socialDescription:
     "Meet vetted mentors for real advice, structured sessions, and career guidance built for ambitious African professionals.",
   url: (configuredSiteUrl || defaultSiteUrl).replace(/\/+$/, ""),
+  links: SOCIAL_LINKS,
   socialImage: {
     url: "/social-preview.png",
     width: 1200,

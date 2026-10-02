@@ -112,7 +112,10 @@ export class AuthController {
     const payload = await this.authService.oauthLogin(req.user);
     this.setAuthCookies(res, payload);
 
-    const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
+    const baseUrl = process.env.WEB_ORIGIN;
+    if (!baseUrl) {
+      throw new Error('WEB_ORIGIN environment variable is required.');
+    }
     return res.redirect(`${baseUrl}${this.getDestination(payload.user)}`);
   }
 
@@ -130,7 +133,10 @@ export class AuthController {
     const payload = await this.authService.oauthLogin(req.user);
     this.setAuthCookies(res, payload);
 
-    const baseUrl = process.env.WEB_ORIGIN || 'http://localhost:3000';
+    const baseUrl = process.env.WEB_ORIGIN;
+    if (!baseUrl) {
+      throw new Error('WEB_ORIGIN environment variable is required.');
+    }
     return res.redirect(`${baseUrl}${this.getDestination(payload.user)}`);
   }
 
