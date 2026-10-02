@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { ArrowCircleDown } from "iconsax-react";
 
 export const ALL_TIME_OPTIONS: string[] = [
   "12:00 AM", "12:15 AM", "12:30 AM", "12:45 AM",
@@ -68,29 +69,32 @@ export function TimeSlotDropdown({
   const normalizedVal = value.trim();
 
   return (
-    <div ref={dropdownRef} className="relative inline-block text-left">
+    <div
+      ref={dropdownRef}
+      className={`relative text-left ${variant === "input" ? "w-full" : "inline-block"}`}
+    >
       {variant === "pill" ? (
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-1.5 rounded-xl bg-[#FFF4EF] px-3.5 py-1.5 text-xs font-semibold text-[#FF5514] transition hover:bg-[#FFE9DF] focus:outline-none ${className}`}
+          className={`flex items-center gap-2 rounded-lg bg-[#FFF2EB] px-3.5 py-1.5 text-sm font-normal text-[#C4320A] transition hover:bg-[#FFE8DC] focus:outline-none ${className}`}
         >
           <span>{normalizedVal || "9:00 AM"}</span>
-          <ChevronDown size={14} className="text-[#FF5514]" />
+          <ChevronDown size={14} className="text-[#C4320A] shrink-0" />
         </button>
       ) : (
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex w-full items-center justify-between rounded-xl border border-[#D0D5DD] bg-white px-3.5 py-2 text-xs font-medium text-[#101828] focus:border-[#FF5514] focus:outline-none ${className}`}
+          className={`flex h-11 w-full items-center justify-between rounded-xl border border-[#D0D5DD] bg-white px-3.5 text-sm font-normal text-[#101828] focus:border-[#FF5514] focus:outline-none ${className}`}
         >
           <span>{normalizedVal || "Select time"}</span>
-          <ChevronDown size={14} className="text-[#667085]" />
+          <ArrowCircleDown size={18} variant="Linear" className="text-[#344054] shrink-0" />
         </button>
       )}
 
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-1 max-h-56 w-36 overflow-y-auto rounded-xl border border-[#EAECF0] bg-white py-1 shadow-xl">
+        <div className={`absolute left-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-[#EAECF0] bg-white py-1 shadow-xl ${variant === "input" ? "w-full" : "w-36"}`}>
           {ALL_TIME_OPTIONS.map((time) => {
             const isSelected =
               time.toLowerCase() === normalizedVal.toLowerCase() ||

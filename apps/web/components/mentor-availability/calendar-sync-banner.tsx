@@ -1,6 +1,7 @@
 "use client";
 
-import { Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { Calendar as CalendarIcon } from "iconsax-react";
 
 interface CalendarSyncBannerProps {
   isGoogleConnected: boolean;
@@ -39,21 +40,34 @@ export function CalendarSyncBanner({
   return (
     <div
       onClick={onClick}
-      className="flex cursor-pointer items-center gap-4 rounded-2xl border border-[#FFCAB6] bg-[#FDF9F6] p-4 sm:p-5 transition hover:bg-[#FCF4EE] shadow-2xs"
+      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[#FFCAB6] bg-[#FDF9F6] p-4 sm:p-5 transition hover:bg-[#FCF4EE] shadow-2xs cursor-pointer"
     >
-      {/* Peach Circle with Calendar Icon */}
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF5514]/10">
-        <CalendarIcon size={22} className="text-[#FF5514]" />
+      <div className="flex items-center gap-4 min-w-0">
+        {/* Peach Circle with Calendar Icon */}
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF5514]/10">
+          <CalendarIcon size="22" variant="Linear" color="#FF5514" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm sm:text-base font-bold text-[#101828]">
+            Sync your external calendar
+          </h3>
+          <p className="mt-0.5 text-xs sm:text-sm text-[#667085] leading-relaxed">
+            Connect Google Calendar or Outlook to automatically block busy times and avoid double bookings.
+          </p>
+        </div>
       </div>
 
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm sm:text-base font-bold text-[#101828]">
-          Sync your external calendar
-        </h3>
-        <p className="mt-0.5 text-xs sm:text-sm text-[#667085] leading-relaxed">
-          Connect Google Calendar or Outlook to automatically block busy times and avoid double bookings.
-        </p>
-      </div>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF5514] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+      >
+        Connect calendar
+      </button>
     </div>
   );
 }

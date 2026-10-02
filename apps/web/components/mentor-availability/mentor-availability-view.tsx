@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye, Check, Calendar as CalendarIcon } from "lucide-react";
+import { Eye, Check } from "lucide-react";
+import { Calendar as IconsaxCalendar } from "iconsax-react";
+import { Calendar } from "@/components/ui/base/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/base/popover";
 import { mentorSessionsService } from "@/services/mentor-sessions";
 import type { DaySchedule, DateOverride, TimeSlot } from "./types";
 import { CalendarSyncBanner } from "./calendar-sync-banner";
@@ -17,10 +20,7 @@ const INITIAL_DAYS: DaySchedule[] = [
     dayOfWeek: 1,
     name: "Monday",
     isActive: true,
-    slots: [
-      { id: "mon-1", startTime: "9:00 AM", endTime: "2:00 pm" },
-      { id: "mon-2", startTime: "3:00 pm", endTime: "5:00 pm" },
-    ],
+    slots: [{ id: "mon-1", startTime: "9:00 AM", endTime: "2:00 pm" }],
   },
   {
     dayOfWeek: 2,
@@ -82,10 +82,33 @@ const INITIAL_OVERRIDES: DateOverride[] = [
   },
 ];
 
+function parseDate(dateStr: string): Date | undefined {
+  if (!dateStr) return undefined;
+  const parts = dateStr.split("/");
+  if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return d;
+  }
+  const fallback = new Date(dateStr);
+  return isNaN(fallback.getTime()) ? undefined : fallback;
+}
+
+function formatDate(date: Date): string {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 export function MentorAvailabilityView() {
   const [days, setDays] = useState<DaySchedule[]>(INITIAL_DAYS);
   const [startDate, setStartDate] = useState("15/05/2024");
   const [endDate, setEndDate] = useState("29/05/2024");
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false);
+  const [isEndDateOpen, setIsEndDateOpen] = useState(false);
   const [timezone, setTimezone] = useState("(-04:00) Eastern Time (US & Canada)");
 
   // Overrides
@@ -278,7 +301,7 @@ export function MentorAvailabilityView() {
       {/* ── Page Header & Top Preview Action ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#101828]">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#101828]">
             Availability
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-[#667085]">
@@ -316,45 +339,85 @@ export function MentorAvailabilityView() {
           <label className="block text-xs font-semibold text-[#101828] mb-1.5">
             Start date
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              placeholder="DD/MM/YYYY"
-              className="w-full rounded-2xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#FF5514] focus:outline-none shadow-2xs"
-            />
-            <CalendarIcon
-              size={16}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#98A2B3]"
-            />
-          </div>
+          <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] shadow-2xs hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
+              >
+                <span className={startDate ? "text-[#101828]" : "text-[#98A2B3]"}>
+                  {startDate || "DD/MM/YYYY"}
+                </span>
+                <IconsaxCalendar
+                  size="18"
+                  variant="Linear"
+                  color="#98A2B3"
+                  className="shrink-0"
+                />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg"
+              align="start"
+            >
+              <Calendar
+                mode="single"
+                selected={parseDate(startDate)}
+                onSelect={(d) => {
+                  if (d) {
+                    setStartDate(formatDate(d));
+                    setIsStartDateOpen(false);
+                  }
+                }}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div>
           <label className="block text-xs font-semibold text-[#101828] mb-1.5">
             End date
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              placeholder="DD/MM/YYYY"
-              className="w-full rounded-2xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] focus:border-[#FF5514] focus:outline-none shadow-2xs"
-            />
-            <CalendarIcon
-              size={16}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#98A2B3]"
-            />
-          </div>
+          <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] shadow-2xs hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
+              >
+                <span className={endDate ? "text-[#101828]" : "text-[#98A2B3]"}>
+                  {endDate || "DD/MM/YYYY"}
+                </span>
+                <IconsaxCalendar
+                  size="18"
+                  variant="Linear"
+                  color="#98A2B3"
+                  className="shrink-0"
+                />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg"
+              align="start"
+            >
+              <Calendar
+                mode="single"
+                selected={parseDate(endDate)}
+                onSelect={(d) => {
+                  if (d) {
+                    setEndDate(formatDate(d));
+                    setIsEndDateOpen(false);
+                  }
+                }}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
       {/* ── Main Two-Column Layout (Weekly Hours + Date Overrides) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Column: Weekly Hours Card */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-8 flex flex-col">
           <WeeklyHoursCard
             days={days}
             onToggleDay={handleToggleDay}
@@ -368,7 +431,7 @@ export function MentorAvailabilityView() {
         </div>
 
         {/* Right Column: Date Overrides Card */}
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-4 flex flex-col">
           <DateOverridesCard
             overrides={overrides}
             onAddOverride={handleAddOverride}

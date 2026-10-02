@@ -74,16 +74,16 @@ export function MentorCard({ mentor }: MentorCardProps) {
       </div>
 
       {/* Footer (Price 24px text-2xl + View Profile CTA with 14px text-sm) */}
-      <div className="mt-5 flex items-center justify-between">
-        <span className="text-2xl font-normal text-[#101828]">
+      <div className="mt-5 flex items-center justify-between gap-2">
+        <span className="text-2xl font-normal text-[#101828] shrink-0">
           {mentor.price}
         </span>
 
         <Link
           href={`/mentors/${mentor.id}`}
-          className="inline-flex items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2.5 text-sm font-medium text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2.5 text-sm font-medium text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
         >
-          <span className="text-white font-medium">View Profile</span>
+          <span className="text-white font-medium whitespace-nowrap">View Profile</span>
         </Link>
       </div>
     </div>
