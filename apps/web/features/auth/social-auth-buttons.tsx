@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authService } from "@/services/auth";
 
 export function GoogleIcon({ className = "size-5" }: { className?: string }) {
@@ -60,6 +60,21 @@ interface SocialAuthButtonsProps {
 export function SocialAuthButtons({ mode = "signin" }: SocialAuthButtonsProps) {
   const prefix = mode === "signin" ? "Log in" : "Continue";
   const [loading, setLoading] = useState<"google" | "linkedin" | null>(null);
+
+  // Reset loading state when user navigates back (bfcache restore or tab regains focus)
+  useEffect(() => {
+    const reset = () => setLoading(null);
+
+    // pageshow fires on bfcache restore (back/forward button)
+    window.addEventListener("pageshow", reset);
+    // visibilitychange catches cases where the tab regains visibility
+    document.addEventListener("visibilitychange", reset);
+
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      document.removeEventListener("visibilitychange", reset);
+    };
+  }, []);
 
   const handleClick = (provider: "google" | "linkedin") => {
     setLoading(provider);
