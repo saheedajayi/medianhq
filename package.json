@@ -7,6 +7,8 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "test:e2e": "npm --prefix apps/api run test:e2e",
     "db:up": "docker compose --env-file .env.local up -d postgres",
     "db:down": "docker compose --env-file .env.local down",
     "db:logs": "docker compose --env-file .env.local logs -f postgres",

@@ -1,8 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
-import { MenteesService } from './mentees.service';
-import { MenteesRepository } from './mentees.repository';
-import type { CreateMenteeProfileDto } from './dto/create-mentee-profile.dto';
+import { MenteesService } from '../../../../src/modules/mentees/mentees.service';
+import { MenteesRepository } from '../../../../src/modules/mentees/mentees.repository';
+import type { CreateMenteeProfileDto } from '../../../../src/modules/mentees/dto/create-mentee-profile.dto';
 
 describe('MenteesService', () => {
   let service: MenteesService;

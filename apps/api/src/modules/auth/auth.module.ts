@@ -9,6 +9,9 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { LinkedInStrategy } from './strategies/linkedin.strategy';
 import { GoogleOAuthGuard, LinkedInOAuthGuard } from './guards/oauth.guard';
 import { OAuthExceptionFilter } from './filters/oauth-exception.filter';
+import { PwnedPasswordService } from './pwned-password.service';
+import { AuthRateLimiterService } from './auth-rate-limiter.service';
+import { SecurityAuditService } from './security-audit.service';
 
 @Global()
 @Module({
@@ -22,7 +25,10 @@ import { OAuthExceptionFilter } from './filters/oauth-exception.filter';
     GoogleOAuthGuard,
     LinkedInOAuthGuard,
     OAuthExceptionFilter,
+    PwnedPasswordService,
+    AuthRateLimiterService,
+    SecurityAuditService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, AuthRateLimiterService, SecurityAuditService],
 })
 export class AuthModule {}

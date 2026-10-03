@@ -8,6 +8,9 @@ import type {
   ResendVerificationPayload,
   ForgotPasswordPayload,
   ResetPasswordPayload,
+  ChangePasswordPayload,
+  SecurityEvent,
+  RevokeSessionsResponse,
 } from "./types";
 
 const AUTH_PATH = "/auth";
@@ -42,21 +45,50 @@ export const authService = {
   },
 
   resendVerification(payload: ResendVerificationPayload) {
-    return apiClient.post<{ message: string }>(`${AUTH_PATH}/resend-verification`, payload);
+    return apiClient.post<{ message: string }>(
+      `${AUTH_PATH}/resend-verification`,
+      payload,
+    );
   },
 
   forgotPassword(payload: ForgotPasswordPayload) {
-    return apiClient.post<{ message: string }>(`${AUTH_PATH}/forgot-password`, payload);
+    return apiClient.post<{ message: string }>(
+      `${AUTH_PATH}/forgot-password`,
+      payload,
+    );
   },
 
   resetPassword(payload: ResetPasswordPayload) {
-    return apiClient.post<{ message: string }>(`${AUTH_PATH}/reset-password`, payload);
+    return apiClient.post<{ message: string }>(
+      `${AUTH_PATH}/reset-password`,
+      payload,
+    );
+  },
+
+  changePassword(payload: ChangePasswordPayload) {
+    return apiClient.post<{ message: string }>(
+      `${AUTH_PATH}/change-password`,
+      payload,
+    );
   },
 
   validateResetToken(token: string) {
-    return apiClient.get<{ valid: boolean }>(`${AUTH_PATH}/reset-password/validate`, {
-      params: { token },
-    });
+    return apiClient.get<{ valid: boolean }>(
+      `${AUTH_PATH}/reset-password/validate`,
+      {
+        params: { token },
+      },
+    );
+  },
+
+  revokeOtherSessions() {
+    return apiClient.post<RevokeSessionsResponse>(
+      `${AUTH_PATH}/revoke-other-sessions`,
+    );
+  },
+
+  getSecurityEvents() {
+    return apiClient.get<SecurityEvent[]>(`${AUTH_PATH}/security-events`);
   },
 };
 
@@ -70,4 +102,7 @@ export type {
   ResendVerificationPayload,
   ForgotPasswordPayload,
   ResetPasswordPayload,
+  ChangePasswordPayload,
+  SecurityEvent,
+  RevokeSessionsResponse,
 } from "./types";

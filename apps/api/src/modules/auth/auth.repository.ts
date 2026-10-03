@@ -70,6 +70,10 @@ export class AuthRepository {
     return this.prisma.user.update({
       where: { id },
       data,
+      include: {
+        menteeProfile: { select: MENTEE_PROFILE_SELECT },
+        mentorProfile: { select: MENTOR_PROFILE_SELECT },
+      },
     });
   }
 

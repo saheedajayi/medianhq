@@ -65,3 +65,24 @@ export type ResetPasswordPayload = {
   token: string;
   password: string;
 };
+
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  password: string;
+};
+
+export type SecurityEvent = {
+  id: string;
+  action: string;
+  status: 'SUCCESS' | 'FAILURE';
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+};
+
+export type RevokeSessionsResponse = {
+  success: boolean;
+  message: string;
+  user?: AuthUser;
+};
+

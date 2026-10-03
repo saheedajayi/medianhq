@@ -9,6 +9,7 @@ import {
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from './guards/auth.guard';
 import { GoogleOAuthGuard, LinkedInOAuthGuard } from './guards/oauth.guard';
 import { OAuthExceptionFilter } from './filters/oauth-exception.filter';
 import type { Request, Response } from 'express';
@@ -21,15 +22,17 @@ import type {
   ResendVerificationDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  ChangePasswordDto,
 } from './dto/auth.dto';
-import {
-  AUTH_COOKIE_NAME,
-  REFRESH_COOKIE_NAME,
-} from './auth.service';
+import { AUTH_COOKIE_NAME, REFRESH_COOKIE_NAME } from './auth.service';
+import { AuthRateLimiterService } from './auth-rate-limiter.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly rateLimiterService: AuthRateLimiterService,
+  ) {}
 
   @Post('register')
   async register(
@@ -157,18 +160,100 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(dto);
+  forgotPassword(
+    @Req() request: Request,
+    @Body() dto: ForgotPasswordDto,
+  ) {
+    this.rateLimiterService.checkLimit(
+      `forgot-ip:${this.getClientIp(request)}`,
+      5,
+      15 * 60 * 1000,
+      'Too many password reset requests from this IP address. Please try again later.',
+    );
+    return this.authService.forgotPassword(dto, {
+      ipAddress: this.getClientIp(request),
+      userAgent: this.getUserAgent(request),
+    });
   }
 
   @Get('reset-password/validate')
-  validateResetToken(@Query('token') token: string) {
-    return this.authService.validateResetToken(token);
+  validateResetToken(
+    @Req() request: Request,
+    @Query('token') token: string,
+  ) {
+    this.rateLimiterService.checkLimit(
+      `validate-ip:${this.getClientIp(request)}`,
+      20,
+      15 * 60 * 1000,
+      'Too many reset token validation attempts. Please try again later.',
+    );
+    return this.authService.validateResetToken(token, {
+      ipAddress: this.getClientIp(request),
+      userAgent: this.getUserAgent(request),
+    });
   }
 
   @Post('reset-password')
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
+  resetPassword(
+    @Req() request: Request,
+    @Body() dto: ResetPasswordDto,
+  ) {
+    this.rateLimiterService.checkLimit(
+      `submit-ip:${this.getClientIp(request)}`,
+      5,
+      15 * 60 * 1000,
+      'Too many password reset submissions. Please try again later.',
+    );
+    return this.authService.resetPassword(dto, {
+      ipAddress: this.getClientIp(request),
+      userAgent: this.getUserAgent(request),
+    });
+  }
+
+  @Post('change-password')
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @Req() request: Request & { user: AuthUser },
+    @Res({ passthrough: true }) response: Response,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    const result = await this.authService.changePassword(
+      request.user.id,
+      dto,
+      {
+        ipAddress: this.getClientIp(request),
+        userAgent: this.getUserAgent(request),
+      },
+    );
+    this.clearAuthCookies(response);
+    return result;
+  }
+
+  @Post('revoke-other-sessions')
+  @UseGuards(AuthGuard)
+  async revokeOtherSessions(
+    @Req() request: Request & { user: AuthUser },
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const payload = await this.authService.revokeOtherSessions(
+      request.user.id,
+      {
+        ipAddress: this.getClientIp(request),
+        userAgent: this.getUserAgent(request),
+      },
+    );
+    this.setAuthCookies(response, payload);
+    return {
+      success: true,
+      message: 'All other sessions have been signed out.',
+      user: payload.user,
+    };
+  }
+
+  @Get('security-events')
+  @UseGuards(AuthGuard)
+  async getSecurityEvents(@Req() request: Request & { user: AuthUser }) {
+    return this.authService.getSecurityEvents(request.user.id);
   }
 
   private setAuthCookies(
@@ -209,5 +294,18 @@ export class AuthController {
       case 'READY':
         return '/dashboard';
     }
+  }
+
+  private getClientIp(request: Request): string {
+    const forwarded = request.headers['x-forwarded-for'];
+    if (typeof forwarded === 'string') {
+      return forwarded.split(',')[0].trim();
+    }
+    return request.ip || request.socket?.remoteAddress || '127.0.0.1';
+  }
+
+  private getUserAgent(request: Request): string {
+    const ua = request.headers['user-agent'];
+    return typeof ua === 'string' ? ua : 'Unknown';
   }
 }

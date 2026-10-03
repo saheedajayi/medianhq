@@ -44,6 +44,7 @@ model User {
   id             String         @id @default(cuid())
   email          String         @unique
   passwordHash   String?
+  sessionVersion Int            @default(0)
   firstName      String
   lastName       String
   role           UserRole?
@@ -70,6 +71,7 @@ model User {
   answersGiven       Answer[]
   mentorEarnings     MentorEarning[]
   payoutRequests     PayoutRequest[]
+  securityAuditLogs  SecurityAuditLog[]
 
   googleId       String?        @unique
   linkedinId     String?        @unique
@@ -392,3 +394,20 @@ model PayoutRequest {
   createdAt     DateTime @default(now())
 }
 
+model SecurityAuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String?
+  action    String
+  ipAddress String?
+  userAgent String?
+  status    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([email])
+  @@index([action])
+  @@index([createdAt])
+}

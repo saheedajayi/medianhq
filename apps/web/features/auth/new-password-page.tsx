@@ -15,8 +15,13 @@ const newPasswordSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[a-z]/, "Password must contain at least one lowercase letter")
       .regex(/[0-9]/, "Password must contain at least one number")
-      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-    confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
+      .regex(
+        /[^A-Za-z0-9]/,
+        "Password must contain at least one special character",
+      ),
+    confirmPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -24,7 +29,10 @@ const newPasswordSchema = z
   });
 
 import { Button } from "@/components/ui/base/button";
-import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
+import {
+  FormField,
+  formInputClassName,
+} from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
 import { authService } from "@/services/auth";
 import type { ApiError } from "@/services/api-client";
@@ -42,7 +50,9 @@ export function NewPasswordPage({ token }: { token: string }) {
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
+  const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
+    {},
+  );
 
   useEffect(() => {
     if (!token || !token.trim()) {
@@ -70,7 +80,7 @@ export function NewPasswordPage({ token }: { token: string }) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    
+
     const result = newPasswordSchema.safeParse({
       password: String(formData.get("password") ?? ""),
       confirmPassword: String(formData.get("confirmPassword") ?? ""),
@@ -99,8 +109,22 @@ export function NewPasswordPage({ token }: { token: string }) {
         router.push("/signin");
       })
       .catch((error) => {
+        const message = getErrorMessage(
+          error,
+          "Please try again later. The link may have expired.",
+        );
+
+        if (
+          message ===
+            "Your new password must be different from your current password." ||
+          message ===
+            "Choose a password that has not appeared in a data breach."
+        ) {
+          setErrors({ password: [message] });
+        }
+
         toast.error("Unable to reset password", {
-          description: getErrorMessage(error, "Please try again later. The link may have expired."),
+          description: message,
         });
       })
       .finally(() => setIsSubmitting(false));
@@ -160,7 +184,11 @@ export function NewPasswordPage({ token }: { token: string }) {
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
-        <FormField id="password" label="New Password" error={errors.password?.[0]}>
+        <FormField
+          id="password"
+          label="New Password"
+          error={errors.password?.[0]}
+        >
           <PasswordInput
             id="password"
             name="password"
@@ -172,8 +200,15 @@ export function NewPasswordPage({ token }: { token: string }) {
             aria-invalid={!!errors.password}
           />
         </FormField>
+        <p className="-mt-2 text-xs text-[#667085]">
+          Choose a password different from your current password.
+        </p>
 
-        <FormField id="confirmPassword" label="Confirm Password" error={errors.confirmPassword?.[0]}>
+        <FormField
+          id="confirmPassword"
+          label="Confirm Password"
+          error={errors.confirmPassword?.[0]}
+        >
           <PasswordInput
             id="confirmPassword"
             name="confirmPassword"

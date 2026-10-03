@@ -4,6 +4,7 @@ import { buildMenteeWaitlistConfirmationTemplate } from './templates/mentee-wait
 import { buildMentorWaitlistConfirmationTemplate } from './templates/mentor-waitlist-confirmation.template';
 import { buildEmailVerificationTemplate } from './templates/email-verification.template';
 import { buildResetPasswordTemplate } from './templates/reset-password.template';
+import { buildPasswordChangedTemplate } from './templates/password-changed.template';
 import { SOCIAL_LINKS } from '../../common/constants/social-links.constant';
 
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
@@ -34,6 +35,14 @@ type PasswordResetEmailInput = {
   email: string;
   firstName: string;
   resetLink: string;
+};
+
+export type PasswordChangedEmailInput = {
+  email: string;
+  firstName: string;
+  changedAt?: Date;
+  deviceInfo?: string;
+  ipAddress?: string;
 };
 
 @Injectable()
@@ -102,6 +111,24 @@ export class EmailService {
     // Extract the token from the resetLink to use as part of the idempotency key
     const token = input.resetLink.split('/').pop() || Date.now().toString();
     await this.sendEmail(payload, `password-reset:${input.email}:${token}`);
+  }
+
+  async sendPasswordChangedEmail(input: PasswordChangedEmailInput) {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM;
+
+    if (!apiKey || !from) {
+      this.logger.warn(
+        'Skipping password changed email because RESEND_API_KEY or EMAIL_FROM is not configured.',
+      );
+      return;
+    }
+
+    const payload = this.buildPasswordChangedPayload(input, from);
+    await this.sendEmail(
+      payload,
+      `password-changed:${input.email}:${Date.now()}`,
+    );
   }
 
   private async sendEmail(payload: ResendEmailPayload, idempotencyKey: string) {
@@ -224,6 +251,39 @@ export class EmailService {
     };
     
     const template = buildResetPasswordTemplate(templateInput);
+
+    return {
+      from,
+      to: [input.email],
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    };
+  }
+
+  private buildPasswordChangedPayload(
+    input: PasswordChangedEmailInput,
+    from: string,
+  ): ResendEmailPayload {
+    const siteUrl = this.getSiteUrl();
+    const assetUrl = this.getEmailAssetUrl(siteUrl);
+    const replyTo = process.env.EMAIL_REPLY_TO;
+    const changedAtStr = (input.changedAt ?? new Date()).toUTCString();
+
+    const template = buildPasswordChangedTemplate({
+      firstName: input.firstName,
+      changedAt: changedAtStr,
+      deviceInfo: input.deviceInfo,
+      ipAddress: input.ipAddress,
+      recoveryLink: `${siteUrl}/forgot-password`,
+      instagramUrl: SOCIAL_LINKS.instagram,
+      twitterUrl: SOCIAL_LINKS.twitter,
+      linkedinUrl: SOCIAL_LINKS.linkedin,
+      sentYear: new Date().getFullYear(),
+      siteUrl,
+      assetUrl,
+    });
 
     return {
       from,
