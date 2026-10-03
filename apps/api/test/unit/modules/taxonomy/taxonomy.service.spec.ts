@@ -1,5 +1,5 @@
-import { TaxonomyService } from './taxonomy.service';
-import { TaxonomyRepository } from './taxonomy.repository';
+import { TaxonomyService } from '../../../../src/modules/taxonomy/taxonomy.service';
+import { TaxonomyRepository } from '../../../../src/modules/taxonomy/taxonomy.repository';
 
 describe('TaxonomyService', () => {
   let service: TaxonomyService;

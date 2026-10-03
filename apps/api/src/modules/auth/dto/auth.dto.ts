@@ -52,3 +52,8 @@ export type ResetPasswordDto = {
   token: string;
   password: string;
 };
+
+export type ChangePasswordDto = {
+  currentPassword: string;
+  password: string;
+};

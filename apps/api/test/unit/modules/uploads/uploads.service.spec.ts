@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UploadsService } from './uploads.service';
+import { UploadsService } from '../../../../src/modules/uploads/uploads.service';
 
 describe('UploadsService', () => {
   let service: UploadsService;

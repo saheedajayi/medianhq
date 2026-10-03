@@ -1,5 +1,5 @@
 import { MentorStatus, UserRole } from '@prisma/client';
-import { getAccountStage } from './account-stage';
+import { getAccountStage } from '../../../../src/modules/auth/account-stage';
 
 describe('getAccountStage', () => {
   const verifiedAt = new Date('2026-07-27T00:00:00.000Z');

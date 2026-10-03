@@ -1,8 +1,8 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
-import { MentorsService } from './mentors.service';
-import { MentorsRepository } from './mentors.repository';
-import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
+import { MentorsService } from '../../../../src/modules/mentors/mentors.service';
+import { MentorsRepository } from '../../../../src/modules/mentors/mentors.repository';
+import type { CreateMentorProfileDto } from '../../../../src/modules/mentors/dto/create-mentor-profile.dto';
 
 describe('MentorsService', () => {
   let service: MentorsService;

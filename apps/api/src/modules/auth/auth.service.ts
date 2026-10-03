@@ -6,11 +6,20 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from 'crypto';
+import {
+  createHmac,
+  randomBytes,
+  randomInt,
+  scryptSync,
+  timingSafeEqual,
+} from 'crypto';
 import { UserRole, type User } from '@prisma/client';
 import { AuthRepository } from './auth.repository';
 import { EmailService } from '../email/email.service';
 import { getAccountStage } from './account-stage';
+import { PwnedPasswordService } from './pwned-password.service';
+import { AuthRateLimiterService } from './auth-rate-limiter.service';
+import { SecurityAuditService } from './security-audit.service';
 import type {
   AuthUser,
   LoginDto,
@@ -19,12 +28,29 @@ import type {
   ResendVerificationDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  ChangePasswordDto,
 } from './dto/auth.dto';
+
+export type AuthRequestContext = {
+  ipAddress?: string;
+  userAgent?: string;
+};
 
 export const AUTH_COOKIE_NAME = 'median_session';
 export const REFRESH_COOKIE_NAME = 'median_refresh_token';
 export const ACCESS_COOKIE_MAX_AGE_MS = 1000 * 60 * 15; // 15 mins
 export const REFRESH_COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+
+/**
+ * Lifetime of a password-reset token (15 minutes).
+ * Single-use and cryptographically random (256-bit entropy).
+ */
+export const PASSWORD_RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
+
+/**
+ * Cooldown between successive password-reset requests for the same account (60 seconds).
+ */
+export const PASSWORD_RESET_COOLDOWN_MS = 60 * 1000;
 
 type AuthPayload = {
   sessionToken: string;
@@ -35,6 +61,7 @@ type AuthPayload = {
 
 type SessionPayload = {
   sub: string;
+  sessionVersion: number;
   role?: UserRole;
   accountStage?: string;
   exp: number;
@@ -52,10 +79,13 @@ export class AuthService {
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly emailService: EmailService,
+    private readonly pwnedPasswordService: PwnedPasswordService,
+    private readonly rateLimiterService: AuthRateLimiterService,
+    private readonly securityAuditService: SecurityAuditService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthPayload> {
-    const input = this.validateRegisterInput(dto);
+    const input = await this.validateRegisterInput(dto);
     const existingUser = await this.authRepository.findIdByEmail(input.email);
 
     if (existingUser) {
@@ -153,6 +183,10 @@ export class AuthService {
       throw new UnauthorizedException('Authentication is required.');
     }
 
+    if (user.sessionVersion !== payload.sessionVersion) {
+      throw new UnauthorizedException('Authentication is required.');
+    }
+
     return this.toAuthUser(user);
   }
 
@@ -166,7 +200,7 @@ export class AuthService {
     if (!user) {
       // Check if user exists by email to link account
       if (normalizedEmail) {
-        user = (await this.authRepository.findByEmail(normalizedEmail)) as any;
+        user = await this.authRepository.findByEmail(normalizedEmail);
       }
 
       if (user) {
@@ -186,7 +220,7 @@ export class AuthService {
           emailVerifiedAt: new Date(), // Implicitly verified by OAuth
           [provider === 'google' ? 'googleId' : 'linkedinId']: providerId,
         };
-        user = (await this.authRepository.create(createData)) as any;
+        user = await this.authRepository.create(createData);
       }
     }
 
@@ -255,11 +289,51 @@ export class AuthService {
     return { success: true, message: 'Verification code sent.' };
   }
 
-  async forgotPassword(dto: ForgotPasswordDto) {
+  async forgotPassword(dto: ForgotPasswordDto, context?: AuthRequestContext) {
     const normalizedEmail = this.normalizeEmail(dto.email);
+
+    // Account rate-limiting: max 5 requests per 15 minutes per account
+    this.rateLimiterService.checkLimit(
+      `forgot-account:${normalizedEmail}`,
+      5,
+      15 * 60 * 1000,
+      'Too many password reset requests for this account. Please try again later.',
+    );
+
     const user = await this.authRepository.findByEmail(normalizedEmail);
     if (!user) {
-      // Do not leak user existence
+      // Do not leak user existence, record audit event
+      await this.securityAuditService.record({
+        email: normalizedEmail,
+        action: 'RECOVERY_REQUEST',
+        status: 'SUCCESS',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+      });
+      return {
+        success: true,
+        message: 'If the email exists, a reset link will be sent.',
+      };
+    }
+
+    // Cooldown check: prevent sending another reset email within 60s
+    const existingToken = await this.authRepository.findVerificationToken(
+      user.email,
+      'PASSWORD_RESET',
+    );
+    if (
+      existingToken &&
+      Date.now() - new Date(existingToken.createdAt).getTime() < PASSWORD_RESET_COOLDOWN_MS
+    ) {
+      await this.securityAuditService.record({
+        userId: user.id,
+        email: user.email,
+        action: 'RECOVERY_REQUEST',
+        status: 'SUCCESS',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { throttled: true },
+      });
       return {
         success: true,
         message: 'If the email exists, a reset link will be sent.',
@@ -271,7 +345,16 @@ export class AuthService {
       email: user.email,
       token,
       type: 'PASSWORD_RESET',
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hour
+      expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS),
+    });
+
+    await this.securityAuditService.record({
+      userId: user.id,
+      email: user.email,
+      action: 'RECOVERY_REQUEST',
+      status: 'SUCCESS',
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
     });
 
     const webOrigin = process.env.WEB_ORIGIN;
@@ -281,11 +364,18 @@ export class AuthService {
 
     const resetLink = `${webOrigin}/reset-password/${token}`;
 
-    await this.emailService.sendPasswordResetEmail({
-      email: user.email,
-      firstName: user.firstName,
-      resetLink,
-    });
+    try {
+      await this.emailService.sendPasswordResetEmail({
+        email: user.email,
+        firstName: user.firstName,
+        resetLink,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password reset email for ${user.email}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
 
     return {
       success: true,
@@ -293,23 +383,46 @@ export class AuthService {
     };
   }
 
-  async validateResetToken(token: string) {
-    if (!token || typeof token !== 'string') {
+  async validateResetToken(token: string, context?: AuthRequestContext) {
+    const trimmedToken = token?.trim();
+    if (!trimmedToken) {
+      await this.securityAuditService.record({
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'missing_token' },
+      });
       throw new BadRequestException('Reset token is required.');
     }
 
     const tokenRecord = await this.authRepository.findVerificationTokenByToken(
-      token,
+      trimmedToken,
       'PASSWORD_RESET',
     );
 
     if (!tokenRecord) {
+      await this.securityAuditService.record({
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'invalid_or_used_token' },
+      });
       throw new BadRequestException(
         'This password reset link is invalid or has already been used.',
       );
     }
 
     if (tokenRecord.expiresAt < new Date()) {
+      await this.securityAuditService.record({
+        email: tokenRecord.email,
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'expired_token' },
+      });
       throw new BadRequestException(
         'This password reset link has expired. Please request a new one.',
       );
@@ -318,39 +431,238 @@ export class AuthService {
     return { valid: true };
   }
 
-  async resetPassword(dto: ResetPasswordDto) {
+  async resetPassword(dto: ResetPasswordDto, context?: AuthRequestContext) {
+    const trimmedToken = dto.token?.trim();
+    if (!trimmedToken) {
+      await this.securityAuditService.record({
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'missing_token' },
+      });
+      throw new BadRequestException('Reset token is required.');
+    }
+
     const tokenRecord = await this.authRepository.findVerificationTokenByToken(
-      dto.token,
+      trimmedToken,
       'PASSWORD_RESET',
     );
 
     if (!tokenRecord) {
+      await this.securityAuditService.record({
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'invalid_or_used_token' },
+      });
       throw new BadRequestException('Invalid or expired reset token.');
     }
 
     if (tokenRecord.expiresAt < new Date()) {
+      await this.securityAuditService.record({
+        email: tokenRecord.email,
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'expired_token' },
+      });
       throw new BadRequestException('Reset token has expired.');
     }
 
     const user = await this.authRepository.findByEmail(tokenRecord.email);
     if (!user) {
+      await this.securityAuditService.record({
+        email: tokenRecord.email,
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'user_not_found' },
+      });
       throw new BadRequestException('User not found.');
     }
 
-    const passwordHash = this.hashPassword(this.validatePassword(dto.password));
-    await this.authRepository.update(user.id, { passwordHash });
+    const password = this.validatePassword(dto.password);
+    await this.assertPasswordIsNotCompromised(password);
+
+    if (user.passwordHash && this.verifyPassword(password, user.passwordHash)) {
+      await this.securityAuditService.record({
+        userId: user.id,
+        email: user.email,
+        action: 'FAILED_RECOVERY',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'password_reuse' },
+      });
+      throw new BadRequestException(
+        'Your new password must be different from your current password.',
+      );
+    }
+
+    const passwordHash = this.hashPassword(password);
+    await this.authRepository.update(user.id, {
+      passwordHash,
+      sessionVersion: { increment: 1 },
+    });
     await this.authRepository.deleteVerificationToken(tokenRecord.id);
+
+    await this.securityAuditService.record({
+      userId: user.id,
+      email: user.email,
+      action: 'PASSWORD_RESET',
+      status: 'SUCCESS',
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
+    try {
+      await this.emailService.sendPasswordChangedEmail({
+        email: user.email,
+        firstName: user.firstName,
+        changedAt: new Date(),
+        deviceInfo: context?.userAgent,
+        ipAddress: context?.ipAddress,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password-changed email to ${user.email}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
 
     return { success: true, message: 'Password has been reset.' };
   }
 
-  private validateRegisterInput(dto: RegisterDto) {
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+    context?: AuthRequestContext,
+  ) {
+    const user = await this.authRepository.findById(userId);
+    if (!user?.passwordHash) {
+      throw new BadRequestException(
+        'Password changes are unavailable for this account.',
+      );
+    }
+
+    const currentPassword = this.validateRequiredText(
+      dto.currentPassword,
+      'Current password',
+    );
+    if (!this.verifyPassword(currentPassword, user.passwordHash)) {
+      await this.securityAuditService.record({
+        userId: user.id,
+        email: user.email,
+        action: 'PASSWORD_CHANGE',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'wrong_current_password' },
+      });
+      throw new BadRequestException('Current password is incorrect.');
+    }
+
+    const password = this.validatePassword(dto.password);
+    if (this.verifyPassword(password, user.passwordHash)) {
+      await this.securityAuditService.record({
+        userId: user.id,
+        email: user.email,
+        action: 'PASSWORD_CHANGE',
+        status: 'FAILURE',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'password_reuse' },
+      });
+      throw new BadRequestException(
+        'Your new password must be different from your current password.',
+      );
+    }
+    await this.assertPasswordIsNotCompromised(password);
+
+    await this.authRepository.update(user.id, {
+      passwordHash: this.hashPassword(password),
+      sessionVersion: { increment: 1 },
+    });
+
+    await this.securityAuditService.record({
+      userId: user.id,
+      email: user.email,
+      action: 'PASSWORD_CHANGE',
+      status: 'SUCCESS',
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
+    try {
+      await this.emailService.sendPasswordChangedEmail({
+        email: user.email,
+        firstName: user.firstName,
+        changedAt: new Date(),
+        deviceInfo: context?.userAgent,
+        ipAddress: context?.ipAddress,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password-changed email to ${user.email}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Password changed. Please sign in again.',
+    };
+  }
+
+  async revokeOtherSessions(
+    userId: string,
+    context?: AuthRequestContext,
+  ): Promise<{
+    sessionToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  }> {
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    const updatedUser = await this.authRepository.update(userId, {
+      sessionVersion: { increment: 1 },
+    });
+
+    await this.securityAuditService.record({
+      userId: user.id,
+      email: user.email,
+      action: 'SESSIONS_REVOKED',
+      status: 'SUCCESS',
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
+    return {
+      sessionToken: this.signAccessToken(updatedUser),
+      refreshToken: this.signRefreshToken(updatedUser),
+      user: this.toAuthUser(updatedUser),
+    };
+  }
+
+  async getSecurityEvents(userId: string) {
+    return this.securityAuditService.getLogsForUser(userId);
+  }
+
+  private async validateRegisterInput(dto: RegisterDto) {
     const email = this.normalizeEmail(dto.email);
     const password = this.validatePassword(dto.password);
+    await this.assertPasswordIsNotCompromised(password);
     const firstName = this.validateRequiredText(dto.firstName, 'First name');
     const lastName = this.validateRequiredText(dto.lastName, 'Last name');
 
-    if (dto.role && !Object.values(UserRole).includes(dto.role as any)) {
+    if (dto.role && !Object.values(UserRole).includes(dto.role)) {
       throw new BadRequestException('A valid role is required.');
     }
 
@@ -396,7 +708,39 @@ export class AuthService {
       );
     }
 
+    if (!/[A-Z]/.test(normalizedPassword)) {
+      throw new BadRequestException(
+        'Password must contain at least one uppercase letter.',
+      );
+    }
+
+    if (!/[a-z]/.test(normalizedPassword)) {
+      throw new BadRequestException(
+        'Password must contain at least one lowercase letter.',
+      );
+    }
+
+    if (!/[0-9]/.test(normalizedPassword)) {
+      throw new BadRequestException(
+        'Password must contain at least one number.',
+      );
+    }
+
+    if (!/[^A-Za-z0-9]/.test(normalizedPassword)) {
+      throw new BadRequestException(
+        'Password must contain at least one special character.',
+      );
+    }
+
     return normalizedPassword;
+  }
+
+  private async assertPasswordIsNotCompromised(password: string) {
+    if (await this.pwnedPasswordService.isCompromised(password)) {
+      throw new BadRequestException(
+        'Choose a password that has not appeared in a data breach.',
+      );
+    }
   }
 
   private validateRequiredText(value: string, fieldName: string) {
@@ -446,6 +790,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('User not found.');
+    }
+
+    if (user.sessionVersion !== payload.sessionVersion) {
+      throw new UnauthorizedException('Authentication is required.');
     }
 
     return {
@@ -519,6 +867,7 @@ export class AuthService {
     const payload = Buffer.from(
       JSON.stringify({
         sub: user.id,
+        sessionVersion: user.sessionVersion,
         role: user.role,
         accountStage: stage,
         type: 'access',
@@ -538,6 +887,7 @@ export class AuthService {
     const payload = Buffer.from(
       JSON.stringify({
         sub: user.id,
+        sessionVersion: user.sessionVersion,
         type: 'refresh',
         exp: expiresAt,
       }),
@@ -580,8 +930,13 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token.');
     }
 
+    const sessionVersion = decodedPayload.sessionVersion;
+
     if (
       !decodedPayload.sub ||
+      typeof sessionVersion !== 'number' ||
+      !Number.isInteger(sessionVersion) ||
+      sessionVersion < 0 ||
       decodedPayload.type !== 'refresh' ||
       !decodedPayload.exp ||
       decodedPayload.exp < Math.floor(Date.now() / 1000)
@@ -591,6 +946,7 @@ export class AuthService {
 
     return {
       sub: decodedPayload.sub,
+      sessionVersion,
       exp: decodedPayload.exp,
       type: 'refresh',
     };
@@ -626,8 +982,13 @@ export class AuthService {
       throw new UnauthorizedException('Authentication is required.');
     }
 
+    const sessionVersion = decodedPayload.sessionVersion;
+
     if (
       !decodedPayload.sub ||
+      typeof sessionVersion !== 'number' ||
+      !Number.isInteger(sessionVersion) ||
+      sessionVersion < 0 ||
       (decodedPayload.role &&
         !Object.values(UserRole).includes(decodedPayload.role)) ||
       (decodedPayload.type && decodedPayload.type !== 'access') ||
@@ -639,6 +1000,7 @@ export class AuthService {
 
     return {
       sub: decodedPayload.sub,
+      sessionVersion,
       role: decodedPayload.role,
       accountStage: decodedPayload.accountStage,
       exp: decodedPayload.exp,
@@ -661,9 +1023,9 @@ export class AuthService {
     const hasMenteeProfile = Boolean(user.menteeProfile);
     const isProfileComplete = Boolean(
       user.menteeProfile &&
-        (user.menteeProfile.gender ||
-          user.menteeProfile.location ||
-          user.menteeProfile.bio),
+      (user.menteeProfile.gender ||
+        user.menteeProfile.location ||
+        user.menteeProfile.bio),
     );
 
     return {
