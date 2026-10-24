@@ -30,7 +30,7 @@ export function CancelSessionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/50 p-4 backdrop-blur-xs">
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[24px] bg-white p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[24px] bg-white p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"
@@ -53,7 +53,7 @@ export function CancelSessionModal({
             <button
               type="button"
               onClick={onClose}
-              className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.99]"
+              className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.99]"
             >
               Back to bookings
             </button>
@@ -166,7 +166,7 @@ export function CancelSessionModal({
               {/* CTA */}
               <button
                 type="submit"
-                className="w-full rounded-full bg-[#EC221F] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#D92D20] active:scale-[0.99]"
+                className="w-full rounded-full bg-[#EC221F] py-3.5 text-sm font-semibold text-white transition hover:bg-[#D92D20] active:scale-[0.99]"
               >
                 Confirm cancellation
               </button>

@@ -144,7 +144,7 @@ export function LandingTestimonials() {
               </p>
 
               <div className="mt-6 sm:mt-8 flex items-center gap-3">
-                <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-full bg-[#FF5514] text-xs font-bold text-white shadow-xs">
+                <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-full bg-[#FF5514] text-xs font-bold text-white">
                   {item.initials}
                 </div>
                 <div>

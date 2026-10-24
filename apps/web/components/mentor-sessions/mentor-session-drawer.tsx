@@ -145,7 +145,7 @@ export function MentorSessionDrawer({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6 backdrop-blur-xs animate-in fade-in-0 duration-200 overflow-y-auto">
       <div
-        className="relative w-full max-w-[580px] my-auto max-h-[90vh] flex flex-col rounded-[28px] bg-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-[580px] my-auto max-h-[90vh] flex flex-col rounded-[28px] bg-white overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -226,7 +226,7 @@ export function MentorSessionDrawer({
                   Session flyer
                 </label>
                 <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#EAECF0] p-6 text-center hover:border-[#FF5514]/40 transition bg-[#FAFAFA]">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-white shadow-xs text-[#475467] mb-2">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-white text-[#475467] mb-2">
                     <UploadCloud className="size-5 text-[#475467]" />
                   </div>
                   <p className="text-sm font-medium text-[#475467]">
@@ -256,7 +256,7 @@ export function MentorSessionDrawer({
                 <SelectTrigger className="h-12 w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] bg-white focus-visible:border-[#FF5514] focus-visible:ring-2 focus-visible:ring-[#FF5514]/20">
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border border-[#EAECF0] bg-white shadow-lg">
+                <SelectContent className="rounded-xl border border-[#EAECF0] bg-white">
                   {DURATION_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={String(opt.value)}>
                       {opt.label}
@@ -280,7 +280,7 @@ export function MentorSessionDrawer({
                 <SelectTrigger className="h-12 w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] bg-white focus-visible:border-[#FF5514] focus-visible:ring-2 focus-visible:ring-[#FF5514]/20">
                   <SelectValue placeholder="Select price" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border border-[#EAECF0] bg-white shadow-lg">
+                <SelectContent className="rounded-xl border border-[#EAECF0] bg-white">
                   <SelectItem value="Free">Free</SelectItem>
                   <SelectItem value="Paid">Paid</SelectItem>
                 </SelectContent>
@@ -309,7 +309,7 @@ export function MentorSessionDrawer({
                 >
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block size-4 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${
                       requiresConfirmation ? "translate-x-4" : "translate-x-0"
                     }`}
                   />
@@ -336,7 +336,7 @@ export function MentorSessionDrawer({
                       <SelectTrigger className="h-12 w-full rounded-xl border border-[#D0D5DD] px-3.5 py-3 text-sm font-medium text-[#101828] bg-white focus-visible:border-[#FF5514] focus-visible:ring-2 focus-visible:ring-[#FF5514]/20">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl border border-[#EAECF0] bg-white shadow-lg">
+                      <SelectContent className="rounded-xl border border-[#EAECF0] bg-white">
                         <SelectItem value="USD">USD $</SelectItem>
                         <SelectItem value="NGN">NGN ₦</SelectItem>
                       </SelectContent>
@@ -436,7 +436,7 @@ export function MentorSessionDrawer({
                     <SelectTrigger className="h-12 w-full rounded-xl border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] bg-white focus-visible:border-[#FF5514] focus-visible:ring-2 focus-visible:ring-[#FF5514]/20">
                       <SelectValue placeholder="English" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl border border-[#EAECF0] bg-white shadow-lg">
+                    <SelectContent className="rounded-xl border border-[#EAECF0] bg-white">
                       <SelectItem value="English">English</SelectItem>
                       <SelectItem value="French">French</SelectItem>
                       <SelectItem value="Spanish">Spanish</SelectItem>
@@ -474,7 +474,7 @@ export function MentorSessionDrawer({
             type="submit"
             form="session-form"
             disabled={isSaving || !formData.title.trim()}
-            className="w-full h-12 rounded-full bg-[#FF5514] text-sm font-semibold text-white transition hover:bg-[#E0480F] disabled:opacity-50 shadow-xs"
+            className="w-full h-12 rounded-full bg-[#FF5514] text-sm font-semibold text-white transition hover:bg-[#E0480F] disabled:opacity-50"
           >
             {isSaving
               ? "Saving..."

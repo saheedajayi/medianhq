@@ -78,7 +78,7 @@ export function LandingFounderNote() {
             alt="A note from the founder - Abdullah Mumuni, Founder of Median"
             width={370}
             height={734}
-            className="h-auto w-full drop-shadow-sm"
+            className="h-auto w-full"
             priority={false}
           />
           {/* Interactive clickable overlay over LinkedIn icon */}

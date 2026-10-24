@@ -40,7 +40,7 @@ export function BookingDetailsDrawer({
     <Sheet open={!!booking} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col border border-[#EAECF0] bg-white p-0 shadow-2xl sm:top-2 sm:right-2 sm:bottom-2 sm:h-[calc(100vh-16px)] sm:max-w-[600px] sm:rounded-[20px]"
+        className="flex w-full flex-col border border-[#EAECF0] bg-white p-0 sm:top-2 sm:right-2 sm:bottom-2 sm:h-[calc(100vh-16px)] sm:max-w-[600px] sm:rounded-[20px]"
       >
         <SheetTitle className="sr-only">Booking Details</SheetTitle>
 
@@ -269,7 +269,7 @@ export function BookingDetailsDrawer({
                       <button
                         type="button"
                         onClick={onClose}
-                        className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.99]"
+                        className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.99]"
                       >
                         Send message
                       </button>
@@ -282,7 +282,7 @@ export function BookingDetailsDrawer({
                     <button
                       type="button"
                       onClick={() => onOpenReschedule(currentBooking)}
-                      className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.99]"
+                      className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.99]"
                     >
                       Reschedule
                     </button>
@@ -290,7 +290,7 @@ export function BookingDetailsDrawer({
                     <button
                       type="button"
                       onClick={() => onOpenCancel(currentBooking)}
-                      className="w-full rounded-full border border-[#EC221F] bg-white py-3.5 text-sm font-semibold text-[#EC221F] shadow-xs transition hover:bg-[#FEF3F2] active:scale-[0.99]"
+                      className="w-full rounded-full border border-[#EC221F] bg-white py-3.5 text-sm font-semibold text-[#EC221F] transition hover:bg-[#FEF3F2] active:scale-[0.99]"
                     >
                       Cancel request
                     </button>
@@ -308,7 +308,7 @@ export function BookingDetailsDrawer({
                             onConfirmAttendance(currentBooking.id);
                           }
                         }}
-                        className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.99]"
+                        className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.99]"
                       >
                         {currentBooking.status === "confirmed"
                           ? "Join session"
@@ -320,7 +320,7 @@ export function BookingDetailsDrawer({
                         onClick={() => {
                           onClose();
                         }}
-                        className="w-full rounded-full border border-[#FF8D62] bg-white py-3.5 text-sm font-semibold text-[#FF5514] shadow-xs transition hover:bg-[#FDF9F6] active:scale-[0.99]"
+                        className="w-full rounded-full border border-[#FF8D62] bg-white py-3.5 text-sm font-semibold text-[#FF5514] transition hover:bg-[#FDF9F6] active:scale-[0.99]"
                       >
                         Send message
                       </button>
@@ -416,7 +416,7 @@ export function BookingDetailsDrawer({
                   <button
                     type="button"
                     onClick={() => onOpenReview(currentBooking)}
-                    className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.99]"
+                    className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.99]"
                   >
                     Review mentor
                   </button>

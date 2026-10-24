@@ -17,7 +17,7 @@ export function DisconnectCalendarModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-[2px] animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[500px] rounded-[24px] bg-white p-7 sm:p-9 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-[500px] rounded-[24px] bg-white p-7 sm:p-9 animate-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"
@@ -50,7 +50,7 @@ export function DisconnectCalendarModal({
                 onConfirmDisconnect();
                 onClose();
               }}
-              className="rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#E04B12] transition-colors"
+              className="rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-semibold text-white hover:bg-[#E04B12] transition-colors"
             >
               Disconnect
             </button>

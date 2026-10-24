@@ -160,7 +160,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Dynamic Dashboard Page Content enclosed in the single curved white canvas */}
-        <div className="flex-1 flex flex-col min-h-0 lg:my-2 lg:mr-2 lg:rounded-[20px] lg:border lg:border-[#EAECF0] bg-white overflow-hidden shadow-xs">
+        <div className="flex-1 flex flex-col min-h-0 lg:my-2 lg:mr-2 lg:rounded-[20px] lg:border lg:border-[#EAECF0] bg-white overflow-hidden">
           <main
             className={cn(
               "flex-1 flex flex-col min-h-0",

@@ -53,7 +53,7 @@ export function SessionsManager({
   }
 
   return (
-    <Card className="border-[#EAECF0] shadow-xs">
+    <Card className="border-[#EAECF0]">
       <CardHeader>
         <CardTitle className="text-lg text-[#101828]">Active Sessions</CardTitle>
         <CardDescription className="text-sm text-[#667085]">

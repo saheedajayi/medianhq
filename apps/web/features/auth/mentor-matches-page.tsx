@@ -60,7 +60,7 @@ export function MentorMatchesPage() {
         {mentors.map((mentor) => (
           <div
             key={mentor.id}
-            className="flex items-center justify-between rounded-2xl border border-[#f1f5f9] bg-white p-4 shadow-[0px_2px_4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-sm"
+            className="flex items-center justify-between rounded-2xl border border-[#f1f5f9] bg-white p-4 transition-shadow"
           >
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -70,7 +70,7 @@ export function MentorMatchesPage() {
                   className="size-14 rounded-full object-cover"
                 />
                 <svg
-                  className="absolute -bottom-1.5 -right-1.5 size-7 drop-shadow-sm"
+                  className="absolute -bottom-1.5 -right-1.5 size-7"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"

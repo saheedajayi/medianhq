@@ -79,7 +79,7 @@ export function SecurityAuditTrail({ refreshKey }: { refreshKey?: number }) {
   }, [fetchEvents, refreshKey]);
 
   return (
-    <Card className="border-[#EAECF0] shadow-xs">
+    <Card className="border-[#EAECF0]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div>
           <CardTitle className="text-lg text-[#101828]">

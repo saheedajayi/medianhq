@@ -8,7 +8,7 @@ import {
 
 export function MobileBottomNav() {
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-sm rounded-full border border-[#EAECF0] bg-white/95 px-4 py-2 shadow-lg backdrop-blur-md lg:hidden">
+    <div className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-sm rounded-full border border-[#EAECF0] bg-white/95 px-4 py-2 backdrop-blur-md lg:hidden">
       <div className="flex items-center justify-around">
         <Link
           href="/dashboard"

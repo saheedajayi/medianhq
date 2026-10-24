@@ -31,7 +31,7 @@ export function CategoryPills({
               onClick={() => onSelectCategory(category)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
                 isActive
-                  ? "bg-white font-semibold text-[#FF5500] shadow-2xs"
+                  ? "bg-white font-semibold text-[#FF5500]"
                   : "text-[#475467] hover:text-[#101828]"
               }`}
             >

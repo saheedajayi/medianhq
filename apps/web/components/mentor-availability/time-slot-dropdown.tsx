@@ -94,7 +94,7 @@ export function TimeSlotDropdown({
       )}
 
       {isOpen && (
-        <div className={`absolute left-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-[#EAECF0] bg-white py-1 shadow-xl ${variant === "input" ? "w-full" : "w-36"}`}>
+        <div className={`absolute left-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-[#EAECF0] bg-white py-1 ${variant === "input" ? "w-full" : "w-36"}`}>
           {ALL_TIME_OPTIONS.map((time) => {
             const isSelected =
               time.toLowerCase() === normalizedVal.toLowerCase() ||

@@ -267,7 +267,7 @@ export function SessionLobby({
         <button
           type="button"
           onClick={handleStartJoin}
-          className="h-[43px] rounded-full bg-[#FF5514] px-6 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer w-fit"
+          className="h-[43px] rounded-full bg-[#FF5514] px-6 text-xs font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer w-fit"
         >
           <span>Join session</span>
           <ChevronDown className="size-3.5 text-white" />
@@ -277,7 +277,7 @@ export function SessionLobby({
       {/* Recording Consent Modal */}
       {showRecordingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/50 p-4 backdrop-blur-xs">
-          <div className="relative w-full max-w-lg rounded-[24px] bg-white p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-lg rounded-[24px] bg-white p-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Close */}
             <button
               type="button"
@@ -369,7 +369,7 @@ export function SessionLobby({
               type="button"
               onClick={() => void handleConfirmRecording()}
               disabled={isCreatingRoom}
-              className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E04406] active:scale-[0.99] disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              className="mt-8 w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.99] disabled:opacity-60 inline-flex items-center justify-center gap-2"
             >
               {isCreatingRoom ? (
                 <>

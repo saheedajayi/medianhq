@@ -1,8 +1,9 @@
 /**
  * Master switch for preview/dummy data across the app.
- * Set NEXT_PUBLIC_USE_MOCK_DATA=false to turn dummy data off everywhere.
+ * Off unless NEXT_PUBLIC_USE_MOCK_DATA=true, so a build without the variable
+ * (e.g. production) never shows dummy data.
  */
-export const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA !== "false";
+export const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
 
 /**
  * Per-page switches. Set a page to `false` to show only real API data

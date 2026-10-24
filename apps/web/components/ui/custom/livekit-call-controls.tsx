@@ -159,7 +159,7 @@ export function LiveKitCallControls({
         type="button"
         onClick={() => void handleLeave()}
         aria-label="End call"
-        className="flex size-12 items-center justify-center rounded-full bg-[#D92D20] text-white shadow-lg transition hover:bg-[#B42318] active:scale-95"
+        className="flex size-12 items-center justify-center rounded-full bg-[#D92D20] text-white transition hover:bg-[#B42318] active:scale-95"
       >
         <PhoneOff className="size-5" />
       </button>

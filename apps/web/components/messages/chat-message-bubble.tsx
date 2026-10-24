@@ -44,7 +44,7 @@ export function ChatMessageBubble({
       {/* Message Content Bubble */}
       <div className="relative max-w-[620px]">
         {isEditing ? (
-          <div className="flex flex-col gap-2 rounded-2xl rounded-tr-none border border-[#FF5514] bg-white p-3 shadow-md">
+          <div className="flex flex-col gap-2 rounded-2xl rounded-tr-none border border-[#FF5514] bg-white p-3">
             <textarea
               value={editContent}
               onChange={(e) => onEditContentChange(e.target.value)}
@@ -117,7 +117,7 @@ export function ChatMessageBubble({
       {showOptions && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`z-20 mt-1.5 rounded-xl border border-[#EAECF0] bg-white p-1 shadow-md animate-in fade-in zoom-in-95 duration-150 min-w-[130px] ${
+          className={`z-20 mt-1.5 rounded-xl border border-[#EAECF0] bg-white p-1 animate-in fade-in zoom-in-95 duration-150 min-w-[130px] ${
             isCurrentUser ? "self-end" : "self-start"
           }`}
         >

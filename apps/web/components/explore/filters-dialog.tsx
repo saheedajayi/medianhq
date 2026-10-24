@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronDown, Star, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ExploreFilterState } from "./types";
 import {
@@ -79,7 +79,7 @@ function OptionCheckbox({
   name?: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-xs text-[#475467]">
+    <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-[#475467]">
       <input
         type={type}
         name={name}
@@ -116,6 +116,32 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
     if (isOpen) setDraft(pickPanelFilters(filters));
   }, [isOpen, filters]);
 
+  // On desktop the panel sits partway down the page, so cap its height to the space
+  // left in the viewport; that keeps Clear all / Show results visible without scrolling.
+  const panelRef = useRef<HTMLElement>(null);
+  const [desktopMaxHeight, setDesktopMaxHeight] = useState<number | undefined>();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const update = () => {
+      const panel = panelRef.current;
+      if (!panel || window.innerWidth < 1024) {
+        setDesktopMaxHeight(undefined);
+        return;
+      }
+      const top = Math.max(panel.getBoundingClientRect().top, 24);
+      setDesktopMaxHeight(Math.max(320, window.innerHeight - top - 24));
+    };
+    update();
+    window.addEventListener("resize", update);
+    // Capture scrolls from the dashboard's inner scroll container too
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const update = (patch: Partial<PanelFilters>) => setDraft((prev) => ({ ...prev, ...patch }));
@@ -128,20 +154,22 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
   const section = (name: string, content: React.ReactNode) => {
     const isSectionOpen = openSections.includes(name);
     return (
-      <div className="border-b border-[#F2F4F7]">
+      <div className="border-b border-[#EAECF0]">
         <button
           type="button"
           onClick={() => toggleSection(name)}
-          className="flex w-full items-center justify-between py-3.5 text-left text-xs font-medium text-[#344054]"
+          className="flex w-full items-center justify-between rounded-lg px-3 py-4 text-left text-sm font-medium text-[#101828] outline-none focus-visible:ring-2 focus-visible:ring-[#FF5500]/30"
           aria-expanded={isSectionOpen}
         >
           {name}
-          <ChevronDown
-            className={cn("size-4 text-[#667085] transition-transform", isSectionOpen && "rotate-180")}
-          />
+          {isSectionOpen ? (
+            <ChevronDown className="size-4 text-[#344054]" />
+          ) : (
+            <ChevronUp className="size-4 text-[#344054]" />
+          )}
         </button>
         {isSectionOpen && (
-          <div className="mb-3.5 space-y-3 rounded-xl border border-[#F2F4F7] p-3">{content}</div>
+          <div className="mb-3 space-y-3 rounded-xl border border-[#F2F4F7] p-3">{content}</div>
         )}
       </div>
     );
@@ -156,22 +184,24 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
         onClick={onClose}
       />
       <aside
-        className="fixed inset-y-0 right-0 z-50 flex w-[min(360px,100vw)] flex-col border-l border-[#E9EAF0] bg-white shadow-xl lg:sticky lg:top-6 lg:z-auto lg:mb-8 lg:h-auto lg:max-h-[calc(100vh-6rem)] lg:w-[300px] lg:shrink-0 lg:rounded-2xl lg:border lg:border-[#EAECF0] lg:shadow-xs"
+        className="fixed inset-y-0 right-0 z-50 flex w-[min(360px,100vw)] flex-col border-l border-[#E9EAF0] bg-white lg:sticky lg:top-6 lg:z-auto lg:mb-8 lg:h-auto lg:max-h-[860px] lg:w-[340px] lg:shrink-0 lg:rounded-2xl lg:border lg:border-[#EAECF0]"
         aria-label="Filters"
+        ref={panelRef}
+        style={desktopMaxHeight ? { maxHeight: Math.min(desktopMaxHeight, 860) } : undefined}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <h2 className="text-base font-semibold text-[#101828]">Filters</h2>
+        <div className="flex items-center justify-between px-5 pt-6 pb-3">
+          <h2 className="text-xl font-medium text-[#101828]">Filters</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="flex size-7 items-center justify-center rounded-full bg-[#F7F8FB] text-[#344054] transition-colors hover:bg-[#EAECF0]"
+            className="flex size-8 items-center justify-center rounded-full bg-[#F7F8FB] text-[#101828] transition-colors hover:bg-[#EAECF0]"
           >
-            <X className="size-3.5" />
+            <X className="size-4" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5">
           {section(
             "Expertise",
             expertiseOptions.map(({ label }) => (
@@ -207,7 +237,7 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
                   ["Max", "maxPrice", "₦50,000"],
                 ] as const
               ).map(([label, key, placeholder]) => (
-                <label key={key} className="flex flex-col gap-1.5 text-[11px] text-[#98A2B3]">
+                <label key={key} className="flex flex-col gap-1.5 text-xs text-[#98A2B3]">
                   {label}
                   <input
                     type="text"
@@ -215,7 +245,7 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
                     placeholder={placeholder}
                     value={formatPrice(draft[key])}
                     onChange={(event) => update({ [key]: parsePrice(event.target.value) })}
-                    className="h-8 w-full rounded-lg bg-[#F7F8FB] px-2.5 text-xs text-[#344054] placeholder:text-[#98A2B3] focus:outline-none focus:ring-1 focus:ring-[#FF5500]"
+                    className="h-9 w-full rounded-lg bg-[#F7F8FB] px-3 text-[13px] text-[#344054] placeholder:text-[#98A2B3] focus:outline-none focus:ring-1 focus:ring-[#FF5500]"
                   />
                 </label>
               ))}
@@ -293,14 +323,14 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-between px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between px-5 py-5">
           <button
             type="button"
             onClick={() => {
               setDraft(emptyPanelFilters);
               onResetFilters();
             }}
-            className="rounded-full border border-[#EAECF0] px-3.5 py-1.5 text-xs font-medium text-[#475467] transition-colors hover:bg-[#F9FAFB]"
+            className="rounded-full border border-[#D0D5DD] px-4 py-2 text-sm font-medium text-[#344054] transition-colors hover:bg-[#F9FAFB]"
           >
             Clear all
           </button>
@@ -310,7 +340,7 @@ export function FiltersDialog({ isOpen, onClose, filters, onApplyFilters, onRese
               onApplyFilters(draft);
               onClose();
             }}
-            className="rounded-full bg-[#FF5500] px-4 py-1.5 text-xs font-semibold text-white shadow-2xs transition-colors hover:bg-[#E04B00]"
+            className="rounded-full bg-[#FF5500] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#E04B00]"
           >
             Show results
           </button>

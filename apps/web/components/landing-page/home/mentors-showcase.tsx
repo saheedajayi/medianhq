@@ -120,7 +120,7 @@ export function LandingMentorsShowcase() {
                   onClick={() => setSelectedCategory(category)}
                   className={`rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all ${
                     isActive
-                      ? "bg-[#FF5514] text-white shadow-xs"
+                      ? "bg-[#FF5514] text-white"
                       : "border border-[#D0D5DD] bg-white text-[#344054] hover:bg-[#F9FAFB]"
                   }`}
                 >
@@ -141,12 +141,12 @@ export function LandingMentorsShowcase() {
           {MENTORS.map((mentor) => (
             <div
               key={mentor.name}
-              className="flex flex-col justify-between overflow-hidden rounded-3xl border border-[#EAECF0] bg-white shadow-2xs transition-all hover:border-[#D0D5DD] hover:shadow-md"
+              className="flex flex-col justify-between overflow-hidden rounded-3xl border border-[#EAECF0] bg-white transition-all hover:border-[#D0D5DD]"
             >
               {/* Card Body */}
               <div className="p-6 sm:p-7 text-center">
                 {/* Avatar */}
-                <div className="mx-auto size-28 overflow-hidden rounded-full border-2 border-white shadow-xs">
+                <div className="mx-auto size-28 overflow-hidden rounded-full border-2 border-white">
                   <Image
                     src={mentor.avatar}
                     alt={mentor.name}
@@ -206,7 +206,7 @@ export function LandingMentorsShowcase() {
                 </div>
                 <Link
                   href="/signup?role=mentee"
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-[#FF5514] px-5 text-xs sm:text-sm font-semibold !text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.98]"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-[#FF5514] px-5 text-xs sm:text-sm font-semibold !text-white transition-all hover:bg-[#E84D12] active:scale-[0.98]"
                 >
                   Book Session
                 </Link>

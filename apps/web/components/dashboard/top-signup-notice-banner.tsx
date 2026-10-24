@@ -30,7 +30,7 @@ export function TopSignupNoticeBanner() {
   const signupAge = formatSignupAge(user?.createdAt);
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#EAECF0] bg-white px-5 py-3.5 shadow-2xs">
+    <div className="flex items-center gap-3 rounded-2xl border border-[#EAECF0] bg-white px-5 py-3.5">
       <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#FFF0EB] text-[#FF5500]">
         <Clock size="18" variant="Linear" color="#FF5500" />
       </div>

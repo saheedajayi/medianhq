@@ -47,7 +47,7 @@ export function MentorsForYouSection({ mentors }: MentorsForYouSectionProps) {
   }, [mentors]);
 
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-[#EAECF0] bg-white p-6 md:p-8 shadow-xs">
+    <section className="flex flex-col gap-4 rounded-3xl border border-[#EAECF0] bg-white p-6 md:p-8">
       <h2 className="text-xs font-bold tracking-wider text-[#667085] uppercase">
         Mentors For You
       </h2>
@@ -85,7 +85,7 @@ export function MentorsForYouSection({ mentors }: MentorsForYouSectionProps) {
           </p>
           <Link
             href="/mentee/explore"
-            className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold !text-white shadow-2xs transition-colors hover:bg-[#E04B00]"
+            className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold !text-white transition-colors hover:bg-[#E04B00]"
           >
             Explore Mentors
           </Link>

@@ -48,7 +48,7 @@ export function LandingHero({
             {isMentor ? (
               <Link
                 href="/signup?role=mentor"
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#FF5514] px-8 text-sm font-semibold !text-white shadow-sm transition-all hover:bg-[#e84d12] sm:w-auto"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#FF5514] px-8 text-sm font-semibold !text-white transition-all hover:bg-[#e84d12] sm:w-auto"
               >
                 Get Started <span aria-hidden="true">→</span>
               </Link>
@@ -56,14 +56,14 @@ export function LandingHero({
               <>
                 <Link
                   href="/signup?role=mentee"
-                  className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#FF5514] px-8 text-sm font-semibold !text-white shadow-sm transition-all hover:bg-[#e84d12] sm:w-auto"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#FF5514] px-8 text-sm font-semibold !text-white transition-all hover:bg-[#e84d12] sm:w-auto"
                 >
                   Find a mentor
                 </Link>
                 <button
                   type="button"
                   onClick={() => onAudienceChange("mentor")}
-                  className="inline-flex h-12 w-full items-center justify-center rounded-full border border-[#FF5514] bg-white px-8 text-sm font-semibold text-[#FF5514] shadow-2xs transition-all hover:bg-[#FFF5F1] active:scale-[0.98] sm:w-auto"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-full border border-[#FF5514] bg-white px-8 text-sm font-semibold text-[#FF5514] transition-all hover:bg-[#FFF5F1] active:scale-[0.98] sm:w-auto"
                 >
                   Become a mentor
                 </button>

@@ -168,7 +168,7 @@ function AuthShellInner({ children }: { children: ReactNode }) {
                   Back
                 </button>
               )}
-              <div className="rounded-[28px] bg-white p-6 sm:p-8 md:p-9 shadow-[0px_4px_24px_rgba(0,0,0,0.03)] w-full max-w-full min-w-0">
+              <div className="rounded-[28px] bg-white p-6 sm:p-8 md:p-9 w-full max-w-full min-w-0">
                 {isCheckingAccess ? (
                   <p className="py-10 text-center text-sm text-[#667085]">
                     Checking your account…

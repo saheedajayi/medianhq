@@ -342,7 +342,7 @@ export function MessagesView() {
           <NoMessagesState />
         </div>
       ) : (
-        <div className="flex flex-1 min-h-0 rounded-[20px] sm:rounded-[24px] border border-[#EAECF0] bg-white overflow-hidden shadow-2xs">
+        <div className="flex flex-1 min-h-0 rounded-[20px] sm:rounded-[24px] border border-[#EAECF0] bg-white overflow-hidden">
           {/* ── Left Column: Conversation Sidebar ── */}
           <ConversationSidebar
             conversations={conversations}

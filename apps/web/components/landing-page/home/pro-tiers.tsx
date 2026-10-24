@@ -46,7 +46,7 @@ export function LandingProTiers({ audience = "mentee" }: { audience?: LandingAud
         <div className="mt-8 sm:mt-10">
           <Link
             href={audience === "mentor" ? "/pricing?audience=mentor" : "/pricing"}
-            className="inline-flex h-12 items-center justify-center rounded-full bg-[#FF5514] px-8 text-sm sm:text-base font-semibold !text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.98]"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-[#FF5514] px-8 text-sm sm:text-base font-semibold !text-white transition-all hover:bg-[#E84D12] active:scale-[0.98]"
           >
             Explore Median pro plans
           </Link>

@@ -22,7 +22,7 @@ export function PreviewScheduleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-[2px] animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[720px] rounded-[24px] bg-white p-7 sm:p-9 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-[720px] rounded-[24px] bg-white p-7 sm:p-9 animate-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"

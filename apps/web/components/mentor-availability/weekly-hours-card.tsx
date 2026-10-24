@@ -33,7 +33,7 @@ export function WeeklyHoursCard({
   const [expandedConflictSlotId, setExpandedConflictSlotId] = useState<string | null>("wed-slot-1");
 
   return (
-    <div className="rounded-3xl border border-[#EAECF0] bg-white p-6 sm:p-8 shadow-xs h-full flex flex-col">
+    <div className="rounded-3xl border border-[#EAECF0] bg-white p-6 sm:p-8 h-full flex flex-col">
       {/* Header: Title & Timezone Dropdown */}
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-base sm:text-lg font-medium text-[#101828]">
@@ -69,7 +69,7 @@ export function WeeklyHoursCard({
                       aria-checked={isActive}
                     >
                       <span
-                        className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${isActive ? "translate-x-5" : "translate-x-0"
+                        className={`pointer-events-none inline-block size-5 transform rounded-full bg-white transition duration-200 ease-in-out ${isActive ? "translate-x-5" : "translate-x-0"
                           }`}
                       />
                     </button>

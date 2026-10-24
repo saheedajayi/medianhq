@@ -219,7 +219,7 @@ export function MentorSessionsView() {
       ) : sessions.length === 0 ? (
         /* Empty State exactly matching Session not set.svg */
         <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-4 text-center">
-          <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF1ED] text-[#FF5514] shadow-xs mb-4">
+          <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF1ED] text-[#FF5514] mb-4">
             <Calendar className="size-6" />
           </div>
 
@@ -235,7 +235,7 @@ export function MentorSessionsView() {
           <button
             type="button"
             onClick={handleCreateOpen}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#FF5514] px-6 py-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E0480F]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#FF5514] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#E0480F]"
           >
             <Plus className="size-4" />
             <span>Create session</span>
@@ -256,7 +256,7 @@ export function MentorSessionsView() {
             <button
               type="button"
               onClick={handleCreateOpen}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#FF5514] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E0480F] shrink-0"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#FF5514] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E0480F] shrink-0"
             >
               <Plus className="size-4" />
               <span>Create session</span>
@@ -275,7 +275,7 @@ export function MentorSessionsView() {
               return (
                 <article
                   key={session.id}
-                  className="flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 shadow-xs transition hover:border-[#D0D5DD] hover:shadow-md"
+                  className="flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 transition hover:border-[#D0D5DD]"
                 >
                   <div>
                     {/* Top Row: Duration badge, Price badge, Live Toggle */}
@@ -302,7 +302,7 @@ export function MentorSessionsView() {
                       >
                         <span
                           aria-hidden="true"
-                          className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                          className={`pointer-events-none inline-block size-4 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${
                             session.isLive ? "translate-x-4" : "translate-x-0"
                           }`}
                         />
@@ -342,14 +342,14 @@ export function MentorSessionsView() {
                     <button
                       type="button"
                       onClick={() => handleEditOpen(session)}
-                      className="h-9 px-5 rounded-full border border-[#D0D5DD] bg-white text-xs font-semibold text-[#344054] hover:bg-[#F9FAFB] transition shadow-2xs text-center"
+                      className="h-9 px-5 rounded-full border border-[#D0D5DD] bg-white text-xs font-semibold text-[#344054] hover:bg-[#F9FAFB] transition text-center"
                     >
                       Edit session
                     </button>
                     <button
                       type="button"
                       onClick={() => setSelectedSession(session)}
-                      className="h-9 px-5 rounded-full bg-[#FF5514] text-xs font-semibold text-white hover:bg-[#E0480F] transition shadow-2xs text-center"
+                      className="h-9 px-5 rounded-full bg-[#FF5514] text-xs font-semibold text-white hover:bg-[#E0480F] transition text-center"
                     >
                       View details
                     </button>

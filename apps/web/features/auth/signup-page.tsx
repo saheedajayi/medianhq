@@ -230,7 +230,7 @@ export function SignupPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 h-12 w-full cursor-pointer rounded-full bg-[#FF5514] text-base font-medium text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.99]"
+          className="mt-2 h-12 w-full cursor-pointer rounded-full bg-[#FF5514] text-base font-medium text-white transition-all hover:bg-[#E84D12] active:scale-[0.99]"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </Button>

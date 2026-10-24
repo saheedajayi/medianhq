@@ -108,7 +108,7 @@ export function OnboardingSidebar() {
                 <div
                   className={`grid size-9 shrink-0 place-items-center rounded-full transition-all duration-300 ${
                     isCompleted
-                      ? "bg-white text-primary shadow-sm"
+                      ? "bg-white text-primary"
                       : isActive
                         ? "border-2 border-white bg-white/20 font-semibold text-white"
                         : "border border-white/40 bg-transparent text-white/80"

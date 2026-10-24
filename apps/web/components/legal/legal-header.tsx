@@ -22,7 +22,7 @@ export function LegalHeader() {
 
         {/* <Link
           href="/waitlist"
-          className="inline-flex h-11 items-center justify-center rounded-full bg-[#FF5514] px-6 text-sm font-semibold text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.98]"
+          className="inline-flex h-11 items-center justify-center rounded-full bg-[#FF5514] px-6 text-sm font-semibold text-white transition-all hover:bg-[#E84D12] active:scale-[0.98]"
         >
           Join waitlist
         </Link> */}

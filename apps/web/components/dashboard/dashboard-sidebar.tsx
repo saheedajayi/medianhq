@@ -203,7 +203,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
           />
 
           {/* Sliding Drawer Container */}
-          <aside className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col bg-[#F9FAFB] px-5 py-6 shadow-2xl transition-transform animate-in slide-in-from-left duration-200">
+          <aside className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col bg-[#F9FAFB] px-5 py-6 transition-transform animate-in slide-in-from-left duration-200">
             {navContent}
           </aside>
         </div>

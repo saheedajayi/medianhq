@@ -15,7 +15,7 @@ export function UpcomingSessionsCard({ sessions }: UpcomingSessionsCardProps) {
 
   if (upcomingList.length > 0) {
     return (
-      <div className="flex flex-col justify-between rounded-3xl border border-[#EAECF0] bg-white p-6 md:p-8 shadow-xs min-h-[300px]">
+      <div className="flex flex-col justify-between rounded-3xl border border-[#EAECF0] bg-white p-6 md:p-8 min-h-[300px]">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold tracking-wider text-[#667085] uppercase">
             Upcoming Sessions
@@ -35,7 +35,7 @@ export function UpcomingSessionsCard({ sessions }: UpcomingSessionsCardProps) {
               className="flex flex-col gap-3 rounded-2xl border border-[#EAECF0] bg-[#F9FAFB] p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex items-center gap-3">
-                <div className="relative size-11 shrink-0 overflow-hidden rounded-full border border-white shadow-2xs">
+                <div className="relative size-11 shrink-0 overflow-hidden rounded-full border border-white">
                   <Image
                     src={session.mentorAvatar || "/default-avatar.svg"}
                     alt={session.mentorName}
@@ -60,7 +60,7 @@ export function UpcomingSessionsCard({ sessions }: UpcomingSessionsCardProps) {
               <div className="flex items-center gap-2">
                 <Link
                   href="/mentee/booking-session"
-                  className="rounded-full bg-[#FF5500] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04B00]"
+                  className="rounded-full bg-[#FF5500] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#E04B00]"
                 >
                   {session.isReadyToJoin ? "Join Session" : "View Details"}
                 </Link>
@@ -83,7 +83,7 @@ export function UpcomingSessionsCard({ sessions }: UpcomingSessionsCardProps) {
   }
 
   return (
-    <div className="flex flex-col justify-between rounded-3xl border border-[#EAECF0] bg-white p-6 md:p-8 shadow-xs min-h-[300px]">
+    <div className="flex flex-col justify-between rounded-3xl border border-[#EAECF0] bg-white p-6 md:p-8 min-h-[300px]">
       <h2 className="text-xs font-bold tracking-wider text-[#667085] uppercase">
         Upcoming Sessions
       </h2>
@@ -104,7 +104,7 @@ export function UpcomingSessionsCard({ sessions }: UpcomingSessionsCardProps) {
 
         <Link
           href="/mentee/explore"
-          className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FF5500] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FF5500] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#E04B00] active:scale-[0.98]"
         >
           <Calendar size="18" variant="Bulk" color="#FFFFFF" className="shrink-0" />
           <span className="text-white">Book Session</span>

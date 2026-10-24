@@ -15,7 +15,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
   const isFeatured = showFeaturedBadge ?? mentor.isFeatured;
 
   return (
-    <div className="relative flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F7F8FB]">
+    <div className="relative flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F7F8FB]">
       {/* Top Right "Featured" Badge */}
       {isFeatured && (
         <span className="absolute top-5 right-5 inline-flex items-center rounded-full bg-[#EDE6E6] px-3 py-0.5 text-xs font-medium text-[#4B1210]">
@@ -26,7 +26,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
       {/* Main Card Body */}
       <div className="flex flex-col items-center text-center">
         {/* Centered Avatar */}
-        <div className="relative mb-3.5 size-[110px] overflow-hidden rounded-full border-2 border-white shadow-xs">
+        <div className="relative mb-3.5 size-[110px] overflow-hidden rounded-full border-2 border-white">
           <Image
             src={mentor.avatarUrl || "/default-avatar.svg"}
             alt={mentor.name}
@@ -102,7 +102,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
 
         <Link
           href={`/mentors/${mentor.id}`}
-          className="inline-flex items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2 text-sm font-medium !text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+          className="inline-flex items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2 text-sm font-medium !text-white transition-all hover:bg-[#E04B00] active:scale-[0.98]"
         >
           View Profile
         </Link>

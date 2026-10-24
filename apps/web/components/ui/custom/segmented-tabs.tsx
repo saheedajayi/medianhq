@@ -79,7 +79,7 @@ export function SegmentedTabs<T extends string = string>({
               currentSize.tab,
               fullWidth && "flex-1 text-center justify-center",
               isActive
-                ? cn("bg-white font-semibold text-[#FF5500] shadow-2xs", activeTabClassName)
+                ? cn("bg-white font-semibold text-[#FF5500]", activeTabClassName)
                 : cn("text-[#475467] hover:text-[#101828]", inactiveTabClassName),
               tabClassName
             )}

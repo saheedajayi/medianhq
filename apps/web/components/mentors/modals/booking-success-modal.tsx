@@ -48,7 +48,7 @@ export function BookingSuccessModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl">
+      <DialogContent className="max-w-md rounded-3xl bg-white p-6 sm:p-8">
         <DialogHeader className="text-center sm:text-center">
           <DialogTitle className="text-xl font-bold text-[#101828]">
             Booking successful
@@ -104,7 +104,7 @@ export function BookingSuccessModal({
           <div className="mt-2 flex flex-col gap-2.5">
             <Link
               href="/mentee/booking-session"
-              className="flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00]"
+              className="flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white transition-colors hover:bg-[#E04B00]"
             >
               View in Bookings
             </Link>
@@ -112,7 +112,7 @@ export function BookingSuccessModal({
             <button
               type="button"
               onClick={handleAddToCalendar}
-              className="flex w-full items-center justify-center gap-2 rounded-full border border-[#EAECF0] bg-white py-3 text-xs font-semibold text-[#344054] shadow-2xs transition-colors hover:bg-[#F9FAFB]"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-[#EAECF0] bg-white py-3 text-xs font-semibold text-[#344054] transition-colors hover:bg-[#F9FAFB]"
             >
               <Calendar className="size-4 text-[#475467]" />
               <span>Add to Calendar</span>

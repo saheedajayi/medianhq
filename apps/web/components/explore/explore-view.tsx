@@ -13,9 +13,10 @@ import { CategoryPills } from "./category-pills";
 import { FeaturedMentorsSection } from "./featured-mentors-section";
 import { MentorsGridSection } from "./mentors-grid-section";
 import { FiltersDialog } from "./filters-dialog";
-import { SearchNormal } from "iconsax-react";
+import { Global, SearchNormal } from "iconsax-react";
 import { mentorsService } from "@/services/mentors";
 import { applyMentorFilters, countActiveFilters } from "./filter-options";
+import { ActiveFilterChips } from "./active-filter-chips";
 
 const USE_MOCKS = isMockDataEnabled("explore");
 
@@ -56,6 +57,8 @@ export function ExploreView() {
 
   // Count active non-default filters (excluding search and category)
   const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
+  const isFiltering =
+    activeFilterCount > 0 || filters.category !== "All" || filters.search.trim() !== "";
 
   // Filtered dataset
   const filteredMentors = useMemo(() => {
@@ -153,7 +156,13 @@ export function ExploreView() {
             }
           />
 
-          {/* When no mentors match, show empty state message, OTHER MENTORS carousel, and fallback grid */}
+          <ActiveFilterChips
+            filters={filters}
+            onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+            onClearAll={handleResetFilters}
+          />
+
+          {/* Loading, no mentors at all, no match, or results */}
           {isLoading ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
@@ -163,9 +172,22 @@ export function ExploreView() {
                 />
               ))}
             </div>
+          ) : mentors.length === 0 ? (
+            /* No mentors on Median yet: nothing to search or filter */
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF4ED]">
+                <Global size="28" variant="Bulk" color="#FF5500" />
+              </div>
+              <h3 className="mt-3 text-lg font-semibold text-[#101828]">
+                No mentors yet
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-[#667085]">
+                Mentors will appear here as they join Median. Check back soon.
+              </p>
+            </div>
           ) : filteredMentors.length === 0 ? (
             <div className="flex flex-col gap-8">
-              {/* Empty search notice */}
+              {/* No match for the current search, category or filters */}
               <div className="flex flex-col items-center justify-center py-4 text-center">
                 <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF4ED]">
                   <SearchNormal size="28" variant="Bulk" color="#FF5500" />
@@ -176,34 +198,28 @@ export function ExploreView() {
                 <p className="mt-1 max-w-sm text-sm text-[#667085]">
                   Try adjusting your filters or search terms<br />to find the right mentor for you.
                 </p>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#E04B00]"
+                >
+                  Reset Filters
+                </button>
               </div>
 
-              {/* OTHER MENTORS Carousel */}
-              <FeaturedMentorsSection mentors={featuredMentors} title="OTHER MENTORS" />
-
-              {/* Fallback All Mentors Grid */}
-              <MentorsGridSection
-                mentors={mentors}
-                totalCount={mentors.length}
-                sortBy={filters.sortBy}
-                onSortChange={(sortBy: SortOption) =>
-                  setFilters((prev) => ({ ...prev, sortBy }))
-                }
-                onResetFilters={handleResetFilters}
-                isFiltersOpen={isFiltersOpen}
-              />
+              {/* Suggestions so the page isn't a dead end (not a result list) */}
+              <FeaturedMentorsSection mentors={featuredMentors} title="YOU MIGHT ALSO LIKE" />
             </div>
           ) : (
             <>
-              {/* Featured Mentors Section (shown on "All" view without active text search) */}
-              {filters.category === "All" && !filters.search.trim() && (
-                <FeaturedMentorsSection mentors={featuredMentors} />
-              )}
+              {/* Featured mentors aren't filtered, so only show them when nothing is narrowing the list */}
+              {!isFiltering && <FeaturedMentorsSection mentors={featuredMentors} />}
 
               {/* Mentors Grid Section */}
               <MentorsGridSection
                 mentors={filteredMentors}
                 totalCount={filteredMentors.length}
+                outOf={isFiltering ? mentors.length : undefined}
                 sortBy={filters.sortBy}
                 onSortChange={(sortBy: SortOption) =>
                   setFilters((prev) => ({ ...prev, sortBy }))

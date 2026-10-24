@@ -63,7 +63,7 @@ export function PaymentConfirmationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl">
+      <DialogContent className="max-w-md rounded-3xl bg-white p-6 sm:p-8">
         <DialogHeader className="text-center sm:text-center">
           <DialogTitle className="text-xl font-bold text-[#101828]">
             Booking Confirmation
@@ -117,7 +117,7 @@ export function PaymentConfirmationModal({
             type="button"
             disabled={isProcessing}
             onClick={handlePay}
-            className="flex items-center justify-center gap-2 w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00] active:scale-[0.99] disabled:opacity-60"
+            className="flex items-center justify-center gap-2 w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#E04B00] active:scale-[0.99] disabled:opacity-60"
           >
             {isProcessing ? (
               <>

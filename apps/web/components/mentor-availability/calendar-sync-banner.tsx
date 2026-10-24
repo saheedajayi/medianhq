@@ -18,7 +18,7 @@ export function CalendarSyncBanner({
     return (
       <div
         onClick={onClick}
-        className="flex cursor-pointer items-center justify-between rounded-2xl border border-[#A6F4C5] bg-[#EDF8F1] px-5 py-4 transition hover:bg-[#E5F5EB] shadow-2xs"
+        className="flex cursor-pointer items-center justify-between rounded-2xl border border-[#A6F4C5] bg-[#EDF8F1] px-5 py-4 transition hover:bg-[#E5F5EB]"
       >
         <div className="flex items-center gap-2.5">
           <CheckCircle2 size={18} className="text-[#12B76A] shrink-0" />
@@ -40,7 +40,7 @@ export function CalendarSyncBanner({
   return (
     <div
       onClick={onClick}
-      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[#FFCAB6] bg-[#FDF9F6] p-4 sm:p-5 transition hover:bg-[#FCF4EE] shadow-2xs cursor-pointer"
+      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[#FFCAB6] bg-[#FDF9F6] p-4 sm:p-5 transition hover:bg-[#FCF4EE] cursor-pointer"
     >
       <div className="flex items-center gap-4 min-w-0">
         {/* Peach Circle with Calendar Icon */}
@@ -64,7 +64,7 @@ export function CalendarSyncBanner({
           e.stopPropagation();
           onClick();
         }}
-        className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF5514] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF5514] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-[#E04B00] active:scale-[0.98]"
       >
         Connect calendar
       </button>

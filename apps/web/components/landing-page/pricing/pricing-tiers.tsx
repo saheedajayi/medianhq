@@ -124,7 +124,7 @@ export function PricingTiers({
                   {isActive && (
                     <motion.div
                       layoutId="activeBillingCyclePill"
-                      className="absolute inset-0 rounded-lg bg-[#FF5514] shadow-xs"
+                      className="absolute inset-0 rounded-lg bg-[#FF5514]"
                       transition={{ type: "spring", stiffness: 450, damping: 35 }}
                     />
                   )}

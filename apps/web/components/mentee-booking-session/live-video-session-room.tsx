@@ -93,7 +93,7 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
 
       {/* Main Video Presentation Stage */}
       <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 pb-24 sm:px-8">
-        <div className="relative aspect-[16/10] max-h-[82vh] w-full max-w-[1320px] overflow-hidden rounded-[24px] bg-[#1A1D24] shadow-2xl">
+        <div className="relative aspect-[16/10] max-h-[82vh] w-full max-w-[1320px] overflow-hidden rounded-[24px] bg-[#1A1D24]">
           {/* Featured remote participant (mentor) — full stage */}
           {featuredRemote ? (
             <>
@@ -120,7 +120,7 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
           )}
 
           {/* Floating Picture-in-Picture — self view */}
-          <div className="absolute bottom-6 right-6 z-20 aspect-[16/10] w-48 sm:w-60 overflow-hidden rounded-xl border border-white/20 bg-[#1D2939] shadow-2xl transition hover:scale-105">
+          <div className="absolute bottom-6 right-6 z-20 aspect-[16/10] w-48 sm:w-60 overflow-hidden rounded-xl border border-white/20 bg-[#1D2939] transition hover:scale-105">
             <LiveKitVideoTile
               participant={localParticipant}
               mirror
@@ -133,7 +133,7 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
       </main>
 
       {/* Bottom Floating Control Dock */}
-      <footer className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 rounded-full bg-[#1A1D24]/90 p-2 sm:p-2.5 backdrop-blur-md shadow-2xl ring-1 ring-white/10">
+      <footer className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 rounded-full bg-[#1A1D24]/90 p-2 sm:p-2.5 backdrop-blur-md ring-1 ring-white/10">
         <LiveKitCallControls
           onLeave={onEndCall}
           isRecording={isRecording}

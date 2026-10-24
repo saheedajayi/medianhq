@@ -24,7 +24,7 @@ export function DashboardHeroBanner({
 
   return (
     <div
-      className="relative overflow-hidden rounded-[28px] p-4 md:p-6 border border-[#FFA370]/30 shadow-xs"
+      className="relative overflow-hidden rounded-[28px] p-4 md:p-6 border border-[#FFA370]/30"
       style={{
         backgroundImage: "url('/dashboard-banner-bg.png')",
         backgroundSize: "400px 400px",

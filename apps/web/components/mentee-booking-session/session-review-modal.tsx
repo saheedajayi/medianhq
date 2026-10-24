@@ -62,7 +62,7 @@ export function SessionReviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/60 p-4 backdrop-blur-xs">
-      <div className="relative max-h-[92vh] w-full max-w-[600px] overflow-y-auto rounded-[20px] bg-white p-7 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative max-h-[92vh] w-full max-w-[600px] overflow-y-auto rounded-[20px] bg-white p-7 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
         {/* Close Button matching SVG */}
         <button
           type="button"
@@ -212,7 +212,7 @@ export function SessionReviewModal({
                 <button
                   type="button"
                   onClick={handleAddActionItem}
-                  className="rounded-full bg-[#FF5514] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#E04406]"
+                  className="rounded-full bg-[#FF5514] px-4 py-2 text-xs font-semibold text-white hover:bg-[#E04406]"
                 >
                   Add
                 </button>
@@ -242,7 +242,7 @@ export function SessionReviewModal({
           {/* Submit Action */}
           <button
             type="submit"
-            className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.99]"
+            className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.99]"
           >
             Submit review
           </button>

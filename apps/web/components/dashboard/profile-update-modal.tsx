@@ -184,7 +184,7 @@ export function ProfileUpdateModal({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-[24px] bg-white p-7 shadow-2xl transition-all md:p-8 animate-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-[24px] bg-white p-7 transition-all md:p-8 animate-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"
@@ -237,7 +237,7 @@ export function ProfileUpdateModal({
               )}
 
               {/* White Background Badge with orange Vuesax GalleryAdd icon */}
-              <div className="absolute bottom-[2px] right-[2px] flex size-7 items-center justify-center rounded-full bg-white border border-[#EAECF0] shadow-2xs transition-transform group-hover:scale-110">
+              <div className="absolute bottom-[2px] right-[2px] flex size-7 items-center justify-center rounded-full bg-white border border-[#EAECF0] transition-transform group-hover:scale-110">
                 <GalleryAdd size="16" variant="Outline" color="#FF5500" />
               </div>
             </div>
@@ -282,7 +282,7 @@ export function ProfileUpdateModal({
               >
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border border-[#EAECF0] bg-white shadow-lg">
+              <SelectContent className="rounded-xl border border-[#EAECF0] bg-white">
                 <SelectItem value="Male" className="cursor-pointer py-2 text-sm text-[#101828]">
                   Male
                 </SelectItem>
@@ -349,7 +349,7 @@ export function ProfileUpdateModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3.5 text-base font-semibold text-white shadow-xs transition-all hover:bg-[#E04B00] active:scale-[0.98] disabled:opacity-50"
+            className="mt-2 flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3.5 text-base font-semibold text-white transition-all hover:bg-[#E04B00] active:scale-[0.98] disabled:opacity-50"
           >
             <span className="text-white font-medium">
               {isSubmitting ? "Updating..." : "Update Profile"}

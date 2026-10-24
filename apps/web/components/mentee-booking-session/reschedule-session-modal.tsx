@@ -83,7 +83,7 @@ export function RescheduleSessionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/50 p-4 backdrop-blur-xs">
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[24px] bg-white p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[24px] bg-white p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"
@@ -141,7 +141,7 @@ export function RescheduleSessionModal({
           <button
             type="submit"
             disabled={!selectedTime}
-            className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E04406] disabled:opacity-50 active:scale-[0.99]"
+            className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E04406] disabled:opacity-50 active:scale-[0.99]"
           >
             Confirm reschedule
           </button>

@@ -91,7 +91,7 @@ export function MentorProfileTabs({
 
       {/* Tab 2: Reviews View */}
       {activeTab === "reviews" && (
-        <div className="rounded-2xl border border-[#F2F2F7] bg-white p-6 shadow-2xs">
+        <div className="rounded-2xl border border-[#F2F2F7] bg-white p-6">
           {/* Header Score */}
           <div className="flex items-center justify-between border-b border-[#EAECF0] pb-4">
             <h2 className="text-base font-bold text-[#101828]">Reviews</h2>

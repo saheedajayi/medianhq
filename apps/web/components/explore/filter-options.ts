@@ -7,13 +7,13 @@ import type {
   SessionType,
 } from "./types";
 
-// Each expertise option matches mentors whose tags, role or bio mention any of its keywords
+// Each expertise option matches mentors whose tags or role mention any of its keywords
 export const expertiseOptions: { label: string; keywords: string[] }[] = [
   { label: "UI/UX Design", keywords: ["ui/ux", "ux", "ui design", "design system", "figma"] },
   { label: "Product Design", keywords: ["product design"] },
   { label: "Web Development", keywords: ["web", "frontend", "front-end", "full stack", "fullstack"] },
   { label: "Data Science", keywords: ["data", "ai/ml", "machine learning"] },
-  { label: "Marketing", keywords: ["marketing", "growth"] },
+  { label: "Marketing", keywords: ["marketing"] },
   { label: "Graphic Design", keywords: ["graphic", "brand", "visual design"] },
 ];
 
@@ -91,7 +91,7 @@ export function applyMentorFilters(
 ): ExploreMentor[] {
   return mentors.filter((mentor) => {
     if (filters.expertise?.length) {
-      const haystack = [...mentor.tags, mentor.role, mentor.bio].join(" ").toLowerCase();
+      const haystack = [...mentor.tags, mentor.role].join(" ").toLowerCase();
       const matches = expertiseOptions
         .filter((option) => filters.expertise!.includes(option.label))
         .some((option) => option.keywords.some((keyword) => haystack.includes(keyword)));

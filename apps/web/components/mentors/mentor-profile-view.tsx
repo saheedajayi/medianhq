@@ -206,6 +206,7 @@ function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
         packages={mentor.packages}
         selectedPackage={selectedPackage}
         dateTimeDisplay={dateTimeDisplay}
+        isLoading={isSubmittingBooking}
         onConfirm={handleConfirmSessionSubmit}
       />
 

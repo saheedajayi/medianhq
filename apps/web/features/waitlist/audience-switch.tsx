@@ -52,7 +52,7 @@ export function AudienceSwitch({
               <motion.span
                 layoutId="waitlist-audience-thumb"
                 aria-hidden="true"
-                className="absolute inset-0 -z-10 rounded-lg bg-primary shadow-sm"
+                className="absolute inset-0 -z-10 rounded-lg bg-primary"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             ) : null}

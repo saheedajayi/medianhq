@@ -313,7 +313,7 @@ export function MentorAvailabilityView() {
         <button
           type="button"
           onClick={() => setIsPreviewModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-5 py-2.5 text-xs sm:text-sm font-medium text-[#344054] shadow-xs hover:bg-gray-50 transition-colors self-start sm:self-auto"
+          className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-5 py-2.5 text-xs sm:text-sm font-medium text-[#344054] hover:bg-gray-50 transition-colors self-start sm:self-auto"
         >
           <Eye size={16} className="text-[#667085]" />
           <span>Preview Availability</span>
@@ -343,7 +343,7 @@ export function MentorAvailabilityView() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] shadow-2xs hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
+                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
               >
                 <span className={startDate ? "text-[#101828]" : "text-[#98A2B3]"}>
                   {startDate || "DD/MM/YYYY"}
@@ -357,7 +357,7 @@ export function MentorAvailabilityView() {
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg"
+              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white"
               align="start"
             >
               <Calendar
@@ -382,7 +382,7 @@ export function MentorAvailabilityView() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] shadow-2xs hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
+                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
               >
                 <span className={endDate ? "text-[#101828]" : "text-[#98A2B3]"}>
                   {endDate || "DD/MM/YYYY"}
@@ -396,7 +396,7 @@ export function MentorAvailabilityView() {
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg"
+              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white"
               align="start"
             >
               <Calendar
@@ -461,7 +461,7 @@ export function MentorAvailabilityView() {
           type="button"
           onClick={handleSaveSchedule}
           disabled={isSaving}
-          className="rounded-full bg-[#FF5514] px-8 py-3 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-[#E04B12] active:scale-98 transition disabled:opacity-50"
+          className="rounded-full bg-[#FF5514] px-8 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#E04B12] active:scale-98 transition disabled:opacity-50"
         >
           {isSaving ? "Saving..." : "Save schedule"}
         </button>

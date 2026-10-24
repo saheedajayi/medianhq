@@ -27,13 +27,13 @@ export function LandingCTABanner() {
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
           <Link
             href="/signup?role=mentee"
-            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#FF5514] px-8 text-base font-semibold text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.98] sm:w-auto"
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#FF5514] px-8 text-base font-semibold text-white transition-all hover:bg-[#E84D12] active:scale-[0.98] sm:w-auto"
           >
             Find a mentor
           </Link>
           <Link
             href="/signup?role=mentor"
-            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-8 !text-[#E84D12] border border-[#E84D12] font-semibold shadow-xs transition-all hover:bg-[#FFFAF5] active:scale-[0.98] sm:w-auto"
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-8 !text-[#E84D12] border border-[#E84D12] font-semibold transition-all hover:bg-[#FFFAF5] active:scale-[0.98] sm:w-auto"
           >
             Apply as a mentor
           </Link>

@@ -155,7 +155,7 @@ export function NewPasswordPage({ token }: { token: string }) {
         <div className="grid gap-3 pt-2">
           <Link
             href="/reset-password"
-            className="flex h-12 w-full items-center justify-center rounded-full bg-[#FF5514] text-base font-medium text-white shadow-xs transition-all hover:bg-[#E84D12]"
+            className="flex h-12 w-full items-center justify-center rounded-full bg-[#FF5514] text-base font-medium text-white transition-all hover:bg-[#E84D12]"
           >
             Request a new link
           </Link>

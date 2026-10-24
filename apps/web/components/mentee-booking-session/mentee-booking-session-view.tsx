@@ -318,7 +318,7 @@ export function MenteeBookingSessionView() {
     <div className="relative w-full flex-1 flex flex-col">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[#101828] px-4 py-3 text-xs font-semibold text-white shadow-xl animate-in slide-in-from-bottom-4">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[#101828] px-4 py-3 text-xs font-semibold text-white animate-in slide-in-from-bottom-4">
           <CheckCircle2 className="size-4 text-[#12B76A]" />
           {toastMessage}
         </div>
@@ -372,7 +372,7 @@ export function MenteeBookingSessionView() {
             return (
               <div
                 key={booking.id}
-                className="group relative flex flex-col overflow-hidden rounded-[20px] border border-[#EAECF0] bg-white transition-all hover:border-[#D0D5DD] hover:shadow-xs sm:flex-row sm:items-stretch"
+                className="group relative flex flex-col overflow-hidden rounded-[20px] border border-[#EAECF0] bg-white transition-all hover:border-[#D0D5DD] sm:flex-row sm:items-stretch"
               >
                 {/* Left Column: Scheduled Time & Subtext with #FDF9F6 (confirmed) or #FCFCFD (not confirmed) */}
                 <div
@@ -471,7 +471,7 @@ export function MenteeBookingSessionView() {
                           <button
                             type="button"
                             onClick={() => handleStartMeetingFlow(booking)}
-                            className="rounded-full bg-[#FF5514] px-6 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.98]"
+                            className="rounded-full bg-[#FF5514] px-6 py-2.5 text-xs font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.98]"
                           >
                             Join session
                           </button>
@@ -480,14 +480,14 @@ export function MenteeBookingSessionView() {
                             <button
                               type="button"
                               onClick={() => setSelectedBooking(booking)}
-                              className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] shadow-xs transition hover:bg-[#FDF9F6] active:scale-[0.98]"
+                              className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] transition hover:bg-[#FDF9F6] active:scale-[0.98]"
                             >
                               Confirm attendance
                             </button>
                             <button
                               type="button"
                               onClick={() => setRescheduleBooking(booking)}
-                              className="rounded-full bg-[#FF5514] px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.98]"
+                              className="rounded-full bg-[#FF5514] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.98]"
                             >
                               Reschedule
                             </button>
@@ -501,7 +501,7 @@ export function MenteeBookingSessionView() {
                         <button
                           type="button"
                           onClick={() => setSelectedBooking(booking)}
-                          className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] shadow-xs transition hover:bg-[#FDF9F6] active:scale-[0.98]"
+                          className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] transition hover:bg-[#FDF9F6] active:scale-[0.98]"
                         >
                           View details
                         </button>
@@ -512,7 +512,7 @@ export function MenteeBookingSessionView() {
                               setMeetingBooking(booking);
                               setMeetingFlow("review");
                             }}
-                            className="rounded-full bg-[#FF5514] px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.98]"
+                            className="rounded-full bg-[#FF5514] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.98]"
                           >
                             Review mentor
                           </button>
@@ -525,14 +525,14 @@ export function MenteeBookingSessionView() {
                         <button
                           type="button"
                           onClick={() => setSelectedBooking(booking)}
-                          className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] shadow-xs transition hover:bg-[#FDF9F6] active:scale-[0.98]"
+                          className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] transition hover:bg-[#FDF9F6] active:scale-[0.98]"
                         >
                           View details
                         </button>
                         <button
                           type="button"
                           onClick={() => setCancelBooking(booking)}
-                          className="rounded-full bg-[#FF5514] px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#E04406] active:scale-[0.98]"
+                          className="rounded-full bg-[#FF5514] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#E04406] active:scale-[0.98]"
                         >
                           Cancel request
                         </button>
@@ -543,7 +543,7 @@ export function MenteeBookingSessionView() {
                       <button
                         type="button"
                         onClick={() => setSelectedBooking(booking)}
-                        className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] shadow-xs transition hover:bg-[#FDF9F6] active:scale-[0.98]"
+                        className="rounded-full border border-[#FF8D62] bg-white px-5 py-2.5 text-xs font-semibold text-[#FF5514] transition hover:bg-[#FDF9F6] active:scale-[0.98]"
                       >
                         View details
                       </button>

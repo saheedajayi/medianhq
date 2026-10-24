@@ -23,7 +23,7 @@ export function DashboardStatsGrid({ stats = defaultStats }: DashboardStatsGridP
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="flex flex-col justify-between rounded-2xl bg-white p-4 shadow-xs transition-shadow hover:shadow-md md:p-6"
+          className="flex flex-col justify-between rounded-2xl bg-white p-4 transition-shadow md:p-6"
         >
           <span className="text-[11px] font-semibold tracking-wider text-[#667085] uppercase md:text-xs">
             {stat.label}

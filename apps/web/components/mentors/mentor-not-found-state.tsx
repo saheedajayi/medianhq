@@ -14,7 +14,7 @@ export function MentorNotFoundState() {
       </p>
       <Link
         href="/explore"
-        className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold !text-white shadow-2xs transition-colors hover:bg-[#E04B00]"
+        className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold !text-white transition-colors hover:bg-[#E04B00]"
       >
         Explore Mentors
       </Link>
