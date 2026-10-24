@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { defaultMentorProfile, mentorsDirectory } from "./mock-profile-data";
+import { isMockDataEnabled, defaultMentorProfile, mentorsDirectory } from "@/mocks";
 import { MentorHeroCard } from "./mentor-hero-card";
 import { MentorProfileTabs } from "./mentor-profile-tabs";
 import { MentorBookingPanel } from "./mentor-booking-panel";
+import { MentorNotFoundState } from "./mentor-not-found-state";
+import { mapApiMentorProfile } from "./map-mentor-profile";
 import { ConfirmSessionModal } from "./modals/confirm-session-modal";
 import { PaymentConfirmationModal } from "./modals/payment-confirmation-modal";
 import { BookingSuccessModal } from "./modals/booking-success-modal";
@@ -12,45 +14,46 @@ import { AvailableDateSlot, MentorDetailProfile, SessionPackage } from "./types"
 import { mentorsService } from "@/services/mentors";
 import { bookingsService } from "@/services/bookings";
 
+const USE_MOCKS = isMockDataEnabled("mentorProfile");
+
 interface MentorProfileViewProps {
   mentorId: string;
 }
 
-export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
-  const fallbackMentor = mentorsDirectory[mentorId] || {
-    ...defaultMentorProfile,
-    id: mentorId,
-  };
+const EMPTY_PACKAGE: SessionPackage = {
+  id: "",
+  title: "",
+  durationMinutes: 30,
+  price: "Free",
+  numericPrice: 0,
+  description: "",
+};
 
-  const [mentor, setMentor] = useState<MentorDetailProfile>(fallbackMentor);
+export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
+  const [mentor, setMentor] = useState<MentorDetailProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
+    setIsLoading(true);
     mentorsService
       .getById(mentorId)
       .then((res: any) => {
-        if (!isMounted || !res) return;
-        setMentor((prev) => ({
-          ...prev,
-          id: res.id || prev.id,
-          name: res.name || prev.name,
-          role: res.role || prev.role,
-          company: res.company || prev.company,
-          location: res.location || prev.location,
-          sessionCount: res.sessionCount ?? prev.sessionCount,
-          rating: res.rating ?? prev.rating,
-          reviewCount: res.reviewCount ?? prev.reviewCount,
-          bio: res.bio || prev.bio,
-          avatarUrl: res.avatarUrl || prev.avatarUrl,
-          socials: {
-            ...prev.socials,
-            linkedin: res.linkedinUrl || prev.socials.linkedin,
-          },
-          reviews: Array.isArray(res.reviews) && res.reviews.length > 0 ? res.reviews : prev.reviews,
-        }));
+        if (!isMounted) return;
+        // Real mentors only ever show their own data
+        setMentor(res?.id ? mapApiMentorProfile(res) : null);
       })
       .catch((err) => {
-        console.warn("Could not fetch mentor by id from API, using fallback data:", err);
+        console.warn("Could not fetch mentor by id from API:", err);
+        // Preview data only when the API cannot provide this mentor
+        if (isMounted) {
+          setMentor(
+            USE_MOCKS ? mentorsDirectory[mentorId] || { ...defaultMentorProfile, id: mentorId } : null
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
       });
 
     return () => {
@@ -58,7 +61,24 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
     };
   }, [mentorId]);
 
-  const initialPackage = mentor.packages[0] || defaultMentorProfile.packages[0]!;
+  if (isLoading) {
+    return (
+      <div className="grid w-full grid-cols-1 gap-8 pb-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div className="h-[520px] animate-pulse rounded-[20px] bg-[#F7F8FB]" />
+        <div className="h-[360px] animate-pulse rounded-[20px] bg-[#F7F8FB]" />
+      </div>
+    );
+  }
+
+  if (!mentor) {
+    return <MentorNotFoundState />;
+  }
+
+  return <MentorProfileContent key={mentor.id} mentor={mentor} />;
+}
+
+function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
+  const initialPackage = mentor.packages[0] || EMPTY_PACKAGE;
   const emptyDateSlot: AvailableDateSlot = {
     dateString: "",
     dayOfWeek: "",

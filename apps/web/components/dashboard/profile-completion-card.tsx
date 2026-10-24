@@ -5,9 +5,14 @@ import { ProfileUpdateModal } from "./profile-update-modal";
 
 interface ProfileCompletionCardProps {
   percentage?: number;
+  /** Optional subtitle; mentors see copy about how mentees find them */
+  description?: string;
 }
 
-export function ProfileCompletionCard({ percentage = 80 }: ProfileCompletionCardProps) {
+export function ProfileCompletionCard({
+  percentage = 80,
+  description = "Complete it to improve your search results.",
+}: ProfileCompletionCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Calculate SVG stroke parameters for circular progress gauge
@@ -56,7 +61,7 @@ export function ProfileCompletionCard({ percentage = 80 }: ProfileCompletionCard
               Your profile is {percentage}% complete
             </h3>
             <p className="text-xs font-normal text-[#475467] sm:text-sm">
-              Complete it to improve your search results.
+              {description}
             </p>
           </div>
         </div>

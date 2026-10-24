@@ -34,7 +34,7 @@ function ReviewPreview() {
       <p className="mx-auto mt-1 max-w-[265px] text-[10px] leading-snug text-[#475467]">
         Your application has been successfully submitted. You&apos;ll get an email when the team verifies your profile.
       </p>
-      <div className="mt-5 w-[190px] rounded-full bg-[#FF5514] py-2 text-[10px] font-semibold text-white">Go to Dashboard</div>
+      <div className="mt-5 w-[190px] rounded-full bg-[#FF5514] py-2 text-[10px] font-semibold !text-white">Go to Dashboard</div>
     </div>
   );
 }

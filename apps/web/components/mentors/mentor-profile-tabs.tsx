@@ -45,6 +45,9 @@ export function MentorProfileTabs({
           <div className="rounded-2xl border border-[#F2F2F7] bg-white p-5">
             <h2 className="text-base font-bold text-[#101828]">Expertise</h2>
             <div className="mt-3 flex flex-wrap gap-2">
+              {mentor.expertise.length === 0 && (
+                <p className="text-sm text-[#667085]">No expertise listed yet.</p>
+              )}
               {mentor.expertise.map((item) => (
                 <span
                   key={item}
@@ -102,13 +105,18 @@ export function MentorProfileTabs({
 
           {/* Reviews List */}
           <div className="flex flex-col divide-y divide-[#EAECF0]">
+            {mentor.reviews.length === 0 && (
+              <p className="py-8 text-center text-sm text-[#667085]">
+                No reviews yet.
+              </p>
+            )}
             {mentor.reviews.map((review) => (
               <div key={review.id} className="flex flex-col gap-2.5 py-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative size-10 overflow-hidden rounded-full border border-[#EAECF0] bg-[#F2F4F7]">
                       <Image
-                        src={review.authorAvatar || "/mentor-avatar.png"}
+                        src={review.authorAvatar || "/default-avatar.svg"}
                         alt={review.authorName}
                         fill
                         className="object-cover"

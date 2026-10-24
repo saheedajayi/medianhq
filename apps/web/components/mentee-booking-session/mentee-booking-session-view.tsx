@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { Clock, Calendar, CheckCircle2 } from "lucide-react";
+import { Clock, CheckCircle2 } from "lucide-react";
+import { Calendar } from "iconsax-react";
 import {
   Booking,
   BookingTab,
@@ -10,7 +12,7 @@ import {
   RecordingOption,
   ActionItem,
 } from "./types";
-import { initialBookings } from "./mock-bookings";
+import { isMockDataEnabled, mockBookings } from "@/mocks";
 import { BookingDetailsDrawer } from "./booking-details-drawer";
 import { RescheduleSessionModal } from "./reschedule-session-modal";
 import { CancelSessionModal } from "./cancel-session-modal";
@@ -20,8 +22,11 @@ import { SessionReviewModal } from "./session-review-modal";
 import { SessionCompletedModal } from "./session-completed-modal";
 import { SegmentedTabs, SegmentedTabItem } from "@/components/ui/custom/segmented-tabs";
 import { bookingsService } from "@/services/bookings";
+import { paymentsService } from "@/services/payments";
 import { reviewsService } from "@/services/reviews";
 import { stopAllMediaTracks } from "./media-utils";
+
+const USE_MOCKS = isMockDataEnabled("bookings");
 
 const tabs: SegmentedTabItem<BookingTab>[] = [
   { value: "upcoming", label: "Upcoming" },
@@ -30,21 +35,68 @@ const tabs: SegmentedTabItem<BookingTab>[] = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+// "3:00 PM - 3:30 PM" -> "3:00pm" (card shows the start time only)
+function formatStartTime(timeFormatted: string) {
+  const start = timeFormatted.split(" - ")[0] ?? timeFormatted;
+  return start.replace(/\s*(AM|PM)$/i, (_, period: string) => period.toLowerCase());
+}
+
+function isBookingTab(value: string | null): value is BookingTab {
+  return tabs.some((tab) => tab.value === value);
+}
+
 export function MenteeBookingSessionView() {
-  const [activeTab, setActiveTab] = useState<BookingTab>("upcoming");
-  const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+  // Active tab lives in ?tab= so it survives refreshes and can be linked to
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab: BookingTab = isBookingTab(tabParam) ? tabParam : "upcoming";
+
+  const setActiveTab = (tab: BookingTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    window.history.replaceState(null, "", `?${params.toString()}`);
+  };
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    bookingsService
-      .getMine()
-      .then((res: any) => {
-        if (!isMounted || !Array.isArray(res) || res.length === 0) return;
-        setBookings(res as any);
-      })
-      .catch((err) => {
-        console.warn("Could not fetch bookings from backend API, using preview mock dataset:", err);
-      });
+
+    const loadBookings = async () => {
+      // Returning from Paystack checkout: confirm the payment before loading bookings
+      const params = new URLSearchParams(window.location.search);
+      const reference = params.get("reference");
+      if (params.get("payment") === "success" && reference) {
+        window.history.replaceState(null, "", window.location.pathname);
+        try {
+          const res = await paymentsService.verify(reference);
+          if (isMounted) {
+            showToast(
+              res?.verified
+                ? "Payment confirmed. Your session is booked!"
+                : "We couldn't confirm your payment yet. It will show under Pending until it does."
+            );
+          }
+        } catch (err) {
+          console.warn("Could not verify payment:", err);
+        }
+      }
+
+      try {
+        const res: any = await bookingsService.getMine();
+        if (!isMounted) return;
+        const realBookings = Array.isArray(res) ? (res as Booking[]) : [];
+        // Preview data only fills in when there are no real bookings yet
+        setBookings(realBookings.length > 0 || !USE_MOCKS ? realBookings : mockBookings);
+      } catch (err) {
+        console.warn("Could not fetch bookings from backend API:", err);
+        if (isMounted && USE_MOCKS) setBookings(mockBookings);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    loadBookings();
 
     return () => {
       isMounted = false;
@@ -293,10 +345,17 @@ export function MenteeBookingSessionView() {
 
       {/* Bookings Card List */}
       <div className="space-y-4">
-        {currentList.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-[150px] animate-pulse rounded-[20px] border border-[#EAECF0] bg-[#F7F8FB]"
+            />
+          ))
+        ) : currentList.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#EAECF0] py-20 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-[#F2F4F7] text-[#667085]">
-              <Calendar className="size-6" />
+            <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF4ED]">
+              <Calendar size="28" variant="Bulk" color="#FF5500" />
             </div>
             <h3 className="mt-3 text-base font-semibold text-[#101828]">
               No {activeTab} bookings
@@ -307,7 +366,8 @@ export function MenteeBookingSessionView() {
           </div>
         ) : (
           currentList.map((booking) => {
-            const isConfirmed = booking.status === "confirmed";
+            // Past bookings keep status "confirmed" from the API, so only highlight upcoming ones
+            const isConfirmed = booking.tab === "upcoming" && booking.status === "confirmed";
 
             return (
               <div
@@ -325,7 +385,7 @@ export function MenteeBookingSessionView() {
                       isConfirmed ? "text-[#FF5514]" : "text-[#101828]"
                     }`}
                   >
-                    {booking.timeFormatted}
+                    {formatStartTime(booking.timeFormatted)}
                   </p>
                   <p
                     className={`mt-1 text-xs font-medium ${
@@ -368,7 +428,7 @@ export function MenteeBookingSessionView() {
                     <div className="flex items-center gap-3">
                       <div className="relative size-10 shrink-0 overflow-hidden rounded-full border border-[#EAECF0] bg-[#F2F4F7]">
                         <Image
-                          src={booking.mentorAvatar}
+                          src={booking.mentorAvatar || "/default-avatar.svg"}
                           alt={booking.mentorName}
                           fill
                           className="object-cover"

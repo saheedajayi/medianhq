@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Search, CheckCheck } from "lucide-react";
-import type { ExtendedConversation } from "./mock-messages";
+import type { ExtendedConversation } from "./types";
 
 export interface ConversationSidebarProps {
   conversations: ExtendedConversation[];

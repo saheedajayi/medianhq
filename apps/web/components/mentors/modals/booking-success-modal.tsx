@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -101,6 +102,13 @@ export function BookingSuccessModal({
 
           {/* Action Buttons */}
           <div className="mt-2 flex flex-col gap-2.5">
+            <Link
+              href="/mentee/booking-session"
+              className="flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00]"
+            >
+              View in Bookings
+            </Link>
+
             <button
               type="button"
               onClick={handleAddToCalendar}
@@ -113,7 +121,7 @@ export function BookingSuccessModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00]"
+              className="w-full text-center text-xs font-medium text-[#667085] hover:text-[#101828] py-1"
             >
               Back to profile
             </button>

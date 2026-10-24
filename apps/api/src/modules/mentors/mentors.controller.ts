@@ -4,13 +4,17 @@ import {
   Get,
   Logger,
   Param,
+  Patch,
   Post,
   Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
+import type {
+  CreateMentorProfileDto,
+  UpdateMentorProfileDto,
+} from './dto/create-mentor-profile.dto';
 import type { ExploreMentorsQueryDto } from './dto/explore-mentors-query.dto';
 import { MentorsService } from './mentors.service';
 import { AuthService } from '../auth/auth.service';
@@ -41,6 +45,24 @@ export class MentorsController {
   @Get('matches')
   getMatches(@CurrentUser() user: AuthUser) {
     return this.mentorsService.getMatches(user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('me/profile')
+  async updateProfile(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateMentorProfileDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.mentorsService.updateProfile(user.id, dto);
+    // Refresh cookies so the current user reflects the new profile details
+    const tokens = await this.authService.issueTokensForUser(user.id);
+    this.authService.setAuthCookies(response, tokens);
+
+    return {
+      ...result,
+      user: tokens.user,
+    };
   }
 
   @Get(':id')

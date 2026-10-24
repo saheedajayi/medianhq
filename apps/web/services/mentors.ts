@@ -7,9 +7,16 @@ export type CreateMentorProfilePayload = {
   company?: string;
   industry: string;
   experience: string;
-  location: string;
-  bio?: string;
+  /** Answer to "Why do you want to mentor?" (private, for application review) */
+  motivation: string;
   cvUrl?: string;
+};
+
+export type UpdateMentorProfilePayload = {
+  gender?: string;
+  location?: string;
+  bio?: string;
+  avatarUrl?: string;
 };
 
 export type MentorMatch = {
@@ -34,10 +41,16 @@ export type ExploreMentorsParams = {
 
 export const mentorsService = {
   apply(payload: CreateMentorProfilePayload) {
+    // Applying makes several sequential DB writes (profile, role, fresh auth cookies),
+    // so allow more than the default 15s on slow connections
     return apiClient.post<{ profile: any }>(
       `${MENTORS_PATH}/apply`,
-      payload
+      payload,
+      { timeout: 60_000 }
     );
+  },
+  updateProfile(payload: UpdateMentorProfilePayload) {
+    return apiClient.patch<{ profile: any }>(`${MENTORS_PATH}/me/profile`, payload);
   },
   getMatches() {
     return apiClient.get<MentorMatch[]>(`${MENTORS_PATH}/matches`);

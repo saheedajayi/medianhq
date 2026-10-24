@@ -101,13 +101,10 @@ export class BookingsService {
       const startsAt = new Date(b.startsAt);
       const isPast = startsAt < now || b.status === BookingStatus.COMPLETED;
       const isCancelled = b.status === BookingStatus.CANCELLED;
-      const isPending = b.status === BookingStatus.PENDING_PAYMENT;
 
       let tab = 'upcoming';
       if (isCancelled) {
         tab = 'cancelled';
-      } else if (isPending) {
-        tab = 'pending';
       } else if (isPast) {
         tab = 'past';
       }
@@ -141,7 +138,7 @@ export class BookingsService {
       const otherUser = isMentee ? b.mentor : b.mentee;
       const otherRole = isMentee ? (b.mentor.mentorProfile?.headline || 'Mentor') : 'Mentee';
       const otherAvatar = isMentee
-        ? `https://i.pravatar.cc/150?u=${b.mentor.id}`
+        ? (b.mentor.mentorProfile?.avatarUrl || '')
         : (b.mentee.menteeProfile?.avatarUrl || '');
 
       let title = 'Mentorship Session';
@@ -176,7 +173,7 @@ export class BookingsService {
         duration: `${b.durationMinutes} mins`,
         durationMinutes: b.durationMinutes,
         price: priceFormatted,
-        status: b.status,
+        status: b.status.toLowerCase(),
         tab,
         note,
         meetingUrl: b.meetingUrl,

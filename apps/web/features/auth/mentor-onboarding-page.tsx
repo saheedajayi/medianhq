@@ -25,7 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
-import { ProgressiveLocationSelect } from "@/components/ui/custom/progressive-location-select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { taxonomyService } from "@/services/taxonomy";
 
@@ -52,8 +51,7 @@ export function MentorOnboardingPage() {
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [experience, setExperience] = useState("");
-  const [location, setLocation] = useState("");
-  const [bio, setBio] = useState("");
+  const [motivation, setMotivation] = useState("");
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvFileName, setCvFileName] = useState("");
   const [cvUrl, setCvUrl] = useState("");
@@ -71,8 +69,8 @@ export function MentorOnboardingPage() {
         if (parsed.company) setCompany(parsed.company);
         if (parsed.industry) setIndustry(parsed.industry);
         if (parsed.experience) setExperience(parsed.experience);
-        if (parsed.location) setLocation(parsed.location);
-        if (parsed.bio) setBio(parsed.bio);
+        // Older drafts stored this answer as `bio`
+        if (parsed.motivation || parsed.bio) setMotivation(parsed.motivation || parsed.bio);
       } else if (currentSubStep === 2) {
         // Visited step 2 directly without step 1 data
         router.replace("/mentor-onboarding");
@@ -115,7 +113,7 @@ export function MentorOnboardingPage() {
 
   function handleSubStep1Submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!industry || !currentRole || !location) {
+    if (!industry || !currentRole) {
       toast.error("Missing information", {
         description: "Please complete all required fields.",
       });
@@ -126,7 +124,7 @@ export function MentorOnboardingPage() {
       try {
         sessionStorage.setItem(
           MENTOR_DRAFT_KEY,
-          JSON.stringify({ currentRole, company, industry, experience, location, bio }),
+          JSON.stringify({ currentRole, company, industry, experience, motivation }),
         );
       } catch {}
     }
@@ -136,7 +134,7 @@ export function MentorOnboardingPage() {
 
   async function handleSubStep2Submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!bio.trim()) {
+    if (!motivation.trim()) {
       toast.error("Missing information", {
         description: "Please share why you want to mentor.",
       });
@@ -163,8 +161,7 @@ export function MentorOnboardingPage() {
         company,
         industry,
         experience,
-        location,
-        bio,
+        motivation,
         cvUrl: finalCvUrl || undefined,
       });
 
@@ -289,19 +286,6 @@ export function MentorOnboardingPage() {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-[#111827]">
-              Where are you based? *
-            </label>
-            <ProgressiveLocationSelect
-              id="mentor-location"
-              value={location}
-              onChange={setLocation}
-              placeholder="Select your location..."
-              triggerClassName="h-[46px] rounded-xl border-[#e2e8f0] bg-transparent px-3.5 text-[15px] shadow-none placeholder:text-[#94a3b8]"
-            />
-          </div>
-
           <div className="mt-2">
             <Button
               type="submit"
@@ -398,8 +382,8 @@ export function MentorOnboardingPage() {
             </label>
             <textarea
               required
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              value={motivation}
+              onChange={(e) => setMotivation(e.target.value)}
               placeholder="Tell us here..."
               rows={4}
               className="w-full max-w-full min-w-0 rounded-xl border border-[#e2e8f0] p-3.5 text-[15px] outline-none transition-colors focus:border-primary placeholder:text-[#94a3b8] resize-none"

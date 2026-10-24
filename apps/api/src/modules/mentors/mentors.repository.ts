@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
-import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
+import type {
+  CreateMentorProfileDto,
+  UpdateMentorProfileDto,
+} from './dto/create-mentor-profile.dto';
 
 @Injectable()
 export class MentorsRepository {
@@ -250,7 +253,10 @@ export class MentorsRepository {
     const company = dto.company !== undefined ? (dto.company || null) : (existing?.company ?? null);
     const jobTitle = dto.currentRole !== undefined ? (dto.currentRole || null) : (existing?.jobTitle ?? null);
     const location = dto.location !== undefined ? (dto.location || null) : (existing?.location ?? null);
-    const bio = dto.bio !== undefined ? (dto.bio || null) : (existing?.bio ?? null);
+    // The onboarding answer is private application context, not the public bio
+    const motivationInput = dto.motivation ?? dto.bio;
+    const motivation =
+      motivationInput !== undefined ? (motivationInput || null) : (existing?.motivation ?? null);
     const cvUrl = typeof dto.cvUrl === 'string' && dto.cvUrl.trim() ? dto.cvUrl : (existing?.cvUrl ?? null);
 
     return this.prisma.mentorProfile.upsert({
@@ -261,7 +267,7 @@ export class MentorsRepository {
         company,
         jobTitle,
         location,
-        bio,
+        motivation,
         cvUrl,
         status: MentorStatus.PENDING_REVIEW,
       },
@@ -272,10 +278,17 @@ export class MentorsRepository {
         company,
         jobTitle,
         location,
-        bio,
+        motivation,
         cvUrl,
         status: MentorStatus.PENDING_REVIEW,
       },
+    });
+  }
+
+  updateProfileByUserId(userId: string, data: UpdateMentorProfileDto) {
+    return this.prisma.mentorProfile.update({
+      where: { userId },
+      data,
     });
   }
 }

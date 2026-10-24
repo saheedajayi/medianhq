@@ -16,7 +16,7 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
       {/* Mentor Avatar */}
       <div className="relative mb-3 size-[112px] overflow-hidden rounded-full border-4 border-white shadow-sm">
         <Image
-          src={mentor.avatarUrl || "/mentor-avatar.png"}
+          src={mentor.avatarUrl || "/default-avatar.svg"}
           alt={mentor.name}
           fill
           sizes="120px"
@@ -37,10 +37,12 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
 
       {/* Metadata: Location, Sessions, Rating */}
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-[#475467] sm:text-sm">
-        <div className="flex items-center gap-1">
-          <Location size="16" variant="Outline" color="#667085" className="shrink-0" />
-          <span>{mentor.location}</span>
-        </div>
+        {mentor.location && (
+          <div className="flex items-center gap-1">
+            <Location size="16" variant="Outline" color="#667085" className="shrink-0" />
+            <span>{mentor.location}</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-1">
           <Messages size="16" variant="Linear" color="#667085" className="shrink-0" />

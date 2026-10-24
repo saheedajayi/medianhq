@@ -1,6 +1,6 @@
-import { Booking } from "./types";
+import type { Booking } from "@/components/mentee-booking-session/types";
 
-export const initialBookings: Booking[] = [
+export const mockBookings: Booking[] = [
   // UPCOMING
   {
     id: "booking-upcoming-1",

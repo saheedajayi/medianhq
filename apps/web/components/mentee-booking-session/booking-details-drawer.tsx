@@ -51,7 +51,7 @@ export function BookingDetailsDrawer({
               <div className="flex items-center gap-4">
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-full border border-[#EAECF0] bg-[#F2F4F7]">
                   <Image
-                    src={currentBooking.mentorAvatar}
+                    src={currentBooking.mentorAvatar || "/default-avatar.svg"}
                     alt={currentBooking.mentorName}
                     fill
                     className="object-cover"
@@ -217,13 +217,13 @@ export function BookingDetailsDrawer({
                         <div className="flex items-center justify-between">
                           <span className="text-[#667085]">Absentee</span>
                           <span className="font-semibold text-[#101828]">
-                            {currentBooking.absentee || "Mentor"}
+                            {currentBooking.absentee || "—"}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-[#667085]">Refund</span>
                           <span className="font-semibold text-[#101828]">
-                            {currentBooking.refundAmount || currentBooking.price || "₦15,000"}
+                            {currentBooking.refundAmount || "—"}
                           </span>
                         </div>
                       </div>
@@ -239,7 +239,7 @@ export function BookingDetailsDrawer({
                         <div className="flex items-center justify-between">
                           <span className="text-[#667085]">Cancelled by</span>
                           <span className="font-semibold text-[#101828]">
-                            {currentBooking.cancelledBy || "You"}
+                            {currentBooking.cancelledBy || "—"}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -252,7 +252,7 @@ export function BookingDetailsDrawer({
                         <div className="flex items-center justify-between">
                           <span className="text-[#667085]">Refund</span>
                           <span className="font-semibold text-[#101828]">
-                            {currentBooking.refundAmount || currentBooking.price || "₦15000"}
+                            {currentBooking.refundAmount || "—"}
                           </span>
                         </div>
                       </div>
@@ -262,8 +262,7 @@ export function BookingDetailsDrawer({
                           CANCELLATION REASON
                         </span>
                         <div className="mt-3 rounded-[8px] bg-[#F7F8FB] p-4 text-sm leading-relaxed text-[#344054]">
-                          {currentBooking.cancellationReason ||
-                            "Mentee had a last-minute work conflict and requested to reschedule the CV review for a later time."}
+                          {currentBooking.cancellationReason || "No reason was given."}
                         </div>
                       </div>
 
@@ -363,7 +362,7 @@ export function BookingDetailsDrawer({
                         <Star
                           key={s}
                           className={`size-4 ${
-                            s <= (currentBooking.rating || 4)
+                            s <= (currentBooking.rating || 0)
                               ? "fill-[#FF9500] text-[#FF9500]"
                               : "text-[#D0D5DD]"
                           }`}
@@ -371,8 +370,7 @@ export function BookingDetailsDrawer({
                       ))}
                     </div>
                     <p className="text-sm leading-relaxed text-[#344054]">
-                      {currentBooking.review ||
-                        "You came well-prepared with specific questions, were receptive to feedback, and took detailed notes. Great session overall."}
+                      {currentBooking.review || "No feedback yet."}
                     </p>
                   </div>
                 </div>
@@ -383,32 +381,10 @@ export function BookingDetailsDrawer({
                     ACTION ITEMS ASSIGNED
                   </span>
                   <div className="mt-3.5 space-y-3">
-                    {(currentBooking.actionItems &&
-                    currentBooking.actionItems.length > 0
-                      ? currentBooking.actionItems
-                      : [
-                          {
-                            id: "a1",
-                            text: "Restructure your CV to lead with impact metrics",
-                            completed: true,
-                          },
-                          {
-                            id: "a2",
-                            text: "Add 3 quantified achievements per role",
-                            completed: true,
-                          },
-                          {
-                            id: "a3",
-                            text: "Remove your outdated skills section",
-                            completed: false,
-                          },
-                          {
-                            id: "a4",
-                            text: "Update your LinkedIn headline to match your target role",
-                            completed: false,
-                          },
-                        ]
-                    ).map((item) => (
+                    {(!currentBooking.actionItems || currentBooking.actionItems.length === 0) && (
+                      <p className="text-sm text-[#667085]">No action items were assigned.</p>
+                    )}
+                    {(currentBooking.actionItems ?? []).map((item) => (
                       <div key={item.id} className="flex items-center gap-3">
                         {item.completed ? (
                           <div className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-[#12B76A] text-white">
@@ -431,8 +407,7 @@ export function BookingDetailsDrawer({
                     SESSION NOTES
                   </span>
                   <div className="mt-3 rounded-[12px] bg-[#F7F8FB] p-5 text-sm leading-relaxed text-[#344054]">
-                    {currentBooking.sessionNotes ||
-                      "You discussed CV structure and ATS optimization strategies. AbdulLah shared a CV template via session notepad. He recommends a follow-up in 2 weeks to review your revised CV."}
+                    {currentBooking.sessionNotes || "No session notes yet."}
                   </div>
                 </div>
 

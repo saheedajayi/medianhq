@@ -7,11 +7,17 @@ import { DashboardStatsGrid } from "./dashboard-stats-grid";
 interface DashboardHeroBannerProps {
   userName?: string;
   upcomingCount?: number;
+  stats?: {
+    label: string;
+    value: number | string;
+    subtext: string;
+  }[];
 }
 
 export function DashboardHeroBanner({
   userName,
   upcomingCount = 0,
+  stats,
 }: DashboardHeroBannerProps) {
   const { data: user } = useCurrentUser();
   const displayFirstName = userName || user?.firstName || "";
@@ -29,7 +35,7 @@ export function DashboardHeroBanner({
       {/* Semi-transparent overlay to ensure soft harmonious tones */}
       <div className="relative z-10 flex flex-col gap-4 md:gap-5">
         <DashboardGreetingCard userName={displayFirstName} upcomingCount={upcomingCount} />
-        <DashboardStatsGrid />
+        <DashboardStatsGrid stats={stats} />
       </div>
     </div>
   );

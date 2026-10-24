@@ -1,94 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MentorCard, Mentor } from "./mentor-card";
+import Link from "next/link";
+import { Global } from "iconsax-react";
+import { MentorCard } from "@/components/explore/mentor-card";
+import type { ExploreMentor } from "@/components/explore/types";
+import { isMockDataEnabled, mockExploreMentors } from "@/mocks";
 import { mentorsService } from "@/services/mentors";
 
-const defaultMentors: Mentor[] = [
-  {
-    id: "1",
-    name: "Abdulrahman Hassan",
-    role: "VP Product",
-    company: "Kuda",
-    location: "London",
-    sessionCount: 40,
-    rating: 4.5,
-    reviewCount: 20,
-    bio: "You chose to improve people's well-being. You stepped out of your comfort zone.",
-    price: "Free",
-  },
-  {
-    id: "2",
-    name: "Abdulrahman Hassan",
-    role: "VP Product",
-    company: "Kuda",
-    location: "London",
-    sessionCount: 40,
-    rating: 4.5,
-    reviewCount: 20,
-    bio: "You chose to improve people's well-being. You stepped out of your comfort zone.",
-    price: "N20,000",
-  },
-  {
-    id: "3",
-    name: "Abdulrahman Hassan",
-    role: "VP Product",
-    company: "Kuda",
-    location: "London",
-    sessionCount: 40,
-    rating: 4.5,
-    reviewCount: 20,
-    bio: "You chose to improve people's well-being. You stepped out of your comfort zone.",
-    price: "Free",
-  },
-  {
-    id: "4",
-    name: "Abdulrahman Hassan",
-    role: "VP Product",
-    company: "Kuda",
-    location: "London",
-    sessionCount: 40,
-    rating: 4.5,
-    reviewCount: 20,
-    bio: "You chose to improve people's well-being. You stepped out of your comfort zone.",
-    price: "Free",
-  },
-  {
-    id: "5",
-    name: "Abdulrahman Hassan",
-    role: "VP Product",
-    company: "Kuda",
-    location: "London",
-    sessionCount: 40,
-    rating: 4.5,
-    reviewCount: 20,
-    bio: "You chose to improve people's well-being. You stepped out of your comfort zone.",
-    price: "N20,000",
-  },
-  {
-    id: "6",
-    name: "Abdulrahman Hassan",
-    role: "VP Product",
-    company: "Kuda",
-    location: "London",
-    sessionCount: 40,
-    rating: 4.5,
-    reviewCount: 20,
-    bio: "You chose to improve people's well-being. You stepped out of your comfort zone.",
-    price: "Free",
-  },
-];
+const USE_MOCKS = isMockDataEnabled("dashboard");
+
+const fallbackMentors: ExploreMentor[] = USE_MOCKS ? mockExploreMentors.slice(0, 6) : [];
 
 interface MentorsForYouSectionProps {
-  mentors?: Mentor[];
+  mentors?: ExploreMentor[];
 }
 
 export function MentorsForYouSection({ mentors }: MentorsForYouSectionProps) {
-  const [list, setList] = useState<Mentor[]>(mentors || defaultMentors);
+  const [list, setList] = useState<ExploreMentor[]>(mentors || fallbackMentors);
+  const [isLoading, setIsLoading] = useState(!mentors && fallbackMentors.length === 0);
 
   useEffect(() => {
     if (mentors && mentors.length > 0) {
       setList(mentors);
+      setIsLoading(false);
       return;
     }
 
@@ -97,23 +32,13 @@ export function MentorsForYouSection({ mentors }: MentorsForYouSectionProps) {
       .getFeatured(6)
       .then((featured: any) => {
         if (!isMounted || !Array.isArray(featured) || featured.length === 0) return;
-        const mapped: Mentor[] = featured.map((m: any) => ({
-          id: String(m.id),
-          name: m.name || "Mentor",
-          role: m.role || "Mentor",
-          company: m.company || "Independent",
-          location: m.location || "Remote",
-          sessionCount: m.sessionCount ?? 0,
-          rating: m.rating ?? 5.0,
-          reviewCount: m.reviewCount ?? 0,
-          bio: m.bio || "",
-          price: m.price || "Free",
-          avatarUrl: m.avatarUrl,
-        }));
-        setList(mapped);
+        setList(featured as ExploreMentor[]);
       })
       .catch((err) => {
-        console.warn("Could not fetch featured mentors from API, using default dataset:", err);
+        console.warn("Could not fetch featured mentors from API:", err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
       });
 
     return () => {
@@ -127,11 +52,45 @@ export function MentorsForYouSection({ mentors }: MentorsForYouSectionProps) {
         Mentors For You
       </h2>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {list.map((mentor, index) => (
-          <MentorCard key={`${mentor.id}-${index}`} mentor={mentor} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-[400px] animate-pulse rounded-[20px] border border-[#F2F2F7] bg-[#F7F8FB]"
+            />
+          ))}
+        </div>
+      ) : list.length > 0 ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {list.map((mentor, index) => (
+            <MentorCard
+              key={`${mentor.id}-${index}`}
+              mentor={mentor}
+              showFeaturedBadge={false}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF4ED]">
+            <Global size="28" variant="Bulk" color="#FF5500" />
+          </div>
+
+          <h3 className="mt-4 text-lg font-bold text-[#101828]">
+            No mentor recommendations yet
+          </h3>
+          <p className="mt-1 max-w-sm text-sm text-[#667085]">
+            We&apos;ll suggest mentors for you here. In the meantime, explore our mentors to find the right fit.
+          </p>
+          <Link
+            href="/mentee/explore"
+            className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold !text-white shadow-2xs transition-colors hover:bg-[#E04B00]"
+          >
+            Explore Mentors
+          </Link>
+        </div>
+      )}
     </section>
   );
 }

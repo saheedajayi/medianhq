@@ -1049,6 +1049,14 @@ export class AuthService {
             avatarUrl: user.menteeProfile.avatarUrl,
           }
         : null,
+      mentorProfile: user.mentorProfile
+        ? {
+            gender: user.mentorProfile.gender,
+            location: user.mentorProfile.location,
+            bio: user.mentorProfile.bio,
+            avatarUrl: user.mentorProfile.avatarUrl,
+          }
+        : null,
     };
   }
 }

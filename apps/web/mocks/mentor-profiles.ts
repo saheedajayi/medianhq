@@ -1,5 +1,5 @@
-import { AvailableDateSlot, MentorDetailProfile } from "./types";
-import { mockExploreMentors } from "../explore/mock-mentors";
+import type { AvailableDateSlot, MentorDetailProfile } from "@/components/mentors/types";
+import { mockExploreMentors } from "./mentors";
 
 function upcomingDates(): AvailableDateSlot[] {
   return Array.from({ length: 7 }, (_, index) => {

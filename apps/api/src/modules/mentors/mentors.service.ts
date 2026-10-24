@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,7 +7,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
-import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
+import type {
+  CreateMentorProfileDto,
+  UpdateMentorProfileDto,
+} from './dto/create-mentor-profile.dto';
 import type {
   ExploreMentorItem,
   ExploreMentorsQueryDto,
@@ -76,7 +80,16 @@ export class MentorsService {
     };
   }
 
-  private formatMentorItem(m: any, isFeatured = false): ExploreMentorItem {
+  // Maps onboarding years of experience ("1-3 years" ... "10+ years") to the explore filter levels
+  private mapExperienceLevel(experience?: string | null): ExploreMentorItem['experienceLevel'] {
+    const years = parseInt(experience ?? '', 10);
+    if (Number.isNaN(years) || years < 3) return 'beginner';
+    if (years < 5) return 'intermediate';
+    if (years < 10) return 'advanced';
+    return 'expert';
+  }
+
+    private formatMentorItem(m: any, isFeatured = false): ExploreMentorItem {
     const bookings = m.user?.mentorBookings || [];
     const completedSessions = bookings.filter(
       (b: any) => b.status === 'COMPLETED' || b.session?.completedAt,
@@ -99,19 +112,23 @@ export class MentorsService {
       name: `${m.user?.firstName ?? ''} ${m.user?.lastName ?? ''}`.trim() || 'Mentor',
       role: m.jobTitle || m.headline || 'Mentor',
       company: m.company || 'Independent',
-      location: m.location || 'Remote',
+      location: m.location || '',
       sessionCount: completedSessions,
       rating: avgRating,
       reviewCount,
       bio: m.bio || m.headline || '',
       category: this.mapCategory(m.industry),
       tags,
-      avatarUrl: `https://i.pravatar.cc/150?u=${m.id}`,
+      avatarUrl: m.avatarUrl || '',
+      gender: m.gender ? m.gender.toLowerCase() : undefined,
       isFeatured,
       nextAvailability: this.getNextAvailability(m.id),
       price: this.formatPrice(m.pricePerSession, m.currency),
       pricePerSession: m.pricePerSession || 0,
       currency: m.currency || 'NGN',
+      experienceLevel: this.mapExperienceLevel(m.experience),
+      // Every mentor offers 1:1 sessions; group sessions are not stored per mentor yet
+      sessionTypes: ['one-on-one'],
     };
   }
 
@@ -263,5 +280,41 @@ export class MentorsService {
       this.logger.error(`Failed to apply for mentor profile (userId: ${userId})`, error);
       throw error;
     }
+  }
+
+  async updateProfile(userId: string, dto: UpdateMentorProfileDto) {
+    const user = await this.mentorsRepository.findUserForOnboarding(userId);
+
+    if (!user?.mentorProfile) {
+      throw new NotFoundException('Apply to become a mentor before updating your profile.');
+    }
+
+    const gender = dto.gender?.trim();
+    if (gender && !['male', 'female'].includes(gender.toLowerCase())) {
+      throw new BadRequestException('Gender must be Male or Female.');
+    }
+
+    const avatarUrl = dto.avatarUrl?.trim();
+    if (avatarUrl && !avatarUrl.startsWith('https://')) {
+      throw new BadRequestException('Profile picture must be an https URL.');
+    }
+
+    const bio = dto.bio?.trim();
+    if (bio && bio.split(/\s+/).length > 300) {
+      throw new BadRequestException('Bio must be less than 300 words.');
+    }
+
+    const profile = await this.mentorsRepository.updateProfileByUserId(userId, {
+      ...(gender && { gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase() }),
+      ...(dto.location?.trim() && { location: dto.location.trim() }),
+      ...(bio && { bio }),
+      ...(avatarUrl && { avatarUrl }),
+    });
+
+    return {
+      success: true,
+      message: 'Mentor profile updated successfully',
+      profile,
+    };
   }
 }

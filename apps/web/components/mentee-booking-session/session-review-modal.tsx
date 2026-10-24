@@ -21,15 +21,9 @@ export function SessionReviewModal({
 }: SessionReviewModalProps) {
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
-  const [reviewText, setReviewText] = useState(
-    `${booking.mentorName} came prepared, asked thoughtful questions, and made strong progress. The CV summary is clearer and the impact metrics are now easier to scan.`
-  );
+  const [reviewText, setReviewText] = useState("");
 
-  const [actionItems, setActionItems] = useState<ActionItem[]>([
-    { id: "1", text: "Rewrite CV summary with impact metrics", completed: true },
-    { id: "2", text: "Add two quantified project outcomes", completed: false },
-    { id: "3", text: "Share updated CV by Sept 25", completed: false },
-  ]);
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
 
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState("");

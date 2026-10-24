@@ -131,6 +131,16 @@ export class PaymentsService {
       throw new NotFoundException(`Payment with reference '${reference}' not found.`);
     }
 
+    if (payment.status === PaymentStatus.SUCCESSFUL) {
+      return { success: true, verified: true, payment, booking: payment.booking };
+    }
+
+    // Only confirm once Paystack reports the charge as successful for the full amount
+    const isPaid = await this.isPaidOnPaystack(payment.providerReference, payment.amount);
+    if (!isPaid) {
+      return { success: false, verified: false, payment, booking: payment.booking };
+    }
+
     // Update payment and booking
     const [updatedPayment, updatedBooking] =
       await this.paymentsRepository.confirmPaymentAndBooking(
@@ -144,6 +154,33 @@ export class PaymentsService {
       payment: updatedPayment,
       booking: updatedBooking,
     };
+  }
+
+  private async isPaidOnPaystack(
+    providerReference: string | null | undefined,
+    expectedAmount: number,
+  ): Promise<boolean> {
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (!providerReference || !paystackSecret) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.paystack.co/transaction/verify/${encodeURIComponent(providerReference)}`,
+        { headers: { Authorization: `Bearer ${paystackSecret}` } },
+      );
+      const data: any = await response.json();
+      return (
+        response.ok &&
+        data.status === true &&
+        data.data?.status === 'success' &&
+        Number(data.data?.amount) >= Math.round(expectedAmount * 100) // Paystack operates in kobo
+      );
+    } catch (err) {
+      this.logger.error(`Failed to verify Paystack transaction: ${providerReference}`, err);
+      return false;
+    }
   }
 
   async handlePaystackWebhook(payload: any) {

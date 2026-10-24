@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { mockExploreMentors } from "./mock-mentors";
+import { isMockDataEnabled, mockExploreMentors } from "@/mocks";
 import {
   ExploreCategory,
   ExploreFilterState,
@@ -15,31 +15,27 @@ import { MentorsGridSection } from "./mentors-grid-section";
 import { FiltersDialog } from "./filters-dialog";
 import { SearchNormal } from "iconsax-react";
 import { mentorsService } from "@/services/mentors";
+import { applyMentorFilters, countActiveFilters } from "./filter-options";
 
-interface ExploreViewProps {
-  initialMentors?: ExploreMentor[];
-}
+const USE_MOCKS = isMockDataEnabled("explore");
 
-export function ExploreView({
-  initialMentors = mockExploreMentors,
-}: ExploreViewProps) {
-  const [mentors, setMentors] = useState<ExploreMentor[]>(initialMentors);
-  const [isLoading, setIsLoading] = useState(false);
+export function ExploreView() {
+  const [mentors, setMentors] = useState<ExploreMentor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    setIsLoading(true);
     mentorsService
       .explore({ limit: 50 })
       .then((res: any) => {
         if (!isMounted) return;
         const apiMentors = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
-        if (apiMentors.length > 0) {
-          setMentors(apiMentors);
-        }
+        // Preview data only fills in when there are no real mentors yet
+        setMentors(apiMentors.length > 0 || !USE_MOCKS ? apiMentors : mockExploreMentors);
       })
       .catch((err) => {
-        console.warn("Could not load mentors from backend API, using fallback data:", err);
+        console.warn("Could not load mentors from backend API:", err);
+        if (isMounted && USE_MOCKS) setMentors(mockExploreMentors);
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
@@ -49,25 +45,17 @@ export function ExploreView({
       isMounted = false;
     };
   }, []);
+
   const [filters, setFilters] = useState<ExploreFilterState>({
     search: "",
     category: "All",
     sortBy: "relevance",
-    priceType: "all",
-    minRating: undefined,
-    locations: undefined,
   });
 
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // Count active non-default filters (excluding search and category)
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.priceType && filters.priceType !== "all") count++;
-    if (filters.minRating !== undefined) count++;
-    if (filters.locations?.length) count++;
-    return count;
-  }, [filters]);
+  const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
 
   // Filtered dataset
   const filteredMentors = useMemo(() => {
@@ -91,24 +79,10 @@ export function ExploreView({
       result = result.filter((m) => m.category === filters.category);
     }
 
-    // 3. Price type filter
-    if (filters.priceType === "free") {
-      result = result.filter((m) => m.price?.toLowerCase() === "free");
-    } else if (filters.priceType === "paid") {
-      result = result.filter((m) => m.price && m.price.toLowerCase() !== "free");
-    }
+    // 3. Filters panel (expertise, location, price, availability, session type, rating, experience, gender)
+    result = applyMentorFilters(result, filters);
 
-    // 4. Rating filter
-    if (filters.minRating !== undefined) {
-      result = result.filter((m) => m.rating >= (filters.minRating ?? 0));
-    }
-
-    // 5. Location filter
-    if (filters.locations?.length) {
-      result = result.filter((m) => filters.locations!.some((location) => m.location.toLowerCase().includes(location.toLowerCase())));
-    }
-
-    // 6. Sorting
+    // 4. Sorting
     switch (filters.sortBy) {
       case "rating":
         result.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
@@ -144,9 +118,6 @@ export function ExploreView({
       search: "",
       category: "All",
       sortBy: "relevance",
-      priceType: "all",
-      minRating: undefined,
-      locations: undefined,
     });
   };
 
@@ -183,11 +154,20 @@ export function ExploreView({
           />
 
           {/* When no mentors match, show empty state message, OTHER MENTORS carousel, and fallback grid */}
-          {filteredMentors.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-[400px] animate-pulse rounded-[20px] border border-[#F2F2F7] bg-[#F7F8FB]"
+                />
+              ))}
+            </div>
+          ) : filteredMentors.length === 0 ? (
             <div className="flex flex-col gap-8">
               {/* Empty search notice */}
               <div className="flex flex-col items-center justify-center py-4 text-center">
-                <div className="flex size-14 items-center justify-center rounded-full bg-[#FFEEE8]">
+                <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF4ED]">
                   <SearchNormal size="28" variant="Bulk" color="#FF5500" />
                 </div>
                 <h3 className="mt-3 text-lg font-semibold text-[#101828]">
@@ -203,8 +183,8 @@ export function ExploreView({
 
               {/* Fallback All Mentors Grid */}
               <MentorsGridSection
-                mentors={initialMentors}
-                totalCount={initialMentors.length}
+                mentors={mentors}
+                totalCount={mentors.length}
                 sortBy={filters.sortBy}
                 onSortChange={(sortBy: SortOption) =>
                   setFilters((prev) => ({ ...prev, sortBy }))
@@ -245,10 +225,9 @@ export function ExploreView({
           }
           onResetFilters={() =>
             setFilters((prev) => ({
-              ...prev,
-              priceType: "all",
-              minRating: undefined,
-              locations: undefined,
+              search: prev.search,
+              category: prev.category,
+              sortBy: prev.sortBy,
             }))
           }
         />

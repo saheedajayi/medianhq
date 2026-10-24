@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 import { menteesService } from "@/services/mentees";
+import { mentorsService } from "@/services/mentors";
 import { uploadsService } from "@/services/uploads";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
@@ -56,6 +57,9 @@ export function ProfileUpdateModal({
 }: ProfileUpdateModalProps) {
   const queryClient = useQueryClient();
   const { data: user, refetch } = useCurrentUser();
+  // Mentors and mentees share this modal; each saves to their own profile
+  const isMentor = user?.role === "MENTOR";
+  const savedProfile = isMentor ? user?.mentorProfile : user?.menteeProfile;
 
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
@@ -77,8 +81,8 @@ export function ProfileUpdateModal({
 
   // Prefill modal form with existing saved profile data when user data is available
   useEffect(() => {
-    if (isOpen && user?.menteeProfile) {
-      const profile = user.menteeProfile;
+    if (isOpen && savedProfile) {
+      const profile = savedProfile;
 
       // Normalize gender value casing to match SelectItem values ("Male" | "Female")
       if (profile.gender) {
@@ -101,7 +105,7 @@ export function ProfileUpdateModal({
         setIsImageFetching(false);
       }
     }
-  }, [isOpen, user]);
+  }, [isOpen, savedProfile]);
 
   if (!isOpen) return null;
 
@@ -136,7 +140,7 @@ export function ProfileUpdateModal({
     setIsSubmitting(true);
 
     try {
-      let avatarUrl = user?.menteeProfile?.avatarUrl || undefined;
+      let avatarUrl = savedProfile?.avatarUrl || undefined;
 
       // Upload profile image to Cloudinary if new image file selected
       if (avatarFile) {
@@ -150,12 +154,12 @@ export function ProfileUpdateModal({
         }
       }
 
-      await menteesService.createProfile({
-        gender,
-        location,
-        bio,
-        avatarUrl,
-      });
+      const payload = { gender, location, bio, avatarUrl };
+      if (isMentor) {
+        await mentorsService.updateProfile(payload);
+      } else {
+        await menteesService.createProfile(payload);
+      }
 
       toast.success("Profile updated successfully");
       await queryClient.invalidateQueries({ queryKey: ["current-user"] });

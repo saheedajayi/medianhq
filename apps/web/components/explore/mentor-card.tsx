@@ -15,7 +15,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
   const isFeatured = showFeaturedBadge ?? mentor.isFeatured;
 
   return (
-    <div className="relative flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="relative flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F7F8FB]">
       {/* Top Right "Featured" Badge */}
       {isFeatured && (
         <span className="absolute top-5 right-5 inline-flex items-center rounded-full bg-[#EDE6E6] px-3 py-0.5 text-xs font-medium text-[#4B1210]">
@@ -28,7 +28,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
         {/* Centered Avatar */}
         <div className="relative mb-3.5 size-[110px] overflow-hidden rounded-full border-2 border-white shadow-xs">
           <Image
-            src={mentor.avatarUrl || "/mentor-avatar.png"}
+            src={mentor.avatarUrl || "/default-avatar.svg"}
             alt={mentor.name}
             fill
             sizes="120px"
@@ -46,10 +46,12 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
 
         {/* Metadata Row: Location, Sessions, Rating */}
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:text-[13px] text-[#475467]">
-          <div className="flex items-center gap-1">
-            <Location size="15" variant="Outline" color="#667085" className="shrink-0" />
-            <span>{mentor.location}</span>
-          </div>
+          {mentor.location && (
+            <div className="flex items-center gap-1">
+              <Location size="15" variant="Outline" color="#667085" className="shrink-0" />
+              <span>{mentor.location}</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-1">
             <Messages size="15" variant="Linear" color="#667085" className="shrink-0" />

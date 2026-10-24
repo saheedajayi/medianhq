@@ -87,6 +87,8 @@ export class BookingsRepository {
     return this.prisma.booking.findMany({
       where: {
         OR: [{ menteeId: userId }, { mentorId: userId }],
+        // Unpaid checkouts are not real bookings yet, so they never appear in booking lists
+        status: { not: BookingStatus.PENDING_PAYMENT },
       },
       include: {
         mentor: {

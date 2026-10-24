@@ -3,11 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { messagesService, type Message } from "@/services/messages";
-import {
-  mockConversations,
-  mockMessagesByConversation,
-  type ExtendedConversation,
-} from "./mock-messages";
+import { isMockDataEnabled, mockConversations, mockMessagesByConversation } from "@/mocks";
+import type { ExtendedConversation } from "./types";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useMessagesRealtime } from "./use-messages-realtime";
 import { NoMessagesState } from "./no-messages-state";
@@ -18,24 +15,34 @@ import { ChatHeader } from "./chat-header";
 import { ChatMessageBubble } from "./chat-message-bubble";
 import { ChatInputBar } from "./chat-input-bar";
 
+const USE_MOCKS = isMockDataEnabled("messages");
+
+const previewConversations: ExtendedConversation[] = USE_MOCKS ? mockConversations : [];
+const previewMessages: Record<string, Message[]> = USE_MOCKS ? mockMessagesByConversation : {};
+
 export function MessagesView() {
   const { data: user } = useCurrentUser();
   const currentUserId = user?.id ?? "current-user";
 
   const [conversations, setConversations] =
-    useState<ExtendedConversation[]>(mockConversations);
-  const [selectedConvId, setSelectedConvId] = useState<string | null>("conv-1");
+    useState<ExtendedConversation[]>(previewConversations);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(
+    previewConversations.length === 0
+  );
+  const [selectedConvId, setSelectedConvId] = useState<string | null>(
+    previewConversations[0]?.id ?? null
+  );
 
   // In-memory messages cache to provide instant (0ms) conversation switching
   const [messagesCache, setMessagesCache] = useState<Record<string, Message[]>>(
     () => ({
-      ...mockMessagesByConversation,
+      ...previewMessages,
     })
   );
 
   // Initialized directly with first conversation's messages so there is zero initial delay
   const [messages, setMessages] = useState<Message[]>(
-    () => mockMessagesByConversation["conv-1"] ?? []
+    () => (previewConversations[0] && previewMessages[previewConversations[0].id]) ?? []
   );
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,26 +132,32 @@ export function MessagesView() {
     },
   });
 
-  // Load conversations from API or fallback to mock
+  // Load conversations from API (preview data stays only when mocks are enabled)
   useEffect(() => {
     let isMounted = true;
     messagesService
       .listConversations()
       .then((data) => {
         if (!isMounted || !Array.isArray(data) || data.length === 0) return;
-        // Merge with mock design details if needed
-        const mapped = data.map((c, i) => ({
+        // Borrow preview design details (badges, typing) only when mocks are enabled
+        const preview = (i: number) =>
+          previewConversations[i % Math.max(previewConversations.length, 1)];
+        const mapped: ExtendedConversation[] = data.map((c, i) => ({
           ...c,
-          sessionBadge:
-            mockConversations[i % mockConversations.length]?.sessionBadge,
-          isTyping: mockConversations[i % mockConversations.length]?.isTyping,
-          statusIcon:
-            mockConversations[i % mockConversations.length]?.statusIcon ?? "read",
+          sessionBadge: preview(i)?.sessionBadge,
+          isTyping: preview(i)?.isTyping,
+          statusIcon: preview(i)?.statusIcon ?? "read",
         }));
         setConversations(mapped);
+        setSelectedConvId((current) =>
+          current && mapped.some((c) => c.id === current) ? current : mapped[0]?.id ?? null
+        );
       })
       .catch(() => {
-        // Keep mock data for preview
+        // Keep whatever is shown (preview data or empty state)
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingConversations(false);
       });
 
     return () => {
@@ -159,10 +172,10 @@ export function MessagesView() {
       return;
     }
 
-    // Immediately display from cache or mock data (0ms latency)
+    // Immediately display from cache or preview data (0ms latency)
     const existing =
       messagesCache[selectedConvId] ??
-      mockMessagesByConversation[selectedConvId] ??
+      previewMessages[selectedConvId] ??
       [];
     setMessages(existing);
     setActiveOptionsMsgId(null);
@@ -206,7 +219,7 @@ export function MessagesView() {
   const handleSelectConv = (id: string) => {
     setSelectedConvId(id);
     const existing =
-      messagesCache[id] ?? mockMessagesByConversation[id] ?? [];
+      messagesCache[id] ?? previewMessages[id] ?? [];
     setMessages(existing);
     setActiveOptionsMsgId(null);
     setMobileChatOpen(true);
@@ -321,7 +334,9 @@ export function MessagesView() {
       </div>
 
       {/* ── Main Single Card Container (Figma design: Unified curved white container with border) ── */}
-      {conversations.length === 0 ? (
+      {isLoadingConversations ? (
+        <div className="flex-1 animate-pulse rounded-[20px] sm:rounded-[24px] border border-[#EAECF0] bg-[#F7F8FB]" />
+      ) : conversations.length === 0 ? (
         /* Entirely Empty State (Mentee - No Messages.png) */
         <div className="flex flex-1 items-center justify-center rounded-[20px] sm:rounded-[24px] border border-[#EAECF0] bg-white p-8">
           <NoMessagesState />

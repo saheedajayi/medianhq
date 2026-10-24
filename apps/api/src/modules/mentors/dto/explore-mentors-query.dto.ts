@@ -39,6 +39,9 @@ export interface ExploreMentorItem {
   price: string;
   pricePerSession: number;
   currency: string;
+  experienceLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  sessionTypes: Array<'one-on-one' | 'group'>;
+  gender?: string;
 }
 
 export interface PaginatedExploreMentorsResponse {

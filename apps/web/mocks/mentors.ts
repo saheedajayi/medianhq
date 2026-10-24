@@ -1,4 +1,4 @@
-import { ExploreMentor } from "./types";
+import type { ExploreMentor } from "@/components/explore/types";
 
 function getNextAvailability(daysAhead: number, time: string) {
   const date = new Date();
@@ -26,6 +26,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: true,
     nextAvailability: getNextAvailability(3, "11:30 AM"),
     price: "Free",
+    experienceLevel: "advanced",
+    sessionTypes: ["one-on-one", "group"],
   },
   {
     id: "2",
@@ -43,6 +45,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: true,
     nextAvailability: getNextAvailability(2, "02:00 PM"),
     price: "N25,000",
+    experienceLevel: "expert",
+    sessionTypes: ["one-on-one"],
   },
   {
     id: "3",
@@ -60,6 +64,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: true,
     nextAvailability: getNextAvailability(1, "04:30 PM"),
     price: "Free",
+    experienceLevel: "advanced",
+    sessionTypes: ["one-on-one"],
   },
   {
     id: "4",
@@ -77,6 +83,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: true,
     nextAvailability: getNextAvailability(4, "10:00 AM"),
     price: "N30,000",
+    experienceLevel: "intermediate",
+    sessionTypes: ["one-on-one", "group"],
   },
   {
     id: "5",
@@ -94,6 +102,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(3, "01:00 PM"),
     price: "Free",
+    experienceLevel: "intermediate",
+    sessionTypes: ["one-on-one"],
   },
   {
     id: "6",
@@ -111,6 +121,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(5, "11:00 AM"),
     price: "N20,000",
+    experienceLevel: "expert",
+    sessionTypes: ["one-on-one"],
   },
   {
     id: "7",
@@ -128,6 +140,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(2, "03:30 PM"),
     price: "N35,000",
+    experienceLevel: "expert",
+    sessionTypes: ["one-on-one", "group"],
   },
   {
     id: "8",
@@ -145,6 +159,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(3, "05:00 PM"),
     price: "Free",
+    experienceLevel: "advanced",
+    sessionTypes: ["one-on-one"],
   },
   {
     id: "9",
@@ -162,6 +178,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(4, "02:00 PM"),
     price: "Free",
+    experienceLevel: "beginner",
+    sessionTypes: ["one-on-one"],
   },
   {
     id: "10",
@@ -179,6 +197,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(3, "10:00 AM"),
     price: "N20,000",
+    experienceLevel: "intermediate",
+    sessionTypes: ["one-on-one", "group"],
   },
   {
     id: "11",
@@ -196,6 +216,8 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(6, "01:30 PM"),
     price: "N25,000",
+    experienceLevel: "advanced",
+    sessionTypes: ["one-on-one"],
   },
   {
     id: "12",
@@ -213,5 +235,7 @@ export const mockExploreMentors: ExploreMentor[] = [
     isFeatured: false,
     nextAvailability: getNextAvailability(2, "11:00 AM"),
     price: "Free",
+    experienceLevel: "beginner",
+    sessionTypes: ["one-on-one"],
   },
 ];

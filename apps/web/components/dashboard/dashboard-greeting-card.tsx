@@ -31,7 +31,7 @@ export function DashboardGreetingCard({
       </div>
 
       <Link
-        href="/mentee/bookings/new"
+        href="/mentee/explore"
         className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#FF5500] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:bg-[#E04B00] active:scale-[0.98] sm:px-5 sm:py-2.5 sm:text-sm"
       >
         <Calendar size="18" variant="Bulk" color="#FFFFFF" className="shrink-0" />

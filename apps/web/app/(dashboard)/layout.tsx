@@ -73,7 +73,7 @@ export default function DashboardLayout({
     };
   }, [pathname, router]);
 
-  const avatarUrl = user?.menteeProfile?.avatarUrl;
+  const avatarUrl = user?.menteeProfile?.avatarUrl ?? user?.mentorProfile?.avatarUrl;
   const isMentor = user?.role === "MENTOR";
 
   return (

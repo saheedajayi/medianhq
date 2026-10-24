@@ -59,6 +59,11 @@ export function MentorBookingPanel({
         <div className="rounded-2xl border border-[#E9EAF0] bg-white p-4 shadow-xs sm:p-5">
           {/* Packages list */}
           <div className="space-y-3">
+            {packages.length === 0 && (
+              <p className="py-6 text-center text-sm text-[#667085]">
+                This mentor hasn&apos;t set up any sessions yet.
+              </p>
+            )}
             {packages.map((pkg) => {
               const isSelected = selectedPackage.id === pkg.id;
 
@@ -104,7 +109,7 @@ export function MentorBookingPanel({
           </div>
 
           {/* Button before viewing dates */}
-          {!isViewingDates ? (
+          {packages.length === 0 ? null : !isViewingDates ? (
             <button
               type="button"
               onClick={() => setIsViewingDates(true)}
@@ -168,6 +173,11 @@ export function MentorBookingPanel({
       ) : (
         /* Group Sessions */
         <div className="space-y-3 rounded-2xl border border-[#E9EAF0] bg-white p-4 shadow-xs sm:p-5">
+          {groupSessions.length === 0 && (
+            <p className="py-6 text-center text-sm text-[#667085]">
+              No upcoming group sessions.
+            </p>
+          )}
           {groupSessions.map((group) => (
             <article
               key={group.id}
@@ -192,7 +202,9 @@ export function MentorBookingPanel({
               </div>
             </article>
           ))}
-          <p className="text-center text-xs text-[#FF5500]">View previous sessions</p>
+          {groupSessions.length > 0 && (
+            <p className="text-center text-xs text-[#FF5500]">View previous sessions</p>
+          )}
         </div>
       )}
     </div>

@@ -27,6 +27,12 @@ export type AuthUser = {
     bio?: string | null;
     avatarUrl?: string | null;
   } | null;
+  mentorProfile?: {
+    gender?: string | null;
+    location?: string | null;
+    bio?: string | null;
+    avatarUrl?: string | null;
+  } | null;
 };
 
 export type AuthResponse = {

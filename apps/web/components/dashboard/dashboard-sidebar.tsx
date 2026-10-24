@@ -41,7 +41,7 @@ const menteeNavItems: NavItem[] = [
   { label: "Explore", href: "/mentee/explore", icon: Global, variant: "Outline", activeVariant: "Bulk" },
   { label: "Bookings", href: "/mentee/booking-session", icon: Calendar, variant: "Outline", activeVariant: "Bulk" },
   { label: "Messages", href: "/mentee/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
-  { label: "Async Q&A", href: "/mentee/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
+  // { label: "Async Q&A", href: "/mentee/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
   { label: "Community", href: "/mentee/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
   { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },
 ];
@@ -52,7 +52,7 @@ const mentorNavItems: NavItem[] = [
   { label: "Bookings", href: "/mentor/bookings", icon: Calendar, variant: "Outline", activeVariant: "Bulk" },
   { label: "Availability", href: "/mentor/availability", icon: CalendarTick, variant: "Outline", activeVariant: "Bulk" },
   { label: "Messages", href: "/mentor/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
-  { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
+  // { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
   { label: "Earnings", href: "/mentor/earnings", icon: Wallet, variant: "Outline", activeVariant: "Bulk" },
   { label: "Community", href: "/mentor/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
   { label: "Achievements", href: "/mentor/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },

@@ -1,10 +1,5 @@
-import type { ConversationSummary, Message } from "@/services/messages";
-
-export interface ExtendedConversation extends ConversationSummary {
-  sessionBadge?: string;
-  isTyping?: boolean;
-  statusIcon?: "read" | "delivered" | "none";
-}
+import type { Message } from "@/services/messages";
+import type { ExtendedConversation } from "@/components/messages/types";
 
 export const mockConversations: ExtendedConversation[] = [
   {
