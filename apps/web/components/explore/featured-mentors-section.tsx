@@ -41,7 +41,7 @@ export function FeaturedMentorsSection({
             type="button"
             onClick={() => handleScroll("left")}
             aria-label="Previous featured mentors"
-            className="flex size-8 items-center justify-center rounded-full border border-[#EAECF0] bg-white text-[#344054] shadow-2xs transition-colors hover:bg-[#F9FAFB] hover:text-[#101828]"
+            className="flex size-8 items-center justify-center rounded-full border border-[#EAECF0] bg-white text-[#344054] transition-colors hover:bg-[#F9FAFB] hover:text-[#101828]"
           >
             <ArrowLeft2 size="16" variant="Linear" color="#344054" />
           </button>
@@ -49,7 +49,7 @@ export function FeaturedMentorsSection({
             type="button"
             onClick={() => handleScroll("right")}
             aria-label="Next featured mentors"
-            className="flex size-8 items-center justify-center rounded-full border border-[#EAECF0] bg-white text-[#344054] shadow-2xs transition-colors hover:bg-[#F9FAFB] hover:text-[#101828]"
+            className="flex size-8 items-center justify-center rounded-full border border-[#EAECF0] bg-white text-[#344054] transition-colors hover:bg-[#F9FAFB] hover:text-[#101828]"
           >
             <ArrowRight2 size="16" variant="Linear" color="#344054" />
           </button>

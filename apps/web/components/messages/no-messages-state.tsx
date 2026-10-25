@@ -9,7 +9,7 @@ export function NoMessagesState({ className = "" }: NoMessagesStateProps) {
   return (
     <div className={`flex flex-col items-center justify-center p-6 text-center ${className}`}>
       {/* Peach Circle with speech bubble icon */}
-      <div className="flex size-14 items-center justify-center rounded-full bg-[#FFEFEA] shadow-2xs">
+      <div className="flex size-14 items-center justify-center rounded-full bg-[#FFEFEA]">
         <SpeechBubbleEmptyIcon className="size-6 text-[#FF5514]" />
       </div>
 
@@ -22,7 +22,7 @@ export function NoMessagesState({ className = "" }: NoMessagesStateProps) {
 
       <Link
         href="/mentee/explore"
-        className="mt-5 inline-flex items-center justify-center rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-medium text-white shadow-xs transition-colors hover:bg-[#E04B12]"
+        className="mt-5 inline-flex items-center justify-center rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#E04B12]"
       >
         Search for mentor
       </Link>

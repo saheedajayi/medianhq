@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Label } from "@/components/ui/base/label";
 
 export const formInputClassName =
-  "h-11 rounded-lg border border-[#D0D5DD] bg-white px-3.5 text-sm text-[#101828] placeholder:text-[#98A2B3] focus-visible:border-[#FF5514] focus-visible:ring-2 focus-visible:ring-[#FF5514]/15 shadow-xs transition-colors";
+  "h-11 rounded-lg border border-[#D0D5DD] bg-white px-3.5 text-sm text-[#101828] placeholder:text-[#98A2B3] focus-visible:border-[#FF5514] focus-visible:ring-2 focus-visible:ring-[#FF5514]/15 transition-colors";
 
 export function FormField({
   id,

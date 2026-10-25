@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,13 +7,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
-import type { CreateMentorProfileDto } from './dto/create-mentor-profile.dto';
+import type {
+  CreateMentorProfileDto,
+  UpdateMentorProfileDto,
+} from './dto/create-mentor-profile.dto';
 import type {
   ExploreMentorItem,
   ExploreMentorsQueryDto,
   PaginatedExploreMentorsResponse,
 } from './dto/explore-mentors-query.dto';
 import { MentorsRepository } from './mentors.repository';
+import { buildAvailableDays } from '../bookings/availability-slots';
+import { MIN_LEAD_TIME_MS } from '../bookings/booking-policy';
 
 @Injectable()
 export class MentorsService {
@@ -56,27 +62,66 @@ export class MentorsService {
     return `${symbol}${pricePerSession.toLocaleString()}`;
   }
 
-  private getNextAvailability(mentorId: string) {
-    // Deterministic offset based on ID hash for consistent display
-    const charCodeSum = mentorId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const daysAhead = (charCodeSum % 5) + 1; // 1 to 5 days ahead
-    const hour = 10 + (charCodeSum % 7); // 10 AM to 4 PM
-    const timeStr = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`;
+  /**
+   * First open slot per mentor over the next two weeks, from their real
+   * availability and bookings. Keyed by mentor user ID; missing means none.
+   */
+  private async getNextAvailability(mentorUserIds: string[]) {
+    const now = new Date();
+    const to = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+    const { windows, bookings } = await this.mentorsRepository.findAvailabilityContext(
+      mentorUserIds,
+      now,
+      to,
+      now,
+    );
 
-    const date = new Date();
-    date.setDate(date.getDate() + daysAhead);
+    const result = new Map<string, ExploreMentorItem['nextAvailability']>();
+    for (const mentorId of mentorUserIds) {
+      const days = buildAvailableDays({
+        windows: windows.filter((w) => w.mentorId === mentorId),
+        busy: bookings
+          .filter((b) => b.mentorId === mentorId)
+          .map((b) => ({
+            startsAt: b.startsAt,
+            endsAt: new Date(b.startsAt.getTime() + b.durationMinutes * 60 * 1000),
+          })),
+        durationMinutes: 30,
+        from: now,
+        days: 14,
+        earliestStart: new Date(now.getTime() + MIN_LEAD_TIME_MS),
+      });
+      const dayIndex = days.findIndex((day) => day.slots.length > 0);
+      if (dayIndex === -1) continue;
 
-    return {
-      relative: daysAhead === 1 ? 'tomorrow' : `in ${daysAhead} days`,
-      formattedDate: `${date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'long',
-      })} ${timeStr}`,
-    };
+      const slot = new Date(days[dayIndex].slots[0]);
+      const format = (options: Intl.DateTimeFormatOptions) =>
+        slot.toLocaleString('en-US', { timeZone: 'Africa/Lagos', ...options });
+      result.set(mentorId, {
+        relative: dayIndex === 0 ? 'today' : dayIndex === 1 ? 'tomorrow' : `in ${dayIndex} days`,
+        formattedDate: `${format({ weekday: 'short', day: 'numeric', month: 'long' })} ${format({
+          hour: 'numeric',
+          minute: '2-digit',
+        })}`,
+      });
+    }
+    return result;
   }
 
-  private formatMentorItem(m: any, isFeatured = false): ExploreMentorItem {
+  // Maps onboarding years of experience ("1-3 years" ... "10+ years") to the explore filter levels
+  private mapExperienceLevel(experience?: string | null): ExploreMentorItem['experienceLevel'] {
+    const years = parseInt(experience ?? '', 10);
+    if (Number.isNaN(years) || years < 3) return 'beginner';
+    if (years < 5) return 'intermediate';
+    if (years < 10) return 'advanced';
+    return 'expert';
+  }
+
+  private formatMentorItem(
+    m: any,
+    isFeatured = false,
+    nextAvailability: ExploreMentorItem['nextAvailability'] = null,
+  ): ExploreMentorItem {
     const bookings = m.user?.mentorBookings || [];
     const completedSessions = bookings.filter(
       (b: any) => b.status === 'COMPLETED' || b.session?.completedAt,
@@ -87,7 +132,7 @@ export class MentorsService {
     const avgRating =
       reviewCount > 0
         ? Number((reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount).toFixed(1))
-        : 4.8; // Default initial rating for approved mentors
+        : 0; // New mentors have no rating until their first review
 
     const tags: string[] = [];
     if (m.industry) tags.push(m.industry);
@@ -99,19 +144,23 @@ export class MentorsService {
       name: `${m.user?.firstName ?? ''} ${m.user?.lastName ?? ''}`.trim() || 'Mentor',
       role: m.jobTitle || m.headline || 'Mentor',
       company: m.company || 'Independent',
-      location: m.location || 'Remote',
+      location: m.location || '',
       sessionCount: completedSessions,
       rating: avgRating,
       reviewCount,
       bio: m.bio || m.headline || '',
       category: this.mapCategory(m.industry),
       tags,
-      avatarUrl: `https://i.pravatar.cc/150?u=${m.id}`,
+      avatarUrl: m.avatarUrl || '',
+      gender: m.gender ? m.gender.toLowerCase() : undefined,
       isFeatured,
-      nextAvailability: this.getNextAvailability(m.id),
+      nextAvailability,
       price: this.formatPrice(m.pricePerSession, m.currency),
       pricePerSession: m.pricePerSession || 0,
       currency: m.currency || 'NGN',
+      experienceLevel: this.mapExperienceLevel(m.experience),
+      // Every mentor offers 1:1 sessions; group sessions are not stored per mentor yet
+      sessionTypes: ['one-on-one'],
     };
   }
 
@@ -137,8 +186,11 @@ export class MentorsService {
       this.mentorsRepository.countExploreMentors(where),
     ]);
 
+    const nextAvailability = await this.getNextAvailability(
+      rawMentors.map((m: any) => m.userId),
+    );
     let formatted = rawMentors.map((m: any, index: number) =>
-      this.formatMentorItem(m, index < 2),
+      this.formatMentorItem(m, index < 2, nextAvailability.get(m.userId) ?? null),
     );
 
     // Filter by minRating if requested
@@ -167,7 +219,10 @@ export class MentorsService {
 
   async getFeatured(limit = 6): Promise<ExploreMentorItem[]> {
     const featured = await this.mentorsRepository.findFeaturedMentors(limit);
-    return featured.map((m: any) => this.formatMentorItem(m, true));
+    const nextAvailability = await this.getNextAvailability(featured.map((m: any) => m.userId));
+    return featured.map((m: any) =>
+      this.formatMentorItem(m, true, nextAvailability.get(m.userId) ?? null),
+    );
   }
 
   async getMentorProfile(id: string) {
@@ -176,7 +231,11 @@ export class MentorsService {
       throw new NotFoundException(`Mentor with ID '${id}' not found`);
     }
 
-    const item = this.formatMentorItem(mentor, false);
+    const [nextAvailability, sessions] = await Promise.all([
+      this.getNextAvailability([mentor.userId]),
+      this.mentorsRepository.findBookableSessions(mentor.userId),
+    ]);
+    const item = this.formatMentorItem(mentor, false, nextAvailability.get(mentor.userId) ?? null);
 
     // Format all review details for the profile page
     const bookings = mentor.user?.mentorBookings || [];
@@ -188,14 +247,41 @@ export class MentorsService {
         rating: r.rating,
         comment: r.comment,
         authorName: r.author ? `${r.author.firstName} ${r.author.lastName}`.trim() : 'Anonymous',
-        authorAvatar: `https://i.pravatar.cc/150?u=${r.author?.id || r.id}`,
+        authorAvatar: r.author?.menteeProfile?.avatarUrl || '',
         createdAt: r.createdAt,
       }));
 
+    // Mentors who haven't created sessions yet still offer a standard 1:1 at their profile price
+    const packages =
+      sessions.length > 0
+        ? sessions.map((session) => ({
+            id: session.id,
+            mentorSessionId: session.id,
+            title: session.title,
+            description: session.description,
+            durationMinutes: session.durationMinutes,
+            price: this.formatPrice(session.price, session.currency),
+            numericPrice: session.price,
+          }))
+        : [
+            {
+              id: 'standard',
+              mentorSessionId: null,
+              title: '1:1 Mentorship Session',
+              description: 'A one-on-one session with this mentor.',
+              durationMinutes: 30,
+              price: item.price,
+              numericPrice: item.pricePerSession,
+            },
+          ];
+
     return {
       ...item,
+      // The mentor's user ID, which bookings and availability are keyed by
+      mentorUserId: mentor.userId,
       experience: mentor.experience,
       linkedinUrl: mentor.linkedinUrl,
+      packages,
       reviews,
     };
   }
@@ -263,5 +349,41 @@ export class MentorsService {
       this.logger.error(`Failed to apply for mentor profile (userId: ${userId})`, error);
       throw error;
     }
+  }
+
+  async updateProfile(userId: string, dto: UpdateMentorProfileDto) {
+    const user = await this.mentorsRepository.findUserForOnboarding(userId);
+
+    if (!user?.mentorProfile) {
+      throw new NotFoundException('Apply to become a mentor before updating your profile.');
+    }
+
+    const gender = dto.gender?.trim();
+    if (gender && !['male', 'female'].includes(gender.toLowerCase())) {
+      throw new BadRequestException('Gender must be Male or Female.');
+    }
+
+    const avatarUrl = dto.avatarUrl?.trim();
+    if (avatarUrl && !avatarUrl.startsWith('https://')) {
+      throw new BadRequestException('Profile picture must be an https URL.');
+    }
+
+    const bio = dto.bio?.trim();
+    if (bio && bio.split(/\s+/).length > 300) {
+      throw new BadRequestException('Bio must be less than 300 words.');
+    }
+
+    const profile = await this.mentorsRepository.updateProfileByUserId(userId, {
+      ...(gender && { gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase() }),
+      ...(dto.location?.trim() && { location: dto.location.trim() }),
+      ...(bio && { bio }),
+      ...(avatarUrl && { avatarUrl }),
+    });
+
+    return {
+      success: true,
+      message: 'Mentor profile updated successfully',
+      profile,
+    };
   }
 }

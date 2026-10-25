@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
 import { MentorsService } from '../../../../src/modules/mentors/mentors.service';
 import { MentorsRepository } from '../../../../src/modules/mentors/mentors.repository';
@@ -12,6 +17,7 @@ describe('MentorsService', () => {
     repository = {
       findUserForOnboarding: jest.fn(),
       upsertProfileByUserId: jest.fn(),
+      updateProfileByUserId: jest.fn(),
       findMenteeProfileByUserId: jest.fn(),
       findApprovedMatches: jest.fn(),
       findMentorById: jest.fn(),
@@ -19,6 +25,8 @@ describe('MentorsService', () => {
       findExploreMentors: jest.fn(),
       countExploreMentors: jest.fn(),
       findFeaturedMentors: jest.fn(),
+      findAvailabilityContext: jest.fn().mockResolvedValue({ windows: [], bookings: [] }),
+      findBookableSessions: jest.fn().mockResolvedValue([]),
     };
 
     service = new MentorsService(repository as unknown as MentorsRepository);
@@ -254,6 +262,10 @@ describe('MentorsService', () => {
       expect(result.data[0].name).toBe('Abdulrahman Hassan');
       expect(result.data[0].category).toBe('Tech');
       expect(result.data[0].price).toBe('Free');
+      expect(result.data[0].experienceLevel).toBe('advanced');
+      expect(result.data[0].sessionTypes).toEqual(['one-on-one']);
+      // No stored photo or location: return empty values instead of placeholders
+      expect(result.data[0].avatarUrl).toBe('');
       expect(result.pagination).toEqual({
         total: 1,
         page: 1,
@@ -329,6 +341,59 @@ describe('MentorsService', () => {
       expect(result.rating).toBe(5);
       expect(result.reviews).toHaveLength(1);
       expect(result.reviews[0].comment).toBe('Great session!');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should save photo, gender, location and bio for a mentor', async () => {
+      repository.findUserForOnboarding.mockResolvedValue({
+        mentorProfile: { id: 'mentor-1', status: MentorStatus.APPROVED },
+      });
+      repository.updateProfileByUserId.mockResolvedValue({ id: 'mentor-1' });
+
+      const result = await service.updateProfile('user-1', {
+        avatarUrl: 'https://res.cloudinary.com/demo/avatar.png',
+        gender: 'female',
+        location: ' Lagos, Nigeria ',
+        bio: 'I help designers grow into product leaders.',
+      });
+
+      expect(result.success).toBe(true);
+      expect(repository.updateProfileByUserId).toHaveBeenCalledWith('user-1', {
+        avatarUrl: 'https://res.cloudinary.com/demo/avatar.png',
+        gender: 'Female',
+        location: 'Lagos, Nigeria',
+        bio: 'I help designers grow into product leaders.',
+      });
+    });
+
+    it('should throw NotFoundException if the user has no mentor profile', async () => {
+      repository.findUserForOnboarding.mockResolvedValue({ mentorProfile: null });
+
+      await expect(service.updateProfile('user-1', { gender: 'Male' })).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(repository.updateProfileByUserId).not.toHaveBeenCalled();
+    });
+
+    it('should reject an unknown gender value', async () => {
+      repository.findUserForOnboarding.mockResolvedValue({
+        mentorProfile: { id: 'mentor-1', status: MentorStatus.APPROVED },
+      });
+
+      await expect(service.updateProfile('user-1', { gender: 'other' })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject a non-https profile picture URL', async () => {
+      repository.findUserForOnboarding.mockResolvedValue({
+        mentorProfile: { id: 'mentor-1', status: MentorStatus.APPROVED },
+      });
+
+      await expect(
+        service.updateProfile('user-1', { avatarUrl: 'javascript:alert(1)' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

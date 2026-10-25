@@ -14,9 +14,9 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-[#F2F2F7] bg-[#FDF9F6] p-6 text-center">
       {/* Mentor Avatar */}
-      <div className="relative mb-3 size-[112px] overflow-hidden rounded-full border-4 border-white shadow-sm">
+      <div className="relative mb-3 size-[112px] overflow-hidden rounded-full border-4 border-white">
         <Image
-          src={mentor.avatarUrl || "/mentor-avatar.png"}
+          src={mentor.avatarUrl || "/default-avatar.svg"}
           alt={mentor.name}
           fill
           sizes="120px"
@@ -37,10 +37,12 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
 
       {/* Metadata: Location, Sessions, Rating */}
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-[#475467] sm:text-sm">
-        <div className="flex items-center gap-1">
-          <Location size="16" variant="Outline" color="#667085" className="shrink-0" />
-          <span>{mentor.location}</span>
-        </div>
+        {mentor.location && (
+          <div className="flex items-center gap-1">
+            <Location size="16" variant="Outline" color="#667085" className="shrink-0" />
+            <span>{mentor.location}</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-1">
           <Messages size="16" variant="Linear" color="#667085" className="shrink-0" />
@@ -50,7 +52,9 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
         <div className="flex items-center gap-1">
           <Star className="size-4 fill-[#FDB022] text-[#FDB022] shrink-0" />
           <span>
-            {mentor.rating} ({mentor.reviewCount} Reviews)
+            {mentor.reviewCount > 0
+              ? `${mentor.rating} (${mentor.reviewCount} Reviews)`
+              : "New mentor"}
           </span>
         </div>
       </div>
@@ -63,7 +67,7 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
             target="_blank"
             rel="noreferrer"
             aria-label="Website"
-            className="flex size-10 items-center justify-center rounded-xl border border-[#EAECF0] bg-white text-[#475467] shadow-2xs transition-colors hover:bg-[#F9FAFB] hover:text-[#FF5500]"
+            className="flex size-10 items-center justify-center rounded-xl border border-[#EAECF0] bg-white text-[#475467] transition-colors hover:bg-[#F9FAFB] hover:text-[#FF5500]"
           >
             <Global size="18" variant="Outline" color="#475467" />
           </Link>
@@ -75,7 +79,7 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
             target="_blank"
             rel="noreferrer"
             aria-label="LinkedIn"
-            className="flex size-10 items-center justify-center rounded-xl border border-[#EAECF0] bg-white text-[#475467] shadow-2xs transition-colors hover:bg-[#F9FAFB] hover:text-[#FF5500]"
+            className="flex size-10 items-center justify-center rounded-xl border border-[#EAECF0] bg-white text-[#475467] transition-colors hover:bg-[#F9FAFB] hover:text-[#FF5500]"
           >
             <svg
               className="size-4.5 fill-current"
@@ -92,7 +96,7 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
             target="_blank"
             rel="noreferrer"
             aria-label="Instagram"
-            className="flex size-10 items-center justify-center rounded-xl border border-[#EAECF0] bg-white text-[#475467] shadow-2xs transition-colors hover:bg-[#F9FAFB] hover:text-[#FF5500]"
+            className="flex size-10 items-center justify-center rounded-xl border border-[#EAECF0] bg-white text-[#475467] transition-colors hover:bg-[#F9FAFB] hover:text-[#FF5500]"
           >
             <Instagram size="18" variant="Outline" color="#475467" />
           </Link>

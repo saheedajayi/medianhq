@@ -21,12 +21,13 @@ import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/api-exception.filter';
 import { ApiResponseInterceptor } from './common/api-response.interceptor';
 
-
 function getAllowedOrigins() {
   const origins = process.env.WEB_ORIGINS ?? process.env.WEB_ORIGIN;
 
   if (!origins) {
-    throw new Error('Environment variable WEB_ORIGINS or WEB_ORIGIN must be defined.');
+    throw new Error(
+      'Environment variable WEB_ORIGINS or WEB_ORIGIN must be defined.',
+    );
   }
 
   return origins
@@ -36,7 +37,8 @@ function getAllowedOrigins() {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody keeps the exact request bytes, which the Paystack webhook signature is computed over
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const httpAdapterHost = app.get(HttpAdapterHost);
 
   app.setGlobalPrefix('api', {

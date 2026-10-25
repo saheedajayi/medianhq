@@ -12,7 +12,7 @@ export function NigeriaFlag({
   return (
     <svg
       viewBox="0 0 44 30"
-      className={`${className} overflow-hidden rounded-[4px] shadow-[0_0_0_1px_rgba(0,0,0,0.06)] shrink-0`}
+      className={`${className} overflow-hidden rounded-[4px] shrink-0`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -31,7 +31,7 @@ export function USAFlag({
   return (
     <svg
       viewBox="0 0 44 30"
-      className={`${className} overflow-hidden rounded-[4px] shadow-[0_0_0_1px_rgba(0,0,0,0.06)] shrink-0`}
+      className={`${className} overflow-hidden rounded-[4px] shrink-0`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -107,7 +107,7 @@ export function CurrencyDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex h-[52px] items-center gap-3 rounded-10 border border-[#FCD5C5] bg-[#FFF4ED] pl-3.5 pr-4 text-sm font-semibold text-[#101828] shadow-2xs transition-all hover:bg-[#FFEFE5] hover:border-[#FBBFA7]"
+        className="inline-flex h-[52px] items-center gap-3 rounded-10 border border-[#FCD5C5] bg-[#FFF4ED] pl-3.5 pr-4 text-sm font-semibold text-[#101828] transition-all hover:bg-[#FFEFE5] hover:border-[#FBBFA7]"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -139,7 +139,7 @@ export function CurrencyDropdown({
 
       {isOpen && (
         <div
-          className={`absolute ${menuAlignClass} z-30 mt-2 w-44 overflow-hidden rounded-10 border border-[#FCD5C5] bg-white p-1.5 shadow-lg shadow-black/5 animate-in fade-in-50 zoom-in-95 duration-100`}
+          className={`absolute ${menuAlignClass} z-30 mt-2 w-44 overflow-hidden rounded-10 border border-[#FCD5C5] bg-white p-1.5 animate-in fade-in-50 zoom-in-95 duration-100`}
         >
           <button
             type="button"

@@ -9,6 +9,8 @@ import { MentorCard } from "./mentor-card";
 interface MentorsGridSectionProps {
   mentors: ExploreMentor[];
   totalCount: number;
+  /** All mentors before search/filters; shown as "N of M" while filtering */
+  outOf?: number;
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
   onResetFilters?: () => void;
@@ -25,6 +27,7 @@ const sortOptions: { label: string; value: SortOption }[] = [
 export function MentorsGridSection({
   mentors,
   totalCount,
+  outOf,
   sortBy,
   onSortChange,
   onResetFilters,
@@ -35,7 +38,9 @@ export function MentorsGridSection({
       {/* Subheader: Results count & Sort dropdown */}
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <span className="text-sm font-medium text-[#475467]">
-          Showing {totalCount} {totalCount === 1 ? "mentor" : "mentors"}
+          Showing {totalCount}
+          {outOf !== undefined && outOf !== totalCount ? ` of ${outOf}` : ""}{" "}
+          {(outOf ?? totalCount) === 1 ? "mentor" : "mentors"}
         </span>
 
         {/* Sort Dropdown */}
@@ -43,7 +48,7 @@ export function MentorsGridSection({
           <SelectTrigger aria-label="Sort mentors" className="h-8 w-auto min-w-[184px] rounded-full border-[#F2F2F7] bg-[#F7F8FB] px-3.5 text-xs font-medium text-[#344054] shadow-none hover:bg-[#EAECF0]/60 focus:border-[#FF5500] focus:ring-0">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="min-w-[220px] rounded-xl border-[#EAECF0] bg-white p-1 shadow-lg">
+          <SelectContent className="min-w-[220px] rounded-xl border-[#EAECF0] bg-white p-1">
             {sortOptions.map((opt) => <SelectItem key={opt.value} value={opt.value} className="rounded-lg text-xs text-[#344054] focus:bg-[#FFF0EB] focus:text-[#E84D12]">{opt.label}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -80,7 +85,7 @@ export function MentorsGridSection({
             <button
               type="button"
               onClick={onResetFilters}
-              className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold text-white shadow-2xs transition-colors hover:bg-[#E04B00]"
+              className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#E04B00]"
             >
               Reset Filters
             </button>

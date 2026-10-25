@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -6,7 +15,7 @@ import type { AuthUser } from '../auth/dto/auth.dto';
 
 @Controller('messages')
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) { }
+  constructor(private readonly messagesService: MessagesService) {}
 
   @UseGuards(AuthGuard)
   @Get('token')
@@ -20,15 +29,28 @@ export class MessagesController {
     return this.messagesService.listConversations(user);
   }
 
+  /** Opens a chat with someone from a booking, existing or new */
+  @UseGuards(AuthGuard)
+  @Get('contacts/:userId')
+  getContact(@CurrentUser() user: AuthUser, @Param('userId') userId: string) {
+    return this.messagesService.getContact(user, userId);
+  }
+
   @UseGuards(AuthGuard)
   @Get(':conversationId')
-  getMessages(@CurrentUser() user: AuthUser, @Param('conversationId') conversationId: string) {
+  getMessages(
+    @CurrentUser() user: AuthUser,
+    @Param('conversationId') conversationId: string,
+  ) {
     return this.messagesService.getMessages(user, conversationId);
   }
 
   @UseGuards(AuthGuard)
   @Post()
-  sendMessage(@CurrentUser() user: AuthUser, @Body() dto: { recipientId: string; content: string }) {
+  sendMessage(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: { recipientId: string; content: string },
+  ) {
     return this.messagesService.sendMessage(user, dto);
   }
 
@@ -44,13 +66,28 @@ export class MessagesController {
 
   @UseGuards(AuthGuard)
   @Delete('message/:messageId')
-  deleteMessage(@CurrentUser() user: AuthUser, @Param('messageId') messageId: string) {
+  deleteMessage(
+    @CurrentUser() user: AuthUser,
+    @Param('messageId') messageId: string,
+  ) {
     return this.messagesService.deleteMessage(user, messageId);
   }
 
   @UseGuards(AuthGuard)
+  @Post(':conversationId/delivered')
+  markDelivered(
+    @CurrentUser() user: AuthUser,
+    @Param('conversationId') conversationId: string,
+  ) {
+    return this.messagesService.markDelivered(user, conversationId);
+  }
+
+  @UseGuards(AuthGuard)
   @Post(':conversationId/read')
-  markConversationRead(@CurrentUser() user: AuthUser, @Param('conversationId') conversationId: string) {
+  markConversationRead(
+    @CurrentUser() user: AuthUser,
+    @Param('conversationId') conversationId: string,
+  ) {
     return this.messagesService.markConversationRead(user, conversationId);
   }
 
@@ -63,4 +100,3 @@ export class MessagesController {
     return this.messagesService.reportMessage(user, dto);
   }
 }
-

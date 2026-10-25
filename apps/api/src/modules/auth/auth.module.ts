@@ -1,3 +1,4 @@
+import { AdminGuard } from './guards/admin.guard';
 import { Global, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -18,6 +19,7 @@ import { SecurityAuditService } from './security-audit.service';
   imports: [EmailModule, PassportModule.register({ session: false })],
   controllers: [AuthController],
   providers: [
+    AdminGuard,
     AuthService,
     AuthRepository,
     GoogleStrategy,
@@ -29,6 +31,6 @@ import { SecurityAuditService } from './security-audit.service';
     AuthRateLimiterService,
     SecurityAuditService,
   ],
-  exports: [AuthService, AuthRateLimiterService, SecurityAuditService],
+  exports: [AuthService, AuthRateLimiterService, SecurityAuditService, AdminGuard],
 })
 export class AuthModule {}

@@ -1,5 +1,6 @@
-import { EmptyState } from "@/components/ui/custom/empty-state";
+import { redirect } from "next/navigation";
 
 export default function NewBookingPage() {
-  return <EmptyState title="Book a session" />;
+  redirect("/mentee/explore");
 }
+

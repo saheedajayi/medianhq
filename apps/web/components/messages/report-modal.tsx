@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, X } from "lucide-react";
-import { messagesService } from "@/services/messages";
+import { useReportMessage } from "@/services/messages/queries/messages.queries";
 
 const REPORT_REASONS = [
   "Inappropriate or offensive content",
@@ -29,6 +29,7 @@ export function ReportModal({
   );
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const reportMessageMutation = useReportMessage();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export function ReportModal({
   async function handleSubmit() {
     setIsSubmitting(true);
     try {
-      await messagesService.reportMessage({
+      await reportMessageMutation.mutateAsync({
         messageId,
         reason: selectedReason,
         note: note.trim() || undefined,
@@ -63,7 +64,7 @@ export function ReportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-[2px] animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[500px] rounded-[24px] bg-white p-7 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-[500px] rounded-[24px] bg-white p-7 sm:p-8 animate-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"
@@ -146,7 +147,7 @@ export function ReportModal({
               type="button"
               disabled={isSubmitting || !selectedReason}
               onClick={handleSubmit}
-              className="mt-6 flex w-full items-center justify-center rounded-full bg-[#EA3829] py-3.5 text-sm font-medium text-white shadow-xs transition-colors hover:bg-[#DC2626] disabled:opacity-50"
+              className="mt-6 flex w-full items-center justify-center rounded-full bg-[#EA3829] py-3.5 text-sm font-medium text-white transition-colors hover:bg-[#DC2626] disabled:opacity-50"
             >
               {isSubmitting ? "Submitting..." : "Submit report"}
             </button>
@@ -164,7 +165,7 @@ export function ReportModal({
             <button
               type="button"
               onClick={onClose}
-              className="mt-7 flex w-full items-center justify-center rounded-full bg-[#FF5514] py-3.5 text-sm font-medium text-white shadow-xs transition-colors hover:bg-[#E04B12]"
+              className="mt-7 flex w-full items-center justify-center rounded-full bg-[#FF5514] py-3.5 text-sm font-medium text-white transition-colors hover:bg-[#E04B12]"
             >
               Back to messages
             </button>
@@ -172,10 +173,10 @@ export function ReportModal({
             <p className="mt-4 text-xs text-[#667085]">
               Need urgent help? Contact{" "}
               <a
-                href="mailto:support@median.com"
+                href="mailto:support@medianhq.co"
                 className="font-medium text-[#FF5514] hover:underline"
               >
-                support@median.com
+                support@medianhq.co
               </a>
             </p>
           </div>

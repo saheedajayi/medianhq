@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { MentorProfileView } from "@/components/mentors/mentor-profile-view";
-import { mentorsDirectory, defaultMentorProfile } from "@/components/mentors/mock-profile-data";
+import { getMentorMetadata } from "@/components/mentors/mentor-metadata";
 
 export async function generateMetadata({
   params,
@@ -8,11 +8,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const mentor = mentorsDirectory[id] || defaultMentorProfile;
-  return {
-    title: `${mentor.name} - ${mentor.role} @ ${mentor.company} | Median Mentorship`,
-    description: mentor.bio,
-  };
+  return getMentorMetadata(id);
 }
 
 export default async function MenteeMentorProfilePage({

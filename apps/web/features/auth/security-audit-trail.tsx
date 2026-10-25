@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback } from "react";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { format } from "date-fns";
 import {
   ShieldCheck,
@@ -19,7 +20,8 @@ import {
   CardTitle,
 } from "@/components/ui/base/card";
 import { Button } from "@/components/ui/base/button";
-import { authService, type SecurityEvent } from "@/services/auth";
+import type { SecurityEvent } from "@/services/auth";
+import { useSecurityEvents } from "@/services/auth/queries/auth.queries";
 
 function formatAction(action: string) {
   switch (action) {
@@ -57,29 +59,27 @@ function formatAction(action: string) {
 }
 
 export function SecurityAuditTrail({ refreshKey }: { refreshKey?: number }) {
-  const [events, setEvents] = useState<SecurityEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: events = [] as SecurityEvent[],
+    isFetching: isLoading,
+    isError,
+    refetch,
+  } = useSecurityEvents();
+  const error = isError
+    ? "Unable to load security events. Please try again later."
+    : null;
 
-  const fetchEvents = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await authService.getSecurityEvents();
-      setEvents(response.data);
-    } catch {
-      setError("Unable to load security events. Please try again later.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const fetchEvents = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
+  // Parent bumps refreshKey after actions that add new events
   useEffect(() => {
-    fetchEvents();
+    if (refreshKey) fetchEvents();
   }, [fetchEvents, refreshKey]);
 
   return (
-    <Card className="border-[#EAECF0] shadow-xs">
+    <Card className="border-[#EAECF0]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div>
           <CardTitle className="text-lg text-[#101828]">
@@ -105,9 +105,20 @@ export function SecurityAuditTrail({ refreshKey }: { refreshKey?: number }) {
       </CardHeader>
       <CardContent>
         {isLoading && events.length === 0 ? (
-          <div className="py-8 text-center text-sm text-[#667085]">
-            Loading security events...
-          </div>
+          <SkeletonGroup label="Loading security events" className="divide-y divide-[#EAECF0]">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-8 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3.5 w-36" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                </div>
+                <Skeleton className="h-3 w-28" />
+              </div>
+            ))}
+          </SkeletonGroup>
         ) : error ? (
           <div className="py-6 text-center text-sm text-[#B42318]">{error}</div>
         ) : events.length === 0 ? (

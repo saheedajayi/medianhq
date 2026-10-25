@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { PaystackSignatureGuard } from './paystack-signature.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/dto/auth.dto';
 
@@ -22,6 +23,8 @@ export class PaymentsController {
     return this.paymentsService.verify(reference);
   }
 
+  // Only Paystack can call this: requests must carry its signature of the body
+  @UseGuards(PaystackSignatureGuard)
   @Post('webhook/paystack')
   paystackWebhook(@Body() payload: unknown) {
     return this.paymentsService.handlePaystackWebhook(payload);

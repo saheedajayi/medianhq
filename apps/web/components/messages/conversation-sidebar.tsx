@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Search, CheckCheck } from "lucide-react";
-import type { ExtendedConversation } from "./mock-messages";
+import { Search } from "lucide-react";
+import type { ExtendedConversation } from "./types";
+import { MessageStatusIcon, formatListTime } from "./message-status";
 
 export interface ConversationSidebarProps {
   conversations: ExtendedConversation[];
@@ -37,7 +38,7 @@ export function ConversationSidebar({
           <Search size={16} className="shrink-0 text-[#98A2B3]" />
           <input
             type="text"
-            placeholder="Search mentor by name"
+            placeholder="Search by name"
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             className="w-full bg-transparent text-sm text-[#101828] placeholder-[#98A2B3] focus:outline-none"
@@ -49,13 +50,13 @@ export function ConversationSidebar({
       <div className="flex-1 overflow-y-auto px-2 sm:px-3 pb-3 divide-y divide-transparent">
         {filteredConversations.length === 0 ? (
           <div className="p-8 text-center text-xs text-[#98A2B3]">
-            No mentors match your search
+            No conversations match your search
           </div>
         ) : (
           filteredConversations.map((conv) => {
             const isSelected = selectedConvId === conv.id;
             const isTyping = conv.isTyping;
-            const isOnline = conv.participant?.isOnline ?? true;
+            const isOnline = conv.participant?.isOnline ?? false;
 
             return (
               <div
@@ -68,8 +69,8 @@ export function ConversationSidebar({
                 {/* Avatar with Online Dot */}
                 <div className="relative size-11 sm:size-12 shrink-0 rounded-full">
                   <Image
-                    src={conv.participant?.avatar || "/mentors/mentor-1.png"}
-                    alt={conv.participant?.name || "Mentor"}
+                    src={conv.participant?.avatar || "/default-avatar.svg"}
+                    alt={conv.participant?.name || ""}
                     fill
                     className="rounded-full object-cover"
                   />
@@ -99,10 +100,7 @@ export function ConversationSidebar({
                 {/* Right Meta: Time & Badges/Checks */}
                 <div className="flex flex-col items-end shrink-0 gap-1.5 self-center">
                   <span className="text-[11px] font-normal text-[#667085]">
-                    {conv.updatedAt === "Yesterday" ||
-                    conv.updatedAt === "Saturday"
-                      ? conv.updatedAt
-                      : "17:45"}
+                    {formatListTime(conv.lastMessage?.createdAt ?? conv.updatedAt)}
                   </span>
 
                   {/* Unread badge or checkmarks */}
@@ -110,10 +108,8 @@ export function ConversationSidebar({
                     <div className="flex size-5 items-center justify-center rounded-full bg-[#FF5514] text-[11px] font-semibold text-white">
                       {conv.unreadCount}
                     </div>
-                  ) : conv.statusIcon === "read" ? (
-                    <CheckCheck size={16} className="text-[#12B76A]" />
-                  ) : conv.statusIcon === "delivered" ? (
-                    <CheckCheck size={16} className="text-[#D0D5DD]" />
+                  ) : conv.statusIcon && conv.statusIcon !== "none" ? (
+                    <MessageStatusIcon status={conv.statusIcon} size={16} />
                   ) : null}
                 </div>
               </div>

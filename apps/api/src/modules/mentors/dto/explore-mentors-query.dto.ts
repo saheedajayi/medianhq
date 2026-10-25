@@ -32,13 +32,17 @@ export interface ExploreMentorItem {
   tags: string[];
   avatarUrl: string;
   isFeatured: boolean;
+  /** First open slot in the next two weeks; null when the mentor has none */
   nextAvailability: {
     relative: string;
     formattedDate: string;
-  };
+  } | null;
   price: string;
   pricePerSession: number;
   currency: string;
+  experienceLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  sessionTypes: Array<'one-on-one' | 'group'>;
+  gender?: string;
 }
 
 export interface PaginatedExploreMentorsResponse {

@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export function LandingHeader() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-black/[0.05] bg-white/70 backdrop-blur-md backdrop-saturate-150 transition-all shadow-[0_4px_20px_-4px_rgba(16,24,40,0.03)]">
+    <header className="sticky top-0 z-50 w-full border-b border-black/[0.05] bg-white/70 backdrop-blur-md backdrop-saturate-150 transition-all">
       <div className="mx-auto flex h-14 sm:h-20 max-w-7xl items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center transition-opacity hover:opacity-90">
@@ -23,13 +23,13 @@ export function LandingHeader() {
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <Link
             href="/signup"
-            className="inline-flex h-8 sm:h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-[#FF5514] bg-white px-3 sm:px-5 text-xs sm:text-sm font-semibold !text-[#FF5514] shadow-2xs transition-all hover:bg-[#FFF5F1] active:scale-[0.98]"
+            className="inline-flex h-8 sm:h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-[#FF5514] bg-white px-3 sm:px-5 text-xs sm:text-sm font-semibold !text-[#FF5514] transition-all hover:bg-[#FFF5F1] active:scale-[0.98]"
           >
             Sign up
           </Link>
           <Link
             href="/signin"
-            className="inline-flex h-8 sm:h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[#FF5514] px-3.5 sm:px-6 text-xs sm:text-sm font-semibold !text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.98]"
+            className="inline-flex h-8 sm:h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[#FF5514] px-3.5 sm:px-6 text-xs sm:text-sm font-semibold !text-white transition-all hover:bg-[#E84D12] active:scale-[0.98]"
           >
             Sign In
           </Link>

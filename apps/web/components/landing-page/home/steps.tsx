@@ -35,7 +35,7 @@ export function StepMentorCard({
   isFeatured = true,
 }: StepMentorCardProps) {
   return (
-    <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#EAECF0] bg-white shadow-2xs">
+    <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#EAECF0] bg-white">
       {/* Featured badge */}
       {isFeatured && (
         <span className="absolute top-1.5 right-1.5 z-10 rounded-full bg-[#EDE6E6] px-1.5 py-0.2 text-[6.5px] font-semibold text-[#4E0703]">
@@ -45,7 +45,7 @@ export function StepMentorCard({
 
       {/* Card Body */}
       <div className="p-1.5 sm:p-2 text-center">
-        <div className="mx-auto size-8 sm:size-9 overflow-hidden rounded-full border border-gray-100 shadow-2xs">
+        <div className="mx-auto size-8 sm:size-9 overflow-hidden rounded-full border border-gray-100">
           <Image
             src={avatarSrc}
             alt={name}
@@ -107,7 +107,7 @@ export function StepMentorCard({
         </div>
         <button
           type="button"
-          className="rounded-full bg-[#FF5514] px-2 py-0.5 text-[7px] sm:text-[7.5px] font-semibold text-white shadow-2xs hover:bg-[#e84d12]"
+          className="rounded-full bg-[#FF5514] px-2 py-0.5 text-[7px] sm:text-[7.5px] font-semibold text-white hover:bg-[#e84d12]"
         >
           View Profile
         </button>
@@ -168,7 +168,7 @@ export function LandingSteps() {
           <LandingStepCard title="Share your goal" description="Turn your ambitions into clear goals and find the right mentor to help you move forward.">
             {/* Visual Stage with spacious #FDF9F6 background */}
             <div className="flex h-[330px] sm:h-[350px] w-full items-center justify-center rounded-xl sm:rounded-2xl bg-[#FDF9F6] p-4 sm:p-6">
-              <div className="w-full max-w-[340px] sm:max-w-[360px] rounded-2xl bg-white p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-black/[0.04]">
+              <div className="w-full max-w-[340px] sm:max-w-[360px] rounded-2xl bg-white p-4 sm:p-5 border border-black/[0.04]">
                 <h4 className="text-center text-xs sm:text-sm font-bold text-[#4E0703]">
                   What do you want to achieve?
                 </h4>
@@ -208,7 +208,7 @@ export function LandingSteps() {
             {/* Visual Stage with spacious #FDF9F6 background */}
             <div className="flex h-[330px] sm:h-[350px] w-full flex-col items-center justify-center rounded-xl sm:rounded-2xl bg-[#FDF9F6] p-3 sm:p-5">
               {/* Clean Floating Category Tabs Bar */}
-              <div className="mb-2.5 inline-flex items-center gap-4 sm:gap-5 rounded-full bg-white p-1.5 pl-1.5 pr-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-black/[0.03]">
+              <div className="mb-2.5 inline-flex items-center gap-4 sm:gap-5 rounded-full bg-white p-1.5 pl-1.5 pr-5 border border-black/[0.03]">
                 <span className="rounded-full bg-[#F4F5F7] px-4 py-1.5 text-xs font-semibold text-[#FF5514]">
                   All
                 </span>
@@ -227,7 +227,7 @@ export function LandingSteps() {
               </div>
 
               {/* Outer White Container enclosing both mentor cards */}
-              <div className="w-full max-w-[340px] sm:max-w-[365px] rounded-2xl bg-white p-2 sm:p-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-black/[0.04]">
+              <div className="w-full max-w-[340px] sm:max-w-[365px] rounded-2xl bg-white p-2 sm:p-2.5 border border-black/[0.04]">
                 <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                   <StepMentorCard
                     avatarSrc="/landing-page/mentor-male.png"
@@ -265,7 +265,7 @@ export function LandingSteps() {
           <LandingStepCard title="Connect with a mentor" description="Choose how you want to connect — 1-on-1 sessions or group calls, based on availability, price, or expertise.">
             {/* Visual Stage with spacious #FDF9F6 background */}
             <div className="flex h-[330px] sm:h-[350px] w-full items-center justify-center rounded-xl sm:rounded-2xl bg-[#FDF9F6] p-4 sm:p-6">
-              <div className="w-full max-w-[280px] sm:max-w-[300px] rounded-2xl bg-white p-3.5 sm:p-4 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-black/[0.04] space-y-2">
+              <div className="w-full max-w-[280px] sm:max-w-[300px] rounded-2xl bg-white p-3.5 sm:p-4 border border-black/[0.04] space-y-2">
                 {sessionOptions.map((option) => (
                   <div
                     key={option.title}
@@ -305,7 +305,7 @@ export function LandingSteps() {
                 <p className="text-[8.5px] sm:text-[9px] font-semibold tracking-wider text-[#FF5514] mb-2 sm:mb-2.5">
                   YOUR 90-DAY GOAL PROGRESS
                 </p>
-                <div className="w-full rounded-2xl border border-black/[0.04] bg-white p-3.5 shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+                <div className="w-full rounded-2xl border border-black/[0.04] bg-white p-3.5">
                   <div className="flex items-center gap-2.5 sm:gap-3">
                     {/* Layered Goal Badge: #FFD9A8 outer, #FF5514 middle, #FF7743 inner circle */}
                     <div className="flex size-8 sm:size-9 shrink-0 items-center justify-center rounded-xl bg-[#FFD9A8] p-1 sm:p-1.5">

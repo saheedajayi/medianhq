@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Element3,
   Global,
@@ -20,8 +19,8 @@ import {
   Logout,
   Add,
 } from "iconsax-react";
-import { authService } from "@/services/auth";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { useLogout } from "@/services/auth/queries/auth.queries";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 
 interface NavItem {
   label: string;
@@ -41,7 +40,7 @@ const menteeNavItems: NavItem[] = [
   { label: "Explore", href: "/mentee/explore", icon: Global, variant: "Outline", activeVariant: "Bulk" },
   { label: "Bookings", href: "/mentee/booking-session", icon: Calendar, variant: "Outline", activeVariant: "Bulk" },
   { label: "Messages", href: "/mentee/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
-  { label: "Async Q&A", href: "/mentee/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
+  // { label: "Async Q&A", href: "/mentee/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
   { label: "Community", href: "/mentee/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
   { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },
 ];
@@ -52,7 +51,7 @@ const mentorNavItems: NavItem[] = [
   { label: "Bookings", href: "/mentor/bookings", icon: Calendar, variant: "Outline", activeVariant: "Bulk" },
   { label: "Availability", href: "/mentor/availability", icon: CalendarTick, variant: "Outline", activeVariant: "Bulk" },
   { label: "Messages", href: "/mentor/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
-  { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
+  // { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
   { label: "Earnings", href: "/mentor/earnings", icon: Wallet, variant: "Outline", activeVariant: "Bulk" },
   { label: "Community", href: "/mentor/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
   { label: "Achievements", href: "/mentor/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },
@@ -67,20 +66,20 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
   const isMentor = (userRole ?? user?.role) === "MENTOR";
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const logoutMutation = useLogout();
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     try {
-      await authService.logout();
+      // Clears the query cache once the request settles
+      await logoutMutation.mutateAsync();
     } catch (error) {
       console.error("Logout request failed:", error);
     } finally {
-      queryClient.clear();
       router.push("/signin");
       router.refresh();
     }
@@ -203,7 +202,7 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
           />
 
           {/* Sliding Drawer Container */}
-          <aside className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col bg-[#F9FAFB] px-5 py-6 shadow-2xl transition-transform animate-in slide-in-from-left duration-200">
+          <aside className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col bg-[#F9FAFB] px-5 py-6 transition-transform animate-in slide-in-from-left duration-200">
             {navContent}
           </aside>
         </div>

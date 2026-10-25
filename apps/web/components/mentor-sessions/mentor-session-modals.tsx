@@ -22,7 +22,7 @@ export function DeleteSessionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in-0 duration-200">
-      <div className="relative w-full max-w-[480px] rounded-[28px] bg-white p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
+      <div className="relative w-full max-w-[480px] rounded-[28px] bg-white p-8 sm:p-10 animate-in zoom-in-95 duration-200 text-center">
         <h3 className="text-2xl sm:text-[28px] font-bold text-[#D92D20] tracking-tight">
           Delete this Session?
         </h3>
@@ -37,7 +37,7 @@ export function DeleteSessionModal({
             type="button"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="w-full rounded-full bg-[#D92D20] py-3.5 text-sm font-semibold text-white transition hover:bg-[#B42318] disabled:opacity-50 shadow-xs cursor-pointer"
+            className="w-full rounded-full bg-[#D92D20] py-3.5 text-sm font-semibold text-white transition hover:bg-[#B42318] disabled:opacity-50 cursor-pointer"
           >
             {isDeleting ? "Deleting..." : "Delete session"}
           </button>
@@ -75,7 +75,7 @@ export function SessionSuccessModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in-0 duration-200">
-      <div className="relative w-full max-w-[480px] rounded-[28px] bg-white p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
+      <div className="relative w-full max-w-[480px] rounded-[28px] bg-white p-8 sm:p-10 animate-in zoom-in-95 duration-200 text-center">
         <h3 className="text-2xl sm:text-[28px] font-bold text-[#3E0A00] tracking-tight">
           {isLive ? "Your session is live" : "Session Updated"}
         </h3>
@@ -90,7 +90,7 @@ export function SessionSuccessModal({
           <button
             type="button"
             onClick={onViewSession}
-            className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E0480F] shadow-xs cursor-pointer"
+            className="w-full rounded-full bg-[#FF5514] py-3.5 text-sm font-semibold text-white transition hover:bg-[#E0480F] cursor-pointer"
           >
             View session
           </button>

@@ -73,7 +73,7 @@ export function MentorSessionDetails({
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-4 py-2 text-xs font-semibold text-[#344054] shadow-xs transition hover:bg-[#F9FAFB] cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-4 py-2 text-xs font-semibold text-[#344054] transition hover:bg-[#F9FAFB] cursor-pointer"
             >
               {copied ? (
                 <>
@@ -91,7 +91,7 @@ export function MentorSessionDetails({
             <button
               type="button"
               onClick={() => onEdit(session)}
-              className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-4 py-2 text-xs font-semibold text-[#344054] shadow-xs transition hover:bg-[#F9FAFB] cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-4 py-2 text-xs font-semibold text-[#344054] transition hover:bg-[#F9FAFB] cursor-pointer"
             >
               <Edit2 size="16" variant="Linear" color="#344054" />
               <span>Edit</span>
@@ -126,7 +126,7 @@ export function MentorSessionDetails({
 
           {/* Banner with geometric pattern background matching Figma */}
           <div
-            className="relative overflow-hidden rounded-2xl p-3 sm:p-4 shadow-md bg-cover bg-center"
+            className="relative overflow-hidden rounded-2xl p-3 sm:p-4 bg-cover bg-center"
             style={{
               backgroundImage: "url('/sessions/session-stats-pattern.png')",
               backgroundColor: "#4D0D00",
@@ -134,7 +134,7 @@ export function MentorSessionDetails({
           >
             <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Total Earnings */}
-              <div className="rounded-xl bg-white p-4 shadow-xs">
+              <div className="rounded-xl bg-white p-4">
                 <div className="flex items-center justify-between text-xs text-[#667085] font-medium">
                   <span>Total Earnings</span>
                   <span className="text-[#98A2B3]">12 Sessions</span>
@@ -145,7 +145,7 @@ export function MentorSessionDetails({
               </div>
 
               {/* Total Bookings */}
-              <div className="rounded-xl bg-white p-4 shadow-xs">
+              <div className="rounded-xl bg-white p-4">
                 <div className="text-xs text-[#667085] font-medium">
                   <span>Total Bookings</span>
                 </div>
@@ -155,7 +155,7 @@ export function MentorSessionDetails({
               </div>
 
               {/* Completed */}
-              <div className="rounded-xl bg-white p-4 shadow-xs">
+              <div className="rounded-xl bg-white p-4">
                 <div className="text-xs text-[#667085] font-medium">
                   <span>Completed</span>
                 </div>
@@ -165,7 +165,7 @@ export function MentorSessionDetails({
               </div>
 
               {/* Pending */}
-              <div className="rounded-xl bg-white p-4 shadow-xs">
+              <div className="rounded-xl bg-white p-4">
                 <div className="text-xs text-[#667085] font-medium">
                   <span>Pending</span>
                 </div>

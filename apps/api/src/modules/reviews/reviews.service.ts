@@ -31,17 +31,31 @@ export class ReviewsService {
       throw new ForbiddenException('Only the mentee on this booking can write a review.');
     }
 
+    // Only sessions that actually took place can be reviewed; the booking
+    // sweep, not the review, decides whether a session was completed
+    const hasTakenPlace =
+      booking.status === BookingStatus.COMPLETED ||
+      (booking.status === BookingStatus.CONFIRMED && booking.startsAt <= new Date());
+    if (!hasTakenPlace) {
+      throw new BadRequestException('You can review a session once it has taken place.');
+    }
+
+    const rating = Math.round(Number(dto.rating));
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      throw new BadRequestException('Rating must be between 1 and 5.');
+    }
+
     const review = await this.prisma.review.upsert({
       where: { bookingId: dto.bookingId },
       create: {
         bookingId: dto.bookingId,
         authorId: user.id,
-        rating: Number(dto.rating) || 5,
+        rating,
         comment: dto.comment || '',
         npsScore: typeof dto.npsScore === 'number' ? dto.npsScore : null,
       },
       update: {
-        rating: Number(dto.rating) || 5,
+        rating,
         comment: dto.comment || '',
         npsScore: typeof dto.npsScore === 'number' ? dto.npsScore : null,
       },
@@ -55,14 +69,6 @@ export class ReviewsService {
         },
       },
     });
-
-    // Mark booking as completed if not already
-    if (booking.status !== BookingStatus.COMPLETED) {
-      await this.prisma.booking.update({
-        where: { id: dto.bookingId },
-        data: { status: BookingStatus.COMPLETED },
-      });
-    }
 
     return {
       success: true,

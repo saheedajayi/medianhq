@@ -5,7 +5,7 @@ import { LandingStepCard } from "../shared/step-card";
 
 function FormPreview() {
   return (
-    <div className="flex h-[244px] w-full max-w-[352px] flex-col justify-center rounded-lg bg-white px-2.5 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+    <div className="flex h-[244px] w-full max-w-[352px] flex-col justify-center rounded-lg bg-white px-2.5 py-2">
       <h4 className="text-center text-xs font-bold text-[#4E0703]">Apply to mentor</h4>
       <p className="text-center text-[7px] text-[#667085]">Tell us your professional background.</p>
       <div className="mb-2 mt-1 flex justify-center gap-1"><span className="h-1 w-3 rounded-full bg-[#FF5514]" /><span className="size-1 rounded-full bg-[#FFCAB6]" /></div>
@@ -28,20 +28,20 @@ function FormPreview() {
 
 function ReviewPreview() {
   return (
-    <div className="flex h-[205px] w-full max-w-[380px] flex-col items-center justify-center rounded-xl bg-white px-5 text-center shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+    <div className="flex h-[205px] w-full max-w-[380px] flex-col items-center justify-center rounded-xl bg-white px-5 text-center">
       <SubmittedCheckIcon compact />
       <h4 className="mt-4 text-base font-bold text-[#4E0703]">Submitted!</h4>
       <p className="mx-auto mt-1 max-w-[265px] text-[10px] leading-snug text-[#475467]">
         Your application has been successfully submitted. You&apos;ll get an email when the team verifies your profile.
       </p>
-      <div className="mt-5 w-[190px] rounded-full bg-[#FF5514] py-2 text-[10px] font-semibold text-white">Go to Dashboard</div>
+      <div className="mt-5 w-[190px] rounded-full bg-[#FF5514] py-2 text-[10px] font-semibold !text-white">Go to Dashboard</div>
     </div>
   );
 }
 
 function ProfilePreview() {
   return (
-    <div className="flex h-[285px] w-full max-w-[292px] flex-col rounded-xl bg-white px-3 py-2.5 shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+    <div className="flex h-[285px] w-full max-w-[292px] flex-col rounded-xl bg-white px-3 py-2.5">
       <h4 className="text-center text-xs font-bold text-[#4E0703]">Profile update</h4>
       <p className="text-center text-[7px] text-[#667085]">Tell us more about you.</p>
       <div className="mb-3 mt-1 flex justify-center gap-1"><span className="size-1 rounded-full bg-[#FFCAB6]" /><span className="h-1 w-3 rounded-full bg-[#FF5514]" /></div>
@@ -58,7 +58,7 @@ function ProfilePreview() {
 
 function SessionsPreview() {
   return (
-    <div className="flex h-[311px] w-full max-w-[380px] flex-col justify-center rounded-xl border border-[#EAECF0] bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+    <div className="flex h-[311px] w-full max-w-[380px] flex-col justify-center rounded-xl border border-[#EAECF0] bg-white p-4">
       <h4 className="mb-3 text-[10px] font-semibold tracking-wide text-[#344054]">UPCOMING SESSIONS</h4>
       {[0, 1, 2].map((index) => (
         <div key={index} className="mb-2 rounded-xl bg-[#F7F8FC] px-3 py-2.5 last:mb-0">

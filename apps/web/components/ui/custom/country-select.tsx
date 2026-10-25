@@ -111,7 +111,7 @@ export function CountrySelect({
   }, [onChange]);
 
   const defaultTriggerStyles =
-    "flex h-11 w-full items-center justify-between rounded-lg border border-[#D0D5DD] bg-white px-4 text-left text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-[#FF5500] focus-visible:ring-2 focus-visible:ring-[#FF5500]/15 disabled:cursor-not-allowed disabled:opacity-50";
+    "flex h-11 w-full items-center justify-between rounded-lg border border-[#D0D5DD] bg-white px-4 text-left text-sm outline-none transition-[color,box-shadow] focus-visible:border-[#FF5500] focus-visible:ring-2 focus-visible:ring-[#FF5500]/15 disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <div ref={wrapperRef} className={`relative min-w-0 ${className}`}>
@@ -148,7 +148,7 @@ export function CountrySelect({
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-[var(--radix-popover-trigger-width)] p-0 z-50 bg-white border border-[#E4E7EC] shadow-md rounded-lg"
+          className="w-[var(--radix-popover-trigger-width)] p-0 z-50 bg-white border border-[#E4E7EC] rounded-lg"
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             inputRef.current?.focus();

@@ -65,7 +65,7 @@ export function ExploreHeader({
           type="button"
           onClick={onOpenFilters}
           className={cn(
-            "flex h-12 shrink-0 items-center gap-2 rounded-full border border-[#EAECF0] bg-white px-5 text-sm font-medium text-[#344054] shadow-2xs transition-all hover:bg-[#F9FAFB] hover:text-[#101828] active:scale-[0.98]",
+            "flex h-12 shrink-0 items-center gap-2 rounded-full border border-[#EAECF0] bg-white px-5 text-sm font-medium text-[#344054] transition-all hover:bg-[#F9FAFB] hover:text-[#101828] active:scale-[0.98]",
             isFiltersOpen && "lg:hidden",
           )}
         >

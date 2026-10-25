@@ -17,7 +17,7 @@ import {
   formInputClassName,
 } from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
-import { authService } from "@/services/auth";
+import { useChangePassword } from "@/services/auth/queries/auth.queries";
 import type { ApiError } from "@/services/api-client";
 
 const changePasswordSchema = z
@@ -50,6 +50,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function ChangePasswordForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const changePasswordMutation = useChangePassword();
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {},
   );
@@ -70,8 +71,8 @@ export function ChangePasswordForm() {
     }
 
     setIsSubmitting(true);
-    authService
-      .changePassword({
+    changePasswordMutation
+      .mutateAsync({
         currentPassword: result.data.currentPassword,
         password: result.data.password,
       })

@@ -5,9 +5,14 @@ import { ProfileUpdateModal } from "./profile-update-modal";
 
 interface ProfileCompletionCardProps {
   percentage?: number;
+  /** Optional subtitle; mentors see copy about how mentees find them */
+  description?: string;
 }
 
-export function ProfileCompletionCard({ percentage = 80 }: ProfileCompletionCardProps) {
+export function ProfileCompletionCard({
+  percentage = 80,
+  description = "Complete it to improve your search results.",
+}: ProfileCompletionCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Calculate SVG stroke parameters for circular progress gauge
@@ -18,7 +23,7 @@ export function ProfileCompletionCard({ percentage = 80 }: ProfileCompletionCard
 
   return (
     <>
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#FFDEC9] bg-[#FFF9F6] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3.5 shadow-2xs">
+      <div className="flex flex-col gap-4 rounded-2xl border border-[#FFDEC9] bg-[#FFF9F6] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3.5">
         <div className="flex items-center gap-4 sm:gap-5">
           {/* SVG Circular Progress Gauge */}
           <div className="relative flex size-16 sm:size-20 shrink-0 items-center justify-center">
@@ -56,7 +61,7 @@ export function ProfileCompletionCard({ percentage = 80 }: ProfileCompletionCard
               Your profile is {percentage}% complete
             </h3>
             <p className="text-xs font-normal text-[#475467] sm:text-sm">
-              Complete it to improve your search results.
+              {description}
             </p>
           </div>
         </div>
@@ -65,7 +70,7 @@ export function ProfileCompletionCard({ percentage = 80 }: ProfileCompletionCard
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF5500] px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-[#E04B00] active:scale-[0.98] sm:text-sm"
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF5500] px-5 py-2.5 text-xs font-semibold text-white transition-all hover:bg-[#E04B00] active:scale-[0.98] sm:text-sm"
         >
           <span className="text-white font-medium">Complete Profile</span>
         </button>

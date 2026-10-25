@@ -7,9 +7,11 @@ import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
-import { menteesService } from "@/services/mentees";
-import { uploadsService } from "@/services/uploads";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { useCreateMenteeProfile } from "@/services/mentees/queries/mentees.queries";
+import { useUpdateMentorProfile } from "@/services/mentors/queries/mentors.queries";
+import { useUploadAvatar } from "@/services/uploads/queries/uploads.queries";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
+import { authQueryKeys } from "@/services/auth/queries/query-keys";
 import {
   Select,
   SelectContent,
@@ -55,7 +57,13 @@ export function ProfileUpdateModal({
   onSuccess,
 }: ProfileUpdateModalProps) {
   const queryClient = useQueryClient();
+  const updateMentorProfileMutation = useUpdateMentorProfile();
+  const createMenteeProfileMutation = useCreateMenteeProfile();
+  const uploadAvatarMutation = useUploadAvatar();
   const { data: user, refetch } = useCurrentUser();
+  // Mentors and mentees share this modal; each saves to their own profile
+  const isMentor = user?.role === "MENTOR";
+  const savedProfile = isMentor ? user?.mentorProfile : user?.menteeProfile;
 
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
@@ -77,8 +85,8 @@ export function ProfileUpdateModal({
 
   // Prefill modal form with existing saved profile data when user data is available
   useEffect(() => {
-    if (isOpen && user?.menteeProfile) {
-      const profile = user.menteeProfile;
+    if (isOpen && savedProfile) {
+      const profile = savedProfile;
 
       // Normalize gender value casing to match SelectItem values ("Male" | "Female")
       if (profile.gender) {
@@ -101,7 +109,7 @@ export function ProfileUpdateModal({
         setIsImageFetching(false);
       }
     }
-  }, [isOpen, user]);
+  }, [isOpen, savedProfile]);
 
   if (!isOpen) return null;
 
@@ -136,12 +144,12 @@ export function ProfileUpdateModal({
     setIsSubmitting(true);
 
     try {
-      let avatarUrl = user?.menteeProfile?.avatarUrl || undefined;
+      let avatarUrl = savedProfile?.avatarUrl || undefined;
 
       // Upload profile image to Cloudinary if new image file selected
       if (avatarFile) {
         try {
-          const uploadRes = await uploadsService.uploadAvatar(avatarFile);
+          const uploadRes = await uploadAvatarMutation.mutateAsync(avatarFile);
           if (uploadRes?.url) {
             avatarUrl = uploadRes.url;
           }
@@ -150,15 +158,15 @@ export function ProfileUpdateModal({
         }
       }
 
-      await menteesService.createProfile({
-        gender,
-        location,
-        bio,
-        avatarUrl,
-      });
+      const payload = { gender, location, bio, avatarUrl };
+      if (isMentor) {
+        await updateMentorProfileMutation.mutateAsync(payload);
+      } else {
+        await createMenteeProfileMutation.mutateAsync(payload);
+      }
 
       toast.success("Profile updated successfully");
-      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me() });
       await refetch();
       onSuccess?.();
       onClose();
@@ -180,7 +188,7 @@ export function ProfileUpdateModal({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-[24px] bg-white p-7 shadow-2xl transition-all md:p-8 animate-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-[24px] bg-white p-7 transition-all md:p-8 animate-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"
@@ -233,7 +241,7 @@ export function ProfileUpdateModal({
               )}
 
               {/* White Background Badge with orange Vuesax GalleryAdd icon */}
-              <div className="absolute bottom-[2px] right-[2px] flex size-7 items-center justify-center rounded-full bg-white border border-[#EAECF0] shadow-2xs transition-transform group-hover:scale-110">
+              <div className="absolute bottom-[2px] right-[2px] flex size-7 items-center justify-center rounded-full bg-white border border-[#EAECF0] transition-transform group-hover:scale-110">
                 <GalleryAdd size="16" variant="Outline" color="#FF5500" />
               </div>
             </div>
@@ -278,7 +286,7 @@ export function ProfileUpdateModal({
               >
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border border-[#EAECF0] bg-white shadow-lg">
+              <SelectContent className="rounded-xl border border-[#EAECF0] bg-white">
                 <SelectItem value="Male" className="cursor-pointer py-2 text-sm text-[#101828]">
                   Male
                 </SelectItem>
@@ -345,7 +353,7 @@ export function ProfileUpdateModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3.5 text-base font-semibold text-white shadow-xs transition-all hover:bg-[#E04B00] active:scale-[0.98] disabled:opacity-50"
+            className="mt-2 flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3.5 text-base font-semibold text-white transition-all hover:bg-[#E04B00] active:scale-[0.98] disabled:opacity-50"
           >
             <span className="text-white font-medium">
               {isSubmitting ? "Updating..." : "Update Profile"}

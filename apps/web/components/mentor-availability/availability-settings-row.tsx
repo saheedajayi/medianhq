@@ -50,7 +50,7 @@ function SettingDropdown({
         >
           <Info size={14} className="text-[#98A2B3] cursor-pointer hover:text-[#667085]" />
           {showTooltip && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 w-44 rounded-lg bg-[#101828] p-2 text-center text-[11px] text-white shadow-lg pointer-events-none">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 w-44 rounded-lg bg-[#101828] p-2 text-center text-[11px] text-white pointer-events-none">
               {tooltip}
             </div>
           )}
@@ -69,7 +69,7 @@ function SettingDropdown({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 bottom-full mb-1 z-50 w-full rounded-xl border border-[#EAECF0] bg-white py-1 shadow-xl">
+        <div className="absolute left-0 bottom-full mb-1 z-50 w-full rounded-xl border border-[#EAECF0] bg-white py-1">
           {options.map((opt) => (
             <button
               key={opt}

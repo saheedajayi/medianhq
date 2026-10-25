@@ -16,6 +16,7 @@ import { SocialAuthButtons } from "./social-auth-buttons";
 import { getAuthDestination } from "@/lib/auth-routing";
 import { passwordSchema } from "@/lib/validations";
 import { authService } from "@/services/auth";
+import { useRegister } from "@/services/auth/queries/auth.queries";
 
 import type { ApiError } from "@/services/api-client";
 
@@ -46,6 +47,7 @@ export function SignupPage() {
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const registerMutation = useRegister();
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
   const [mounted, setMounted] = useState(false);
 
@@ -117,19 +119,19 @@ export function SignupPage() {
 
     const { email, firstName, lastName, password } = result.data;
 
-    authService
-      .register({
+    registerMutation
+      .mutateAsync({
         firstName,
         lastName,
         email,
         password,
       })
-      .then((response) => {
+      .then((data) => {
         toast.success("Account created", {
           description: "Please check your email to verify your account.",
         });
 
-        const retryParam = response.data.emailSent === false ? "&retryEmail=true" : "";
+        const retryParam = data.emailSent === false ? "&retryEmail=true" : "";
         router.push(`/email-verification?email=${encodeURIComponent(email)}${retryParam}`);
       })
       .catch((error) => {
@@ -230,7 +232,7 @@ export function SignupPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 h-12 w-full cursor-pointer rounded-full bg-[#FF5514] text-base font-medium text-white shadow-xs transition-all hover:bg-[#E84D12] active:scale-[0.99]"
+          className="mt-2 h-12 w-full cursor-pointer rounded-full bg-[#FF5514] text-base font-medium text-white transition-all hover:bg-[#E84D12] active:scale-[0.99]"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </Button>

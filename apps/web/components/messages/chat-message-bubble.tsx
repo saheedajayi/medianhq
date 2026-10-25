@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { MoreVertical, Edit2, Trash2, Flag } from "lucide-react";
 import type { Message } from "@/services/messages";
+import { MessageStatusIcon, formatMessageTime, getMessageStatus } from "./message-status";
 
 export interface ChatMessageBubbleProps {
   message: Message;
@@ -44,7 +45,7 @@ export function ChatMessageBubble({
       {/* Message Content Bubble */}
       <div className="relative max-w-[620px]">
         {isEditing ? (
-          <div className="flex flex-col gap-2 rounded-2xl rounded-tr-none border border-[#FF5514] bg-white p-3 shadow-md">
+          <div className="flex flex-col gap-2 rounded-2xl rounded-tr-none border border-[#FF5514] bg-white p-3">
             <textarea
               value={editContent}
               onChange={(e) => onEditContentChange(e.target.value)}
@@ -103,21 +104,24 @@ export function ChatMessageBubble({
         {!isCurrentUser && (
           <div className="relative size-5 shrink-0 rounded-full overflow-hidden">
             <Image
-              src={participantAvatar || "/mentors/mentor-1.png"}
-              alt="Mentor"
+              src={participantAvatar || "/default-avatar.svg"}
+              alt=""
               fill
               className="object-cover"
             />
           </div>
         )}
-        <span>{message.createdAt || "Today 17:45"}</span>
+        <span>{formatMessageTime(message.createdAt)}</span>
+        {message.isEdited && <span>· Edited</span>}
+        {/* Delivery ticks on your own messages, like WhatsApp */}
+        {isCurrentUser && <MessageStatusIcon status={getMessageStatus(message)} />}
       </div>
 
       {/* ── Context Menu Popover (Mentee - Message options.png) ── */}
       {showOptions && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`z-20 mt-1.5 rounded-xl border border-[#EAECF0] bg-white p-1 shadow-md animate-in fade-in zoom-in-95 duration-150 min-w-[130px] ${
+          className={`z-20 mt-1.5 rounded-xl border border-[#EAECF0] bg-white p-1 animate-in fade-in zoom-in-95 duration-150 min-w-[130px] ${
             isCurrentUser ? "self-end" : "self-start"
           }`}
         >

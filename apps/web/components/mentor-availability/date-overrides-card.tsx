@@ -81,7 +81,7 @@ export function DateOverridesCard({
   };
 
   return (
-    <div className="rounded-3xl border border-[#EAECF0] bg-white p-6 sm:p-8 shadow-xs h-full flex flex-col">
+    <div className="rounded-3xl border border-[#EAECF0] bg-white p-6 sm:p-8 h-full flex flex-col">
       {/* Header: Title only */}
       <div>
         <h3 className="text-xl font-medium text-[#101828]">
@@ -123,7 +123,7 @@ export function DateOverridesCard({
                       </button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg z-50"
+                      className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white z-50"
                       align="start"
                     >
                       <CalendarComponent
@@ -179,7 +179,7 @@ export function DateOverridesCard({
                   <button
                     type="button"
                     onClick={() => handleSaveEdit(ov.id)}
-                    className="rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#E04B12] transition-colors"
+                    className="rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-semibold text-white hover:bg-[#E04B12] transition-colors"
                   >
                     Save
                   </button>
@@ -226,7 +226,7 @@ export function DateOverridesCard({
 
         {/* Add Date Override Card Form (with shadcn Calendar) */}
         {isAdding && (
-          <div className="mt-4 rounded-2xl border border-[#EAECF0] bg-white p-5 space-y-4 shadow-sm animate-in fade-in zoom-in-95 duration-150">
+          <div className="mt-4 rounded-2xl border border-[#EAECF0] bg-white p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <h4 className="text-xs sm:text-sm font-bold text-[#101828]">
               Add date override
             </h4>
@@ -253,7 +253,7 @@ export function DateOverridesCard({
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg z-50"
+                  className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white z-50"
                   align="start"
                 >
                   <CalendarComponent
@@ -309,7 +309,7 @@ export function DateOverridesCard({
               <button
                 type="button"
                 onClick={handleConfirmAdd}
-                className="rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#E04B12] transition-colors"
+                className="rounded-full bg-[#FF5514] px-7 py-2.5 text-sm font-semibold text-white hover:bg-[#E04B12] transition-colors"
               >
                 Add override
               </button>

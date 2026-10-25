@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/base/button";
 import { Input } from "@/components/ui/base/input";
 import { Label } from "@/components/ui/base/label";
 import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
-import { authService } from "@/services/auth";
+import { useForgotPassword } from "@/services/auth/queries/auth.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -29,6 +29,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function ResetPasswordPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const forgotPasswordMutation = useForgotPassword();
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -53,8 +54,8 @@ export function ResetPasswordPage() {
 
     setIsSubmitting(true);
 
-    authService
-      .forgotPassword({ email })
+    forgotPasswordMutation
+      .mutateAsync({ email })
       .then(() => {
         toast.success("Reset link sent", {
           description: "Check your email for the reset link.",

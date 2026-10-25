@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -16,8 +17,6 @@ interface BookingSuccessModalProps {
   selectedPackage: SessionPackage;
   dateSlotDisplay: string;
   timeSlotDisplay: string;
-  transactionId?: string;
-  amountPaidDisplay?: string;
 }
 
 export function BookingSuccessModal({
@@ -27,11 +26,7 @@ export function BookingSuccessModal({
   selectedPackage,
   dateSlotDisplay,
   timeSlotDisplay,
-  transactionId = "#TXN-2026-0847",
-  amountPaidDisplay,
 }: BookingSuccessModalProps) {
-  const isPaid = selectedPackage.numericPrice > 0;
-
   // Google Calendar URL generator
   const handleAddToCalendar = () => {
     const title = encodeURIComponent(
@@ -47,36 +42,19 @@ export function BookingSuccessModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl">
+      <DialogContent className="max-w-md rounded-3xl bg-white p-6 sm:p-8">
         <DialogHeader className="text-center sm:text-center">
           <DialogTitle className="text-xl font-bold text-[#101828]">
-            Booking successful
+            Request sent
           </DialogTitle>
           <p className="mt-1 text-xs text-[#667085]">
-            A confirmation email and calendar invite have been sent to your email.
+            {`${mentorName} has 24 hours to accept. We'll email you as soon as they respond.`}
           </p>
         </DialogHeader>
 
         <div className="mt-4 flex flex-col gap-4 text-left">
           {/* Details Card */}
           <div className="flex flex-col gap-2 rounded-2xl bg-[#F9FAFB] p-4 text-xs">
-            {isPaid && (
-              <>
-                <div className="flex items-center justify-between py-1 text-[#475467]">
-                  <span>Transaction ID</span>
-                  <span className="font-semibold text-[#101828]">
-                    {transactionId}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1 text-[#475467]">
-                  <span>Amount paid</span>
-                  <span className="font-semibold text-[#101828]">
-                    {amountPaidDisplay || selectedPackage.price}
-                  </span>
-                </div>
-              </>
-            )}
-
             <div className="flex items-center justify-between py-1 text-[#475467]">
               <span>Session date</span>
               <span className="font-semibold text-[#101828]">
@@ -101,10 +79,17 @@ export function BookingSuccessModal({
 
           {/* Action Buttons */}
           <div className="mt-2 flex flex-col gap-2.5">
+            <Link
+              href="/mentee/booking-session"
+              className="flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white transition-colors hover:bg-[#E04B00]"
+            >
+              View in Bookings
+            </Link>
+
             <button
               type="button"
               onClick={handleAddToCalendar}
-              className="flex w-full items-center justify-center gap-2 rounded-full border border-[#EAECF0] bg-white py-3 text-xs font-semibold text-[#344054] shadow-2xs transition-colors hover:bg-[#F9FAFB]"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-[#EAECF0] bg-white py-3 text-xs font-semibold text-[#344054] transition-colors hover:bg-[#F9FAFB]"
             >
               <Calendar className="size-4 text-[#475467]" />
               <span>Add to Calendar</span>
@@ -113,7 +98,7 @@ export function BookingSuccessModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full rounded-full bg-[#FF5500] py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#E04B00]"
+              className="w-full text-center text-xs font-medium text-[#667085] hover:text-[#101828] py-1"
             >
               Back to profile
             </button>

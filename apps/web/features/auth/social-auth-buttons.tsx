@@ -70,7 +70,7 @@ export function SocialAuthButtons({ mode = "signin" }: SocialAuthButtonsProps) {
         type="button"
         disabled={loading !== null}
         onClick={() => handleClick("linkedin")}
-        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading === "linkedin" ? <Spinner /> : <LinkedInIcon className="size-5 shrink-0" />}
         <span>{loading === "linkedin" ? "Redirecting…" : `${prefix} with LinkedIn`}</span>
@@ -79,7 +79,7 @@ export function SocialAuthButtons({ mode = "signin" }: SocialAuthButtonsProps) {
         type="button"
         disabled={loading !== null}
         onClick={() => handleClick("google")}
-        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] shadow-xs transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex h-11 cursor-pointer items-center justify-center gap-3 rounded-full border border-[#D0D5DD] bg-white text-sm font-medium text-[#344054] transition-all hover:border-[#98A2B3] hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading === "google" ? <Spinner /> : <GoogleIcon className="size-5 shrink-0" />}
         <span>{loading === "google" ? "Redirecting…" : `${prefix} with Google`}</span>

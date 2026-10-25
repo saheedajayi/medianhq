@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState, useRef } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { menteesService } from "@/services/mentees";
+import { useCreateMenteeProfile } from "@/services/mentees/queries/mentees.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -24,8 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { taxonomyService } from "@/services/taxonomy";
+import { useCreateRole, useIndustries } from "@/services/taxonomy/queries/taxonomy.queries";
 import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries";
 
 const ALLOWED_INDUSTRIES = ["Finance", "Technology", "Business", "Consulting"];
@@ -58,17 +57,10 @@ export function MenteeOnboardingPage() {
   const [timeframe, setTimeframe] = useState("");
   const otherInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { data: taxonomyData, refetch: refetchTaxonomy } = useQuery({
-    queryKey: ["taxonomy"],
-    queryFn: taxonomyService.getIndustries,
-  });
+  const { data: taxonomyData } = useIndustries();
 
-  const createRoleMutation = useMutation({
-    mutationFn: (roleName: string) => taxonomyService.createRole(industry, roleName),
-    onSuccess: () => {
-      refetchTaxonomy();
-    }
-  });
+  const createRoleMutation = useCreateRole();
+  const createMenteeProfileMutation = useCreateMenteeProfile();
 
   const INDUSTRIES = ALLOWED_INDUSTRIES;
   const INDUSTRY_ROLES: Record<string, string[]> = {
@@ -130,8 +122,8 @@ export function MenteeOnboardingPage() {
       return g;
     });
 
-    menteesService
-      .createProfile({
+    createMenteeProfileMutation
+      .mutateAsync({
         goals: finalGoals,
         goalDescription,
         currentRole,
@@ -287,7 +279,7 @@ export function MenteeOnboardingPage() {
               onValueChange={setCurrentRole}
               onCreate={(val) => {
                 setCurrentRole(val);
-                createRoleMutation.mutate(val);
+                createRoleMutation.mutate({ industryName: industry, roleName: val });
               }}
               placeholder="Select a role..."
               emptyText={industry ? "No role found." : "Please select an industry first."}

@@ -91,13 +91,9 @@ export const metadata: Metadata = {
   authors: [{ name: "MedianHQ" }],
   creator: "MedianHQ",
   publisher: "MedianHQ",
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "/",
     siteName: siteConfig.name,
     title: siteConfig.title,
     description: siteConfig.socialDescription,

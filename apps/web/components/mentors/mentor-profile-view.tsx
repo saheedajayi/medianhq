@@ -1,90 +1,104 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { defaultMentorProfile, mentorsDirectory } from "./mock-profile-data";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { MentorHeroCard } from "./mentor-hero-card";
 import { MentorProfileTabs } from "./mentor-profile-tabs";
 import { MentorBookingPanel } from "./mentor-booking-panel";
+import { MentorNotFoundState } from "./mentor-not-found-state";
+import { mapApiMentorProfile } from "./map-mentor-profile";
+import { MentorProfileSkeleton } from "./mentor-profile-skeleton";
 import { ConfirmSessionModal } from "./modals/confirm-session-modal";
 import { PaymentConfirmationModal } from "./modals/payment-confirmation-modal";
 import { BookingSuccessModal } from "./modals/booking-success-modal";
 import { AvailableDateSlot, MentorDetailProfile, SessionPackage } from "./types";
-import { mentorsService } from "@/services/mentors";
-import { bookingsService } from "@/services/bookings";
+import { useMentor } from "@/services/mentors/queries/mentors.queries";
+import {
+  useCreateBooking,
+  useMentorAvailability,
+  useMyBookings,
+} from "@/services/bookings/queries/bookings.queries";
+import { getSlotIso, toAvailableDateSlots } from "@/components/bookings/available-slots";
+
 
 interface MentorProfileViewProps {
   mentorId: string;
 }
 
+const EMPTY_DATE_SLOT: AvailableDateSlot = {
+  dateString: "",
+  dayOfWeek: "",
+  dayNumber: "",
+  month: "",
+  slotsCount: 0,
+  times: [],
+};
+
+const EMPTY_PACKAGE: SessionPackage = {
+  id: "",
+  title: "",
+  durationMinutes: 30,
+  price: "Free",
+  numericPrice: 0,
+  description: "",
+};
+
 export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
-  const fallbackMentor = mentorsDirectory[mentorId] || {
-    ...defaultMentorProfile,
-    id: mentorId,
-  };
+  const { data, isLoading } = useMentor(mentorId);
 
-  const [mentor, setMentor] = useState<MentorDetailProfile>(fallbackMentor);
+  const mentor = useMemo<MentorDetailProfile | null>(
+    () => (data?.id ? mapApiMentorProfile(data) : null),
+    [data]
+  );
 
-  useEffect(() => {
-    let isMounted = true;
-    mentorsService
-      .getById(mentorId)
-      .then((res: any) => {
-        if (!isMounted || !res) return;
-        setMentor((prev) => ({
-          ...prev,
-          id: res.id || prev.id,
-          name: res.name || prev.name,
-          role: res.role || prev.role,
-          company: res.company || prev.company,
-          location: res.location || prev.location,
-          sessionCount: res.sessionCount ?? prev.sessionCount,
-          rating: res.rating ?? prev.rating,
-          reviewCount: res.reviewCount ?? prev.reviewCount,
-          bio: res.bio || prev.bio,
-          avatarUrl: res.avatarUrl || prev.avatarUrl,
-          socials: {
-            ...prev.socials,
-            linkedin: res.linkedinUrl || prev.socials.linkedin,
-          },
-          reviews: Array.isArray(res.reviews) && res.reviews.length > 0 ? res.reviews : prev.reviews,
-        }));
-      })
-      .catch((err) => {
-        console.warn("Could not fetch mentor by id from API, using fallback data:", err);
-      });
+  if (isLoading) {
+    return <MentorProfileSkeleton />;
+  }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [mentorId]);
+  if (!mentor) {
+    return <MentorNotFoundState />;
+  }
 
-  const initialPackage = mentor.packages[0] || defaultMentorProfile.packages[0]!;
-  const emptyDateSlot: AvailableDateSlot = {
-    dateString: "",
-    dayOfWeek: "",
-    dayNumber: "",
-    month: "",
-    slotsCount: 0,
-    times: [],
-  };
-  const initialDate =
-    mentor.availableDates && mentor.availableDates.length > 0
-      ? mentor.availableDates[0]!
-      : emptyDateSlot;
-  const initialTime = initialDate.times[0] || "";
+  return <MentorProfileContent key={mentor.id} mentor={mentor} />;
+}
+
+function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
+  const initialPackage = mentor.packages[0] || EMPTY_PACKAGE;
 
   // State management
   const [activeTab, setActiveTab] = useState<"profile" | "reviews">("profile");
   const [selectedPackage, setSelectedPackage] = useState<SessionPackage>(initialPackage);
-  const [selectedDate, setSelectedDate] = useState<AvailableDateSlot>(initialDate);
-  const [selectedTime, setSelectedTime] = useState<string>(initialTime);
+  const [selectedDate, setSelectedDate] = useState<AvailableDateSlot>(EMPTY_DATE_SLOT);
+  const [selectedTime, setSelectedTime] = useState<string>("");
+
+  // Open slots depend on the session length, so they reload when the package changes
+  const { data: availableDays, isLoading: isLoadingDates } = useMentorAvailability(
+    mentor.mentorUserId,
+    selectedPackage.durationMinutes
+  );
+  const availableDates = useMemo(() => toAvailableDateSlots(availableDays), [availableDays]);
+
+  // Keep the picked date and time valid as slots load or get taken
+  useEffect(() => {
+    const stillOpen = availableDates.find((d) => d.dateString === selectedDate.dateString);
+    if (stillOpen && stillOpen.times.includes(selectedTime)) {
+      if (stillOpen !== selectedDate) setSelectedDate(stillOpen);
+      return;
+    }
+    const nextDate = stillOpen ?? availableDates[0] ?? EMPTY_DATE_SLOT;
+    setSelectedDate(nextDate);
+    setSelectedTime(nextDate.times[0] ?? "");
+  }, [availableDates, selectedDate, selectedTime]);
 
   // Modal states
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
+  // The slot that was booked: booking refreshes the open slots, which moves the picker on
+  const [bookedSlot, setBookedSlot] = useState<{ date: string; time: string } | null>(null);
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+  const createBookingMutation = useCreateBooking();
 
   // Formatted date string for modals
   const dateSlotDisplay = selectedDate.dateString
@@ -98,6 +112,31 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
   const dateTimeDisplay = `${dateSlotDisplay} - ${selectedTime} WAT`;
 
   // Step 1: User completes session goals & submits
+  // A mentee can't book the same session again until their current one has ended
+  const { data: myBookings } = useMyBookings();
+  const activeBooking = (myBookings ?? []).find(
+    (b) =>
+      (b.tab === "upcoming" || b.tab === "pending") &&
+      b.mentorId === mentor.mentorUserId &&
+      (b.mentorSessionId ?? null) === (selectedPackage.mentorSessionId ?? null)
+  );
+  const existingBooking = activeBooking
+    ? {
+        when: activeBooking.fullDateTime,
+        href: `/mentee/booking-session?tab=${activeBooking.tab}`,
+      }
+    : null;
+
+  // Validate the slot when "Book Session" is clicked, before asking for goals
+  const handleProceedToConfirm = () => {
+    if (existingBooking) return;
+    if (!getSlotIso(selectedDate, selectedTime)) {
+      toast.error("Pick a time", { description: "Choose one of the open slots to continue." });
+      return;
+    }
+    setIsConfirmOpen(true);
+  };
+
   const handleConfirmSessionSubmit = async (data: {
     scope: string;
     goals: string;
@@ -109,36 +148,40 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
       setSelectedPackage(data.packageToUse);
     }
 
+    // Checked before the confirm modal opens; this guards against the slot list changing meanwhile
+    const startsAt = getSlotIso(selectedDate, selectedTime);
+    if (!startsAt) {
+      setIsConfirmOpen(false);
+      toast.error("Pick a time", { description: "Choose one of the open slots to continue." });
+      return;
+    }
+
     setIsSubmittingBooking(true);
     try {
-      const startsAtIso = selectedDate.dateString
-        ? new Date(`${selectedDate.dateString}T14:00:00Z`).toISOString()
-        : new Date(Date.now() + 86400000).toISOString();
-
-      const res = await bookingsService.create({
-        mentorId: mentor.id,
-        startsAt: startsAtIso,
-        durationMinutes: pkg.durationMinutes || 30,
-        title: pkg.title,
-        price: data.isFree ? 0 : pkg.numericPrice,
+      const res = await createBookingMutation.mutateAsync({
+        mentorId: mentor.mentorUserId ?? mentor.id,
+        mentorSessionId: pkg.mentorSessionId ?? undefined,
+        startsAt,
         notes: data.scope,
         goals: data.goals ? [data.goals] : [],
       });
 
-      if (res?.booking?.id) {
-        setCreatedBookingId(res.booking.id);
+      setCreatedBookingId(res.booking?.id ?? null);
+      setBookedSlot({ date: dateSlotDisplay, time: selectedTime });
+      setIsConfirmOpen(false);
+      // Free sessions go straight to the mentor; paid ones go to checkout first
+      if (pkg.numericPrice > 0) {
+        setIsPaymentOpen(true);
+      } else {
+        setIsSuccessOpen(true);
       }
     } catch (err) {
-      console.warn("Could not save booking to backend API, continuing in preview mode:", err);
+      const message = (err as { message?: string })?.message;
+      toast.error("We couldn't book that session", {
+        description: message || "Please try again, or pick another time.",
+      });
     } finally {
       setIsSubmittingBooking(false);
-      setIsConfirmOpen(false);
-
-      if (data.isFree) {
-        setIsSuccessOpen(true);
-      } else {
-        setIsPaymentOpen(true);
-      }
     }
   };
 
@@ -164,7 +207,9 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
           <div className="sticky top-6">
             <MentorBookingPanel
               packages={mentor.packages}
-              availableDates={mentor.availableDates}
+              availableDates={availableDates}
+              isLoadingDates={isLoadingDates}
+              existingBooking={existingBooking}
               groupSessions={mentor.groupSessions}
               selectedPackage={selectedPackage}
               onSelectPackage={setSelectedPackage}
@@ -172,7 +217,7 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
               onSelectDate={setSelectedDate}
               selectedTime={selectedTime}
               onSelectTime={setSelectedTime}
-              onProceedToConfirm={() => setIsConfirmOpen(true)}
+              onProceedToConfirm={handleProceedToConfirm}
             />
           </div>
         </div>
@@ -186,6 +231,7 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
         packages={mentor.packages}
         selectedPackage={selectedPackage}
         dateTimeDisplay={dateTimeDisplay}
+        isLoading={isSubmittingBooking}
         onConfirm={handleConfirmSessionSubmit}
       />
 
@@ -195,7 +241,7 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
         onClose={() => setIsPaymentOpen(false)}
         mentorName={mentor.name}
         selectedPackage={selectedPackage}
-        dateTimeDisplay={dateTimeDisplay}
+        dateTimeDisplay={bookedSlot ? `${bookedSlot.date} - ${bookedSlot.time} WAT` : dateTimeDisplay}
         bookingId={createdBookingId || undefined}
         onPaySuccess={handlePaymentSuccess}
       />
@@ -206,10 +252,8 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
         onClose={() => setIsSuccessOpen(false)}
         mentorName={mentor.name}
         selectedPackage={selectedPackage}
-        dateSlotDisplay={dateSlotDisplay}
-        timeSlotDisplay={selectedTime}
-        transactionId="#TXN-2026-0847"
-        amountPaidDisplay={`₦${(selectedPackage.numericPrice + Math.round(selectedPackage.numericPrice * 0.1)).toLocaleString()}`}
+        dateSlotDisplay={bookedSlot?.date ?? dateSlotDisplay}
+        timeSlotDisplay={bookedSlot?.time ?? selectedTime}
       />
     </div>
   );

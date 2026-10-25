@@ -152,7 +152,7 @@ export function ProgressiveLocationSelect({
       : `Search states in ${selectedCountry?.name ?? "country"}...`;
 
   const defaultTriggerStyles =
-    "flex h-11 w-full items-center justify-between rounded-xl border border-[#D0D5DD] bg-white px-4 text-left text-sm shadow-2xs outline-none transition-all focus-visible:border-[#FF5500] focus-visible:ring-2 focus-visible:ring-[#FF5500]/15 disabled:cursor-not-allowed disabled:opacity-50";
+    "flex h-11 w-full items-center justify-between rounded-xl border border-[#D0D5DD] bg-white px-4 text-left text-sm outline-none transition-all focus-visible:border-[#FF5500] focus-visible:ring-2 focus-visible:ring-[#FF5500]/15 disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <div ref={wrapperRef} className={`relative min-w-0 ${className}`}>
@@ -193,7 +193,7 @@ export function ProgressiveLocationSelect({
 
         <PopoverContent
           align="start"
-          className="w-[var(--radix-popover-trigger-width)] min-w-[300px] max-w-[400px] p-0 z-50 bg-white border border-[#E4E7EC] shadow-xl rounded-2xl overflow-hidden"
+          className="w-[var(--radix-popover-trigger-width)] min-w-[300px] max-w-[400px] p-0 z-50 bg-white border border-[#E4E7EC] rounded-2xl overflow-hidden"
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             inputRef.current?.focus();
@@ -208,7 +208,7 @@ export function ProgressiveLocationSelect({
                 onClick={() => setActiveTab("country")}
                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1 transition-colors ${
                   activeTab === "country"
-                    ? "bg-[#FF5500] text-white font-semibold shadow-xs"
+                    ? "bg-[#FF5500] text-white font-semibold"
                     : selectedCountry
                     ? "bg-[#F2F4F7] text-[#344054] hover:bg-[#E4E7EC]"
                     : "text-[#98A2B3]"
@@ -226,7 +226,7 @@ export function ProgressiveLocationSelect({
                 onClick={() => selectedCountry && setActiveTab("state")}
                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1 transition-colors ${
                   activeTab === "state"
-                    ? "bg-[#FF5500] text-white font-semibold shadow-xs"
+                    ? "bg-[#FF5500] text-white font-semibold"
                     : selectedState
                     ? "bg-[#F2F4F7] text-[#344054] hover:bg-[#E4E7EC]"
                     : "text-[#98A2B3] cursor-not-allowed"

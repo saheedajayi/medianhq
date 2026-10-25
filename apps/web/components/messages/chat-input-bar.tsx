@@ -38,7 +38,7 @@ export function ChatInputBar({
             type="button"
             onClick={onSend}
             disabled={isSending}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#FF5514] text-white shadow-2xs transition-transform hover:bg-[#E04B12] active:scale-95 disabled:opacity-50"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#FF5514] text-white transition-transform hover:bg-[#E04B12] active:scale-95 disabled:opacity-50"
             aria-label="Send message"
           >
             <AngledPaperPlaneIcon className="size-4 text-white" />

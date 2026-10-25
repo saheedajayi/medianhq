@@ -13,6 +13,10 @@ const MENTEE_PROFILE_SELECT = {
 const MENTOR_PROFILE_SELECT = {
   id: true,
   status: true,
+  gender: true,
+  location: true,
+  bio: true,
+  avatarUrl: true,
 };
 
 @Injectable()

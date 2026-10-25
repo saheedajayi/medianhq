@@ -15,6 +15,8 @@ export interface MentorReview {
 
 export interface SessionPackage {
   id: string;
+  /** The mentor's session to book; null for the standard 1:1 at profile price */
+  mentorSessionId?: string | null;
   title: string;
   durationMinutes: number;
   price: string; // "Free" or "₦20,000"
@@ -29,6 +31,8 @@ export interface AvailableDateSlot {
   month: string; // "Jun"
   slotsCount: number;
   times: string[]; // ["3:00PM", "3:30PM", "4:00PM", "4:30PM"]
+  /** Exact ISO start for each entry in times, when the dates come from the API */
+  slotIsos?: string[];
 }
 
 export interface GroupSessionEvent {
@@ -42,6 +46,8 @@ export interface GroupSessionEvent {
 
 export interface MentorDetailProfile {
   id: string;
+  /** The mentor's user ID, which bookings and availability use */
+  mentorUserId?: string;
   name: string;
   role: string;
   company: string;

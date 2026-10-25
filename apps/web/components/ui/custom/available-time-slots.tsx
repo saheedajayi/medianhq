@@ -87,7 +87,7 @@ export function AvailableTimeSlots({
               className={cn(
                 "flex h-[59px] w-full items-center justify-center rounded-[12px] border text-sm font-bold tracking-tight transition-all active:scale-[0.98]",
                 isSelected
-                  ? "border-[#FFCAB6] bg-[#FDF9F6] text-[#FF5514] shadow-xs ring-1 ring-[#FFCAB6]"
+                  ? "border-[#FFCAB6] bg-[#FDF9F6] text-[#FF5514] ring-1 ring-[#FFCAB6]"
                   : "border-[#F2F2F7] bg-white text-[#101828] hover:border-[#FFCAB6] hover:bg-[#FFFBF8]"
               )}
             >

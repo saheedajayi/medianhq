@@ -15,7 +15,7 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
   const isFeatured = showFeaturedBadge ?? mentor.isFeatured;
 
   return (
-    <div className="relative flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="relative flex flex-col justify-between rounded-[20px] border border-[#F2F2F7] bg-white p-6 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F7F8FB]">
       {/* Top Right "Featured" Badge */}
       {isFeatured && (
         <span className="absolute top-5 right-5 inline-flex items-center rounded-full bg-[#EDE6E6] px-3 py-0.5 text-xs font-medium text-[#4B1210]">
@@ -26,9 +26,9 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
       {/* Main Card Body */}
       <div className="flex flex-col items-center text-center">
         {/* Centered Avatar */}
-        <div className="relative mb-3.5 size-[110px] overflow-hidden rounded-full border-2 border-white shadow-xs">
+        <div className="relative mb-3.5 size-[110px] overflow-hidden rounded-full border-2 border-white">
           <Image
-            src={mentor.avatarUrl || "/mentor-avatar.png"}
+            src={mentor.avatarUrl || "/default-avatar.svg"}
             alt={mentor.name}
             fill
             sizes="120px"
@@ -46,10 +46,12 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
 
         {/* Metadata Row: Location, Sessions, Rating */}
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:text-[13px] text-[#475467]">
-          <div className="flex items-center gap-1">
-            <Location size="15" variant="Outline" color="#667085" className="shrink-0" />
-            <span>{mentor.location}</span>
-          </div>
+          {mentor.location && (
+            <div className="flex items-center gap-1">
+              <Location size="15" variant="Outline" color="#667085" className="shrink-0" />
+              <span>{mentor.location}</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-1">
             <Messages size="15" variant="Linear" color="#667085" className="shrink-0" />
@@ -59,7 +61,9 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
           <div className="flex items-center gap-1">
             <Star className="size-3.5 fill-[#FDB022] text-[#FDB022] shrink-0" />
             <span>
-              {mentor.rating} ({mentor.reviewCount} Reviews)
+              {mentor.reviewCount > 0
+                ? `${mentor.rating} (${mentor.reviewCount} Reviews)`
+                : "New mentor"}
             </span>
           </div>
         </div>
@@ -89,18 +93,20 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
             <span className="text-xs font-semibold text-[#FF5500]">
               Next availability
             </span>
-            <span className="rounded-full bg-[#FFEEE8] px-2 py-0.5 text-[11px] font-medium text-[#FF5500]">
-              {mentor.nextAvailability.relative}
-            </span>
+            {mentor.nextAvailability && (
+              <span className="rounded-full bg-[#FFEEE8] px-2 py-0.5 text-[11px] font-medium text-[#FF5500]">
+                {mentor.nextAvailability.relative}
+              </span>
+            )}
           </div>
           <span className="mt-0.5 text-xs text-[#667085]">
-            {mentor.nextAvailability.formattedDate}
+            {mentor.nextAvailability?.formattedDate ?? "No open times this fortnight"}
           </span>
         </div>
 
         <Link
           href={`/mentors/${mentor.id}`}
-          className="inline-flex items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2 text-sm font-medium !text-white shadow-2xs transition-all hover:bg-[#E04B00] active:scale-[0.98]"
+          className="inline-flex items-center justify-center rounded-full bg-[#FF5500] px-4.5 py-2 text-sm font-medium !text-white transition-all hover:bg-[#E04B00] active:scale-[0.98]"
         >
           View Profile
         </Link>

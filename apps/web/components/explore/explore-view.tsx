@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { mockExploreMentors } from "./mock-mentors";
+import { useMemo, useState } from "react";
 import {
   ExploreCategory,
   ExploreFilterState,
@@ -13,61 +12,33 @@ import { CategoryPills } from "./category-pills";
 import { FeaturedMentorsSection } from "./featured-mentors-section";
 import { MentorsGridSection } from "./mentors-grid-section";
 import { FiltersDialog } from "./filters-dialog";
-import { SearchNormal } from "iconsax-react";
-import { mentorsService } from "@/services/mentors";
+import { Global, SearchNormal } from "iconsax-react";
+import { useExploreMentors } from "@/services/mentors/queries/mentors.queries";
+import { applyMentorFilters, countActiveFilters } from "./filter-options";
+import { ActiveFilterChips } from "./active-filter-chips";
+import { MentorCardGridSkeleton } from "./mentor-card-skeleton";
 
-interface ExploreViewProps {
-  initialMentors?: ExploreMentor[];
-}
 
-export function ExploreView({
-  initialMentors = mockExploreMentors,
-}: ExploreViewProps) {
-  const [mentors, setMentors] = useState<ExploreMentor[]>(initialMentors);
-  const [isLoading, setIsLoading] = useState(false);
+export function ExploreView() {
+  const { data: apiMentors, isLoading } = useExploreMentors({ limit: 50 });
 
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    mentorsService
-      .explore({ limit: 50 })
-      .then((res: any) => {
-        if (!isMounted) return;
-        const apiMentors = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
-        if (apiMentors.length > 0) {
-          setMentors(apiMentors);
-        }
-      })
-      .catch((err) => {
-        console.warn("Could not load mentors from backend API, using fallback data:", err);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+  const mentors = useMemo<ExploreMentor[]>(
+    () => (Array.isArray(apiMentors) ? (apiMentors as ExploreMentor[]) : []),
+    [apiMentors]
+  );
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
   const [filters, setFilters] = useState<ExploreFilterState>({
     search: "",
     category: "All",
     sortBy: "relevance",
-    priceType: "all",
-    minRating: undefined,
-    locations: undefined,
   });
 
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // Count active non-default filters (excluding search and category)
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.priceType && filters.priceType !== "all") count++;
-    if (filters.minRating !== undefined) count++;
-    if (filters.locations?.length) count++;
-    return count;
-  }, [filters]);
+  const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
+  const isFiltering =
+    activeFilterCount > 0 || filters.category !== "All" || filters.search.trim() !== "";
 
   // Filtered dataset
   const filteredMentors = useMemo(() => {
@@ -91,24 +62,10 @@ export function ExploreView({
       result = result.filter((m) => m.category === filters.category);
     }
 
-    // 3. Price type filter
-    if (filters.priceType === "free") {
-      result = result.filter((m) => m.price?.toLowerCase() === "free");
-    } else if (filters.priceType === "paid") {
-      result = result.filter((m) => m.price && m.price.toLowerCase() !== "free");
-    }
+    // 3. Filters panel (expertise, location, price, availability, session type, rating, experience, gender)
+    result = applyMentorFilters(result, filters);
 
-    // 4. Rating filter
-    if (filters.minRating !== undefined) {
-      result = result.filter((m) => m.rating >= (filters.minRating ?? 0));
-    }
-
-    // 5. Location filter
-    if (filters.locations?.length) {
-      result = result.filter((m) => filters.locations!.some((location) => m.location.toLowerCase().includes(location.toLowerCase())));
-    }
-
-    // 6. Sorting
+    // 4. Sorting
     switch (filters.sortBy) {
       case "rating":
         result.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
@@ -144,10 +101,12 @@ export function ExploreView({
       search: "",
       category: "All",
       sortBy: "relevance",
-      priceType: "all",
-      minRating: undefined,
-      locations: undefined,
     });
+  };
+
+  // Chips' "Clear all" only undoes the Filters dialog, keeping the tab, search and sort
+  const handleClearPanelFilters = () => {
+    setFilters((prev) => ({ search: prev.search, category: prev.category, sortBy: prev.sortBy }));
   };
 
   return (
@@ -182,12 +141,33 @@ export function ExploreView({
             }
           />
 
-          {/* When no mentors match, show empty state message, OTHER MENTORS carousel, and fallback grid */}
-          {filteredMentors.length === 0 ? (
+          <ActiveFilterChips
+            filters={filters}
+            onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+            onClearAll={handleClearPanelFilters}
+          />
+
+          {/* Loading, no mentors at all, no match, or results */}
+          {isLoading ? (
+            <MentorCardGridSkeleton className="gap-6" />
+          ) : mentors.length === 0 ? (
+            /* No mentors on Median yet: nothing to search or filter */
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF4ED]">
+                <Global size="28" variant="Bulk" color="#FF5500" />
+              </div>
+              <h3 className="mt-3 text-lg font-semibold text-[#101828]">
+                No mentors yet
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-[#667085]">
+                Mentors will appear here as they join Median. Check back soon.
+              </p>
+            </div>
+          ) : filteredMentors.length === 0 ? (
             <div className="flex flex-col gap-8">
-              {/* Empty search notice */}
+              {/* No match for the current search, category or filters */}
               <div className="flex flex-col items-center justify-center py-4 text-center">
-                <div className="flex size-14 items-center justify-center rounded-full bg-[#FFEEE8]">
+                <div className="flex size-14 items-center justify-center rounded-full bg-[#FFF4ED]">
                   <SearchNormal size="28" variant="Bulk" color="#FF5500" />
                 </div>
                 <h3 className="mt-3 text-lg font-semibold text-[#101828]">
@@ -196,34 +176,28 @@ export function ExploreView({
                 <p className="mt-1 max-w-sm text-sm text-[#667085]">
                   Try adjusting your filters or search terms<br />to find the right mentor for you.
                 </p>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="mt-4 rounded-full bg-[#FF5500] px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#E04B00]"
+                >
+                  Reset Filters
+                </button>
               </div>
 
-              {/* OTHER MENTORS Carousel */}
-              <FeaturedMentorsSection mentors={featuredMentors} title="OTHER MENTORS" />
-
-              {/* Fallback All Mentors Grid */}
-              <MentorsGridSection
-                mentors={initialMentors}
-                totalCount={initialMentors.length}
-                sortBy={filters.sortBy}
-                onSortChange={(sortBy: SortOption) =>
-                  setFilters((prev) => ({ ...prev, sortBy }))
-                }
-                onResetFilters={handleResetFilters}
-                isFiltersOpen={isFiltersOpen}
-              />
+              {/* Suggestions so the page isn't a dead end (not a result list) */}
+              <FeaturedMentorsSection mentors={featuredMentors} title="YOU MIGHT ALSO LIKE" />
             </div>
           ) : (
             <>
-              {/* Featured Mentors Section (shown on "All" view without active text search) */}
-              {filters.category === "All" && !filters.search.trim() && (
-                <FeaturedMentorsSection mentors={featuredMentors} />
-              )}
+              {/* Featured mentors aren't filtered, so only show them when nothing is narrowing the list */}
+              {!isFiltering && <FeaturedMentorsSection mentors={featuredMentors} />}
 
               {/* Mentors Grid Section */}
               <MentorsGridSection
                 mentors={filteredMentors}
                 totalCount={filteredMentors.length}
+                outOf={isFiltering ? mentors.length : undefined}
                 sortBy={filters.sortBy}
                 onSortChange={(sortBy: SortOption) =>
                   setFilters((prev) => ({ ...prev, sortBy }))
@@ -245,10 +219,9 @@ export function ExploreView({
           }
           onResetFilters={() =>
             setFilters((prev) => ({
-              ...prev,
-              priceType: "all",
-              minRating: undefined,
-              locations: undefined,
+              search: prev.search,
+              category: prev.category,
+              sortBy: prev.sortBy,
             }))
           }
         />

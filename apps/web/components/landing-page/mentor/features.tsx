@@ -45,10 +45,10 @@ export function MentorFeatures() {
               What you get when you <br /> join median
             </h2>
           </div>
-          <div className="absolute top-[3%] left-[4%] z-10 h-[275px] w-[245px] overflow-hidden rounded-[20px] shadow-sm">
+          <div className="absolute top-[3%] left-[4%] z-10 h-[275px] w-[245px] overflow-hidden rounded-[20px]">
             <Image src="/landing-page/mentor-call.png" alt="Mentor meeting with a mentee" fill sizes="245px" className="object-cover" />
           </div>
-          <div className="absolute right-[16%] bottom-[4%] z-10 h-[280px] w-[250px] overflow-hidden rounded-[20px] shadow-sm">
+          <div className="absolute right-[16%] bottom-[4%] z-10 h-[280px] w-[250px] overflow-hidden rounded-[20px]">
             <Image src="/landing-page/mentor-mentoring.png" alt="Mentor guiding a professional" fill sizes="250px" className="object-cover" />
           </div>
           {benefits.map((benefit) => <LandingBenefitCard key={benefit.title} title={benefit.title} description={benefit.description} color={benefit.color} className={benefit.position} />)}

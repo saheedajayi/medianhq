@@ -67,7 +67,7 @@ export function TimezoneDropdown({ value, onChange }: TimezoneDropdownProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-80 sm:w-96 rounded-2xl border border-[#EAECF0] bg-white p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 z-50 mt-2 w-80 sm:w-96 rounded-2xl border border-[#EAECF0] bg-white p-3 animate-in fade-in zoom-in-95 duration-150">
           {/* Search bar inside dropdown */}
           <div className="relative mb-2">
             <Search

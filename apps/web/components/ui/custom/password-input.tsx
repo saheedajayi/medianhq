@@ -148,7 +148,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           side="bottom"
           align="start"
           sideOffset={6}
-          className="w-72 p-3.5 rounded-xl border border-slate-200 bg-white/95 backdrop-blur-xs shadow-lg z-50 text-xs"
+          className="w-72 p-3.5 rounded-xl border border-slate-200 bg-white/95 backdrop-blur-xs z-50 text-xs"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
         >

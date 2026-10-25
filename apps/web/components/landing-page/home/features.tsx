@@ -35,7 +35,7 @@ export function LandingFeatures() {
           {/* 3. Top-Left: AI Image & Card */}
           {/* AI Image */}
           <div
-            className="absolute left-[4%] top-[3%] z-10 overflow-hidden rounded-[20px] shadow-sm"
+            className="absolute left-[4%] top-[3%] z-10 overflow-hidden rounded-[20px]"
             style={{ width: "245px", height: "275px" }}
           >
             <Image
@@ -70,7 +70,7 @@ export function LandingFeatures() {
           {/* 6. Bottom-Right: Vetted Experts Only Card & Photo */}
           {/* Mentee Photo */}
           <div
-            className="absolute right-[16%] bottom-[4%] z-10 overflow-hidden rounded-[20px] shadow-sm"
+            className="absolute right-[16%] bottom-[4%] z-10 overflow-hidden rounded-[20px]"
             style={{ width: "250px", height: "280px" }}
           >
             <Image
@@ -111,7 +111,7 @@ export function LandingFeatures() {
           {/* Stacked Cards */}
           <div className="mt-8 space-y-6">
             {/* Card 1: AI Powered Matching */}
-            <div className="overflow-hidden rounded-2xl bg-[#EDE6E6] p-6 shadow-sm">
+            <div className="overflow-hidden rounded-2xl bg-[#EDE6E6] p-6">
               <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl">
                 <Image
                   src="/landing-page/ai-matching.png"
@@ -129,7 +129,7 @@ export function LandingFeatures() {
             </div>
 
             {/* Card 2: One-on-One Live Calls */}
-            <div className="rounded-2xl bg-[#FFEEE8] p-6 shadow-sm">
+            <div className="rounded-2xl bg-[#FFEEE8] p-6">
               <h3 className="text-xl font-bold text-[#101828]">
                 One-on-One Live Calls
               </h3>
@@ -139,7 +139,7 @@ export function LandingFeatures() {
             </div>
 
             {/* Card 3: Async QnA */}
-            <div className="rounded-2xl bg-[#FFEEE8] p-6 shadow-sm">
+            <div className="rounded-2xl bg-[#FFEEE8] p-6">
               <h3 className="text-xl font-bold text-[#101828]">
                 Async QnA
               </h3>
@@ -149,7 +149,7 @@ export function LandingFeatures() {
             </div>
 
             {/* Card 4: Vetted Experts Only */}
-            <div className="overflow-hidden rounded-2xl bg-[#EDE6E6] p-6 shadow-sm">
+            <div className="overflow-hidden rounded-2xl bg-[#EDE6E6] p-6">
               <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl">
                 <Image
                   src="/landing-page/vetted-experts.png"

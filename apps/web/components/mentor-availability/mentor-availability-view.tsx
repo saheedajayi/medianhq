@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { Eye, Check } from "lucide-react";
 import { Calendar as IconsaxCalendar } from "iconsax-react";
 import { Calendar } from "@/components/ui/base/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/base/popover";
-import { mentorSessionsService } from "@/services/mentor-sessions";
+import {
+  useMentorAvailability,
+  useSaveAvailability,
+} from "@/services/mentor-sessions/queries/mentor-sessions.queries";
 import type { DaySchedule, DateOverride, TimeSlot } from "./types";
 import { CalendarSyncBanner } from "./calendar-sync-banner";
 import { WeeklyHoursCard } from "./weekly-hours-card";
@@ -134,35 +138,34 @@ export function MentorAvailabilityView() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Load from API if available
+  const { data: savedAvailability, isLoading: isLoadingAvailability } = useMentorAvailability();
+  const saveAvailabilityMutation = useSaveAvailability();
+
+  // Seed the editable schedule from the API once; otherwise keep the default schedule.
+  // Later refetches (e.g. after saving) must not overwrite what the mentor is editing.
+  const hasSeededDays = useRef(false);
   useEffect(() => {
-    mentorSessionsService
-      .getAvailability()
-      .then((res) => {
-        const data = res.data;
-        if (!Array.isArray(data) || data.length === 0) return;
-        setDays((prev) =>
-          prev.map((d) => {
-            const found = data.find((item) => item.dayOfWeek === d.dayOfWeek);
-            if (!found) return d;
-            return {
-              ...d,
-              isActive: found.isActive !== false,
-              slots: [
-                {
-                  id: `slot-${d.dayOfWeek}-1`,
-                  startTime: found.startTime || "9:00 AM",
-                  endTime: found.endTime || "2:00 pm",
-                },
-              ],
-            };
-          })
-        );
+    const data = savedAvailability;
+    if (hasSeededDays.current || !Array.isArray(data) || data.length === 0) return;
+    hasSeededDays.current = true;
+    setDays((prev) =>
+      prev.map((d) => {
+        const found = data.find((item) => item.dayOfWeek === d.dayOfWeek);
+        if (!found) return d;
+        return {
+          ...d,
+          isActive: found.isActive !== false,
+          slots: [
+            {
+              id: `slot-${d.dayOfWeek}-1`,
+              startTime: found.startTime || "9:00 AM",
+              endTime: found.endTime || "2:00 pm",
+            },
+          ],
+        };
       })
-      .catch(() => {
-        // Fallback gracefully to default Figma mock schedule
-      });
-  }, []);
+    );
+  }, [savedAvailability]);
 
   // Handlers for weekly hours
   const handleToggleDay = (dayOfWeek: number) => {
@@ -284,7 +287,7 @@ export function MentorAvailabilityView() {
         endTime: d.slots[0]?.endTime || "5:00 PM",
         isActive: d.isActive && d.slots.length > 0,
       }));
-      await mentorSessionsService.saveAvailability(payload);
+      await saveAvailabilityMutation.mutateAsync(payload);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch {
@@ -313,7 +316,7 @@ export function MentorAvailabilityView() {
         <button
           type="button"
           onClick={() => setIsPreviewModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-5 py-2.5 text-xs sm:text-sm font-medium text-[#344054] shadow-xs hover:bg-gray-50 transition-colors self-start sm:self-auto"
+          className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-5 py-2.5 text-xs sm:text-sm font-medium text-[#344054] hover:bg-gray-50 transition-colors self-start sm:self-auto"
         >
           <Eye size={16} className="text-[#667085]" />
           <span>Preview Availability</span>
@@ -343,7 +346,7 @@ export function MentorAvailabilityView() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] shadow-2xs hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
+                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
               >
                 <span className={startDate ? "text-[#101828]" : "text-[#98A2B3]"}>
                   {startDate || "DD/MM/YYYY"}
@@ -357,7 +360,7 @@ export function MentorAvailabilityView() {
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg"
+              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white"
               align="start"
             >
               <Calendar
@@ -382,7 +385,7 @@ export function MentorAvailabilityView() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] shadow-2xs hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
+                className="flex w-full items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3 text-sm text-[#101828] hover:border-[#D0D5DD] focus:border-[#FF5514] focus:outline-none transition-colors text-left"
               >
                 <span className={endDate ? "text-[#101828]" : "text-[#98A2B3]"}>
                   {endDate || "DD/MM/YYYY"}
@@ -396,7 +399,7 @@ export function MentorAvailabilityView() {
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white shadow-lg"
+              className="w-auto p-0 rounded-2xl border border-[#EAECF0] bg-white"
               align="start"
             >
               <Calendar
@@ -418,6 +421,26 @@ export function MentorAvailabilityView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Column: Weekly Hours Card */}
         <div className="lg:col-span-8 flex flex-col">
+          {/* Until the saved schedule arrives, a placeholder instead of the default hours */}
+          {isLoadingAvailability ? (
+            <SkeletonGroup
+              label="Loading your weekly hours"
+              className="h-full rounded-3xl border border-[#EAECF0] bg-white p-6 sm:p-8"
+            >
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="mt-4 h-12 w-full rounded-xl" />
+              <div className="mt-8 space-y-6">
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <Skeleton className="h-5 w-9 rounded-full" />
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-10 w-28 rounded-lg" />
+                    <Skeleton className="h-10 w-28 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </SkeletonGroup>
+          ) : (
           <WeeklyHoursCard
             days={days}
             onToggleDay={handleToggleDay}
@@ -428,6 +451,7 @@ export function MentorAvailabilityView() {
             timezone={timezone}
             onTimezoneChange={setTimezone}
           />
+          )}
         </div>
 
         {/* Right Column: Date Overrides Card */}
@@ -461,7 +485,7 @@ export function MentorAvailabilityView() {
           type="button"
           onClick={handleSaveSchedule}
           disabled={isSaving}
-          className="rounded-full bg-[#FF5514] px-8 py-3 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-[#E04B12] active:scale-98 transition disabled:opacity-50"
+          className="rounded-full bg-[#FF5514] px-8 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-[#E04B12] active:scale-98 transition disabled:opacity-50"
         >
           {isSaving ? "Saving..." : "Save schedule"}
         </button>
