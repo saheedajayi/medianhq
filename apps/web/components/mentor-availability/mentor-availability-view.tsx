@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { Eye, Check } from "lucide-react";
 import { Calendar as IconsaxCalendar } from "iconsax-react";
 import { Calendar } from "@/components/ui/base/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/base/popover";
-import { mentorSessionsService } from "@/services/mentor-sessions";
+import {
+  useMentorAvailability,
+  useSaveAvailability,
+} from "@/services/mentor-sessions/queries/mentor-sessions.queries";
 import type { DaySchedule, DateOverride, TimeSlot } from "./types";
 import { CalendarSyncBanner } from "./calendar-sync-banner";
 import { WeeklyHoursCard } from "./weekly-hours-card";
@@ -134,35 +138,34 @@ export function MentorAvailabilityView() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Load from API if available
+  const { data: savedAvailability, isLoading: isLoadingAvailability } = useMentorAvailability();
+  const saveAvailabilityMutation = useSaveAvailability();
+
+  // Seed the editable schedule from the API once; otherwise keep the default schedule.
+  // Later refetches (e.g. after saving) must not overwrite what the mentor is editing.
+  const hasSeededDays = useRef(false);
   useEffect(() => {
-    mentorSessionsService
-      .getAvailability()
-      .then((res) => {
-        const data = res.data;
-        if (!Array.isArray(data) || data.length === 0) return;
-        setDays((prev) =>
-          prev.map((d) => {
-            const found = data.find((item) => item.dayOfWeek === d.dayOfWeek);
-            if (!found) return d;
-            return {
-              ...d,
-              isActive: found.isActive !== false,
-              slots: [
-                {
-                  id: `slot-${d.dayOfWeek}-1`,
-                  startTime: found.startTime || "9:00 AM",
-                  endTime: found.endTime || "2:00 pm",
-                },
-              ],
-            };
-          })
-        );
+    const data = savedAvailability;
+    if (hasSeededDays.current || !Array.isArray(data) || data.length === 0) return;
+    hasSeededDays.current = true;
+    setDays((prev) =>
+      prev.map((d) => {
+        const found = data.find((item) => item.dayOfWeek === d.dayOfWeek);
+        if (!found) return d;
+        return {
+          ...d,
+          isActive: found.isActive !== false,
+          slots: [
+            {
+              id: `slot-${d.dayOfWeek}-1`,
+              startTime: found.startTime || "9:00 AM",
+              endTime: found.endTime || "2:00 pm",
+            },
+          ],
+        };
       })
-      .catch(() => {
-        // Fallback gracefully to default Figma mock schedule
-      });
-  }, []);
+    );
+  }, [savedAvailability]);
 
   // Handlers for weekly hours
   const handleToggleDay = (dayOfWeek: number) => {
@@ -284,7 +287,7 @@ export function MentorAvailabilityView() {
         endTime: d.slots[0]?.endTime || "5:00 PM",
         isActive: d.isActive && d.slots.length > 0,
       }));
-      await mentorSessionsService.saveAvailability(payload);
+      await saveAvailabilityMutation.mutateAsync(payload);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch {
@@ -418,6 +421,26 @@ export function MentorAvailabilityView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Column: Weekly Hours Card */}
         <div className="lg:col-span-8 flex flex-col">
+          {/* Until the saved schedule arrives, a placeholder instead of the default hours */}
+          {isLoadingAvailability ? (
+            <SkeletonGroup
+              label="Loading your weekly hours"
+              className="h-full rounded-3xl border border-[#EAECF0] bg-white p-6 sm:p-8"
+            >
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="mt-4 h-12 w-full rounded-xl" />
+              <div className="mt-8 space-y-6">
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <Skeleton className="h-5 w-9 rounded-full" />
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-10 w-28 rounded-lg" />
+                    <Skeleton className="h-10 w-28 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </SkeletonGroup>
+          ) : (
           <WeeklyHoursCard
             days={days}
             onToggleDay={handleToggleDay}
@@ -428,6 +451,7 @@ export function MentorAvailabilityView() {
             timezone={timezone}
             onTimezoneChange={setTimezone}
           />
+          )}
         </div>
 
         {/* Right Column: Date Overrides Card */}

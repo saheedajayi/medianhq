@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, X } from "lucide-react";
-import { messagesService } from "@/services/messages";
+import { useReportMessage } from "@/services/messages/queries/messages.queries";
 
 const REPORT_REASONS = [
   "Inappropriate or offensive content",
@@ -29,6 +29,7 @@ export function ReportModal({
   );
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const reportMessageMutation = useReportMessage();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export function ReportModal({
   async function handleSubmit() {
     setIsSubmitting(true);
     try {
-      await messagesService.reportMessage({
+      await reportMessageMutation.mutateAsync({
         messageId,
         reason: selectedReason,
         note: note.trim() || undefined,
@@ -172,10 +173,10 @@ export function ReportModal({
             <p className="mt-4 text-xs text-[#667085]">
               Need urgent help? Contact{" "}
               <a
-                href="mailto:support@median.com"
+                href="mailto:support@medianhq.co"
                 className="font-medium text-[#FF5514] hover:underline"
               >
-                support@median.com
+                support@medianhq.co
               </a>
             </p>
           </div>

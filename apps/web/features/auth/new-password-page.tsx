@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft } from "lucide-react";
@@ -34,7 +34,10 @@ import {
   formInputClassName,
 } from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
-import { authService } from "@/services/auth";
+import {
+  useResetPassword,
+  useValidateResetToken,
+} from "@/services/auth/queries/auth.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -47,35 +50,24 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export function NewPasswordPage({ token }: { token: string }) {
   const router = useRouter();
-  const [isValidating, setIsValidating] = useState(true);
-  const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {},
   );
 
-  useEffect(() => {
-    if (!token || !token.trim()) {
-      setIsValidating(false);
-      setValidationError("Missing or invalid password reset token.");
-      return;
-    }
-
-    authService
-      .validateResetToken(token)
-      .then(() => {
-        setIsValidating(false);
-      })
-      .catch((error) => {
-        setIsValidating(false);
-        setValidationError(
-          getErrorMessage(
-            error,
-            "This password reset link is invalid or has expired.",
-          ),
-        );
-      });
-  }, [token]);
+  const trimmedToken = token?.trim() ?? "";
+  const resetPasswordMutation = useResetPassword();
+  const { isLoading: isValidatingToken, error: tokenError } =
+    useValidateResetToken(trimmedToken);
+  const isValidating = !!trimmedToken && isValidatingToken;
+  const validationError = !trimmedToken
+    ? "Missing or invalid password reset token."
+    : tokenError
+      ? getErrorMessage(
+          tokenError,
+          "This password reset link is invalid or has expired.",
+        )
+      : null;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -100,8 +92,8 @@ export function NewPasswordPage({ token }: { token: string }) {
 
     setIsSubmitting(true);
 
-    authService
-      .resetPassword({ token, password })
+    resetPasswordMutation
+      .mutateAsync({ token, password })
       .then(() => {
         toast.success("Password reset successfully", {
           description: "You can now log in with your new password.",

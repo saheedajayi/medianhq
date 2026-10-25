@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { AuthFormSkeleton } from "./auth-form-skeleton";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
@@ -170,9 +171,7 @@ function AuthShellInner({ children }: { children: ReactNode }) {
               )}
               <div className="rounded-[28px] bg-white p-6 sm:p-8 md:p-9 w-full max-w-full min-w-0">
                 {isCheckingAccess ? (
-                  <p className="py-10 text-center text-sm text-[#667085]">
-                    Checking your account…
-                  </p>
+                  <AuthFormSkeleton fields={3} label="Checking your account" />
                 ) : (
                   children
                 )}

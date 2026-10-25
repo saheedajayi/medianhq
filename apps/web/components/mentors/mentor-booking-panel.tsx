@@ -7,10 +7,14 @@ import { Calendar2 } from "iconsax-react";
 import { SegmentedTabs } from "@/components/ui/custom/segmented-tabs";
 import { AvailableDateSlot, GroupSessionEvent, SessionPackage } from "./types";
 import { AvailableDates } from "@/components/ui/custom/available-dates";
+import { AvailableDatesSkeleton } from "@/components/ui/custom/available-dates-skeleton";
 
 interface MentorBookingPanelProps {
   packages: SessionPackage[];
   availableDates: AvailableDateSlot[];
+  isLoadingDates?: boolean;
+  /** Set when the mentee already has the selected session pending or upcoming */
+  existingBooking?: { when: string; href: string } | null;
   groupSessions: GroupSessionEvent[];
   selectedPackage: SessionPackage;
   onSelectPackage: (pkg: SessionPackage) => void;
@@ -24,6 +28,8 @@ interface MentorBookingPanelProps {
 export function MentorBookingPanel({
   packages,
   availableDates,
+  isLoadingDates = false,
+  existingBooking = null,
   groupSessions,
   selectedPackage,
   onSelectPackage,
@@ -35,7 +41,6 @@ export function MentorBookingPanel({
 }: MentorBookingPanelProps) {
   const [sessionMode, setSessionMode] = useState<"1on1" | "group">("1on1");
   const [isViewingDates, setIsViewingDates] = useState(false);
-  const [joinedWaitlist, setJoinedWaitlist] = useState(false);
 
   const hasSlots =
     availableDates &&
@@ -120,7 +125,9 @@ export function MentorBookingPanel({
           ) : (
             /* Available Dates Section (Either with dates OR empty state) */
             <div className="mt-5 border-t border-[#F2F4F7] pt-5">
-              {hasSlots ? (
+              {isLoadingDates ? (
+                <AvailableDatesSkeleton />
+              ) : hasSlots ? (
                 <>
                   <AvailableDates
                     dates={availableDates}
@@ -130,15 +137,27 @@ export function MentorBookingPanel({
                     onSelectTime={onSelectTime}
                   />
 
-                  {/* Book Session Submit */}
+                  {/* Book Session Submit; one booking of a session at a time */}
                   <button
                     type="button"
                     onClick={onProceedToConfirm}
-                    disabled={!selectedTime}
+                    disabled={!selectedTime || !!existingBooking}
                     className="mt-5 w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#E04B00] disabled:opacity-50 active:scale-[0.99]"
                   >
                     Book Session
                   </button>
+                  {existingBooking && (
+                    <p className="mt-2.5 text-center text-xs leading-relaxed text-[#667085]">
+                      You already have this session booked for {existingBooking.when}. You can
+                      book it again after it ends.{" "}
+                      <Link
+                        href={existingBooking.href}
+                        className="font-semibold !text-[#FF5500] hover:underline"
+                      >
+                        View booking
+                      </Link>
+                    </p>
+                  )}
                 </>
               ) : (
                 /* Empty state matching Image 2 */
@@ -150,18 +169,11 @@ export function MentorBookingPanel({
                     No available slots
                   </h4>
                   <p className="mt-1 text-xs text-[#667085]">
-                    This mentor is fully booked.
+                    This mentor has no open times in the next two weeks. Check back soon.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setJoinedWaitlist(true)}
-                    className="mt-4 rounded-full bg-[#FF5500] px-6 py-2.5 text-xs font-semibold text-white transition hover:bg-[#E04B00] active:scale-[0.98]"
-                  >
-                    {joinedWaitlist ? "Joined waitlist ✓" : "Join waitlist"}
-                  </button>
                   <Link
                     href="/explore"
-                    className="mt-3 text-xs font-medium text-[#475467] transition hover:text-[#101828]"
+                    className="mt-4 rounded-full bg-[#FF5500] px-6 py-2.5 text-xs font-semibold !text-white transition hover:bg-[#E04B00] active:scale-[0.98]"
                   >
                     Browse similar mentors
                   </Link>

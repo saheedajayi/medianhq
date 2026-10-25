@@ -156,8 +156,8 @@ export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audien
             <Link href="/terms" className="hover:text-[#101828] transition-colors">
               Terms
             </Link>
-            <a href="mailto:hello@median.com" className="hover:text-[#101828]">
-              hello@median.com
+            <a href={siteConfig.links.email} className="hover:text-[#101828]">
+              {siteConfig.links.email.replace("mailto:", "")}
             </a>
           </div>
           <p>© 2026 Median · All rights reserved</p>

@@ -7,10 +7,11 @@ import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
-import { menteesService } from "@/services/mentees";
-import { mentorsService } from "@/services/mentors";
-import { uploadsService } from "@/services/uploads";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { useCreateMenteeProfile } from "@/services/mentees/queries/mentees.queries";
+import { useUpdateMentorProfile } from "@/services/mentors/queries/mentors.queries";
+import { useUploadAvatar } from "@/services/uploads/queries/uploads.queries";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
+import { authQueryKeys } from "@/services/auth/queries/query-keys";
 import {
   Select,
   SelectContent,
@@ -56,6 +57,9 @@ export function ProfileUpdateModal({
   onSuccess,
 }: ProfileUpdateModalProps) {
   const queryClient = useQueryClient();
+  const updateMentorProfileMutation = useUpdateMentorProfile();
+  const createMenteeProfileMutation = useCreateMenteeProfile();
+  const uploadAvatarMutation = useUploadAvatar();
   const { data: user, refetch } = useCurrentUser();
   // Mentors and mentees share this modal; each saves to their own profile
   const isMentor = user?.role === "MENTOR";
@@ -145,7 +149,7 @@ export function ProfileUpdateModal({
       // Upload profile image to Cloudinary if new image file selected
       if (avatarFile) {
         try {
-          const uploadRes = await uploadsService.uploadAvatar(avatarFile);
+          const uploadRes = await uploadAvatarMutation.mutateAsync(avatarFile);
           if (uploadRes?.url) {
             avatarUrl = uploadRes.url;
           }
@@ -156,13 +160,13 @@ export function ProfileUpdateModal({
 
       const payload = { gender, location, bio, avatarUrl };
       if (isMentor) {
-        await mentorsService.updateProfile(payload);
+        await updateMentorProfileMutation.mutateAsync(payload);
       } else {
-        await menteesService.createProfile(payload);
+        await createMenteeProfileMutation.mutateAsync(payload);
       }
 
       toast.success("Profile updated successfully");
-      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKeys.me() });
       await refetch();
       onSuccess?.();
       onClose();

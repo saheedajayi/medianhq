@@ -3,14 +3,20 @@
 import Link from "next/link";
 import { ListChecks, CheckCircle2, Circle } from "lucide-react";
 import { Calendar } from "iconsax-react";
-import type { ActionItem } from "@/components/mentee-booking-session/types";
+import { DashboardListCardSkeleton } from "./dashboard-list-card-skeleton";
+import type { ActionItem } from "@/components/bookings/types";
 
 interface ActionItemsCardProps {
-  actionItems?: (ActionItem & { mentorName?: string })[];
+  actionItems?: (ActionItem & { participantName?: string })[];
+  isLoading?: boolean;
 }
 
-export function ActionItemsCard({ actionItems }: ActionItemsCardProps) {
+export function ActionItemsCard({ actionItems, isLoading = false }: ActionItemsCardProps) {
   const items = actionItems || [];
+
+  if (isLoading) {
+    return <DashboardListCardSkeleton title="Action Items" rows={3} />;
+  }
 
   if (items.length > 0) {
     return (
@@ -44,9 +50,9 @@ export function ActionItemsCard({ actionItems }: ActionItemsCardProps) {
                 <span className={`text-xs font-medium ${item.completed ? "text-[#98A2B3] line-through" : "text-[#101828]"}`}>
                   {item.text}
                 </span>
-                {item.mentorName && (
+                {item.participantName && (
                   <span className="text-[11px] text-[#667085]">
-                    From session with {item.mentorName}
+                    From session with {item.participantName}
                   </span>
                 )}
               </div>

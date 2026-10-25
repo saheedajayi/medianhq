@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { MentorStatus, UserRole } from '@prisma/client';
+import { MentorStatus, UserRole, BookingStatus } from '@prisma/client';
+import { PAYMENT_HOLD_MS } from '../bookings/booking-policy';
 import { PrismaService } from '../../database/prisma.service';
 import type {
   CreateMentorProfileDto,
@@ -53,6 +54,37 @@ export class MentorsRepository {
     `;
   }
 
+  /** Weekly windows and taken time for several mentors at once, for next-availability */
+  async findAvailabilityContext(mentorUserIds: string[], from: Date, to: Date, now: Date) {
+    if (mentorUserIds.length === 0) return { windows: [], bookings: [] };
+    const [windows, bookings] = await Promise.all([
+      this.prisma.weeklyAvailability.findMany({ where: { mentorId: { in: mentorUserIds } } }),
+      this.prisma.booking.findMany({
+        where: {
+          mentorId: { in: mentorUserIds },
+          startsAt: { gte: new Date(from.getTime() - 24 * 60 * 60 * 1000), lt: to },
+          OR: [
+            { status: { in: [BookingStatus.PENDING_CONFIRMATION, BookingStatus.CONFIRMED] } },
+            {
+              status: BookingStatus.PENDING_PAYMENT,
+              createdAt: { gt: new Date(now.getTime() - PAYMENT_HOLD_MS) },
+            },
+          ],
+        },
+        select: { mentorId: true, startsAt: true, durationMinutes: true },
+      }),
+    ]);
+    return { windows, bookings };
+  }
+
+  /** The mentor's live 1:1 sessions, which mentees book as packages */
+  findBookableSessions(mentorUserId: string) {
+    return this.prisma.mentorSession.findMany({
+      where: { mentorId: mentorUserId, isLive: true, type: 'ONE_ON_ONE' },
+      orderBy: [{ price: 'asc' }, { durationMinutes: 'asc' }],
+    });
+  }
+
   findMentorById(id: string) {
     return this.prisma.mentorProfile.findFirst({
       where: {
@@ -74,6 +106,7 @@ export class MentorsRepository {
                         id: true,
                         firstName: true,
                         lastName: true,
+                        menteeProfile: { select: { avatarUrl: true } },
                       },
                     },
                   },

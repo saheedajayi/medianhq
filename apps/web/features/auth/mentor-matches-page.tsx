@@ -1,18 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/base/button";
 import { ArrowRight, UserSearch } from "lucide-react";
 import Link from "next/link";
-import { mentorsService } from "@/services/mentors";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
+import { useMentorMatches } from "@/services/mentors/queries/mentors.queries";
 
 export function MentorMatchesPage() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["mentorMatches"],
-    queryFn: () => mentorsService.getMatches(),
-  });
+  const { data, isLoading, error } = useMentorMatches();
 
-  const mentors = data?.data || [];
+  const mentors = data || [];
 
   if (!isLoading && mentors.length === 0 && !error) {
     return (
@@ -52,7 +49,24 @@ export function MentorMatchesPage() {
 
       <div className="grid gap-4">
         {isLoading && (
-          <div className="text-center text-[#64748b] py-8">Finding your best matches...</div>
+          <SkeletonGroup label="Finding your best matches" className="grid gap-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between rounded-2xl border border-[#f1f5f9] bg-white p-4"
+              >
+                <div className="flex items-center gap-4">
+                  <Skeleton className="size-14 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-44" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+                <Skeleton className="h-9 w-24 rounded-full" />
+              </div>
+            ))}
+          </SkeletonGroup>
         )}
         {error && (
           <div className="text-center text-red-500 py-8">Failed to load mentors</div>

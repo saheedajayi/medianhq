@@ -1,50 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Global } from "iconsax-react";
 import { MentorCard } from "@/components/explore/mentor-card";
 import type { ExploreMentor } from "@/components/explore/types";
-import { isMockDataEnabled, mockExploreMentors } from "@/mocks";
-import { mentorsService } from "@/services/mentors";
-
-const USE_MOCKS = isMockDataEnabled("dashboard");
-
-const fallbackMentors: ExploreMentor[] = USE_MOCKS ? mockExploreMentors.slice(0, 6) : [];
+import { useFeaturedMentors } from "@/services/mentors/queries/mentors.queries";
+import { MentorCardGridSkeleton } from "@/components/explore/mentor-card-skeleton";
 
 interface MentorsForYouSectionProps {
   mentors?: ExploreMentor[];
 }
 
 export function MentorsForYouSection({ mentors }: MentorsForYouSectionProps) {
-  const [list, setList] = useState<ExploreMentor[]>(mentors || fallbackMentors);
-  const [isLoading, setIsLoading] = useState(!mentors && fallbackMentors.length === 0);
+  const hasProvidedMentors = !!mentors && mentors.length > 0;
+  const { data: featured, isLoading: isFeaturedLoading } = useFeaturedMentors(6, {
+    enabled: !hasProvidedMentors,
+  });
 
-  useEffect(() => {
-    if (mentors && mentors.length > 0) {
-      setList(mentors);
-      setIsLoading(false);
-      return;
-    }
-
-    let isMounted = true;
-    mentorsService
-      .getFeatured(6)
-      .then((featured: any) => {
-        if (!isMounted || !Array.isArray(featured) || featured.length === 0) return;
-        setList(featured as ExploreMentor[]);
-      })
-      .catch((err) => {
-        console.warn("Could not fetch featured mentors from API:", err);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [mentors]);
+  const list: ExploreMentor[] = hasProvidedMentors
+    ? mentors
+    : Array.isArray(featured) && featured.length > 0
+      ? (featured as ExploreMentor[])
+      : [];
+  const isLoading = !hasProvidedMentors && isFeaturedLoading;
 
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-[#EAECF0] bg-white p-6 md:p-8">
@@ -53,14 +31,7 @@ export function MentorsForYouSection({ mentors }: MentorsForYouSectionProps) {
       </h2>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-[400px] animate-pulse rounded-[20px] border border-[#F2F2F7] bg-[#F7F8FB]"
-            />
-          ))}
-        </div>
+        <MentorCardGridSkeleton count={3} />
       ) : list.length > 0 ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {list.map((mentor, index) => (

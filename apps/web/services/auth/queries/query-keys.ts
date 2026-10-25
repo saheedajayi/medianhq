@@ -1,0 +1,15 @@
+export const authQueryKeys = {
+  all: ["auth"] as const,
+  me: () => [...authQueryKeys.all, "me"] as const,
+  securityEvents: () => [...authQueryKeys.all, "security-events"] as const,
+  resetToken: (token: string) => [...authQueryKeys.all, "reset-token", token] as const,
+  login: () => [...authQueryKeys.all, "login"] as const,
+  register: () => [...authQueryKeys.all, "register"] as const,
+  logout: () => [...authQueryKeys.all, "logout"] as const,
+  verifyEmail: () => [...authQueryKeys.all, "verify-email"] as const,
+  resendVerification: () => [...authQueryKeys.all, "resend-verification"] as const,
+  forgotPassword: () => [...authQueryKeys.all, "forgot-password"] as const,
+  resetPassword: () => [...authQueryKeys.all, "reset-password"] as const,
+  changePassword: () => [...authQueryKeys.all, "change-password"] as const,
+  revokeOtherSessions: () => [...authQueryKeys.all, "revoke-other-sessions"] as const,
+};

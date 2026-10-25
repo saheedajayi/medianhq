@@ -5,9 +5,13 @@ import { buildMentorWaitlistConfirmationTemplate } from './templates/mentor-wait
 import { buildEmailVerificationTemplate } from './templates/email-verification.template';
 import { buildResetPasswordTemplate } from './templates/reset-password.template';
 import { buildPasswordChangedTemplate } from './templates/password-changed.template';
+import { buildBookingUpdateTemplate } from './templates/booking-update.template';
 import { SOCIAL_LINKS } from '../../common/constants/social-links.constant';
 
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
+// Seeded demo accounts (packages/database/prisma/demo) use this domain; it has no
+// mailbox, so emailing it would only bounce and hurt our sender reputation
+const DEMO_EMAIL_DOMAIN = '@demo.medianhq.co';
 const REQUEST_TIMEOUT_MS = 30_000;
 
 type WaitlistConfirmationInput = {
@@ -43,6 +47,19 @@ export type PasswordChangedEmailInput = {
   changedAt?: Date;
   deviceInfo?: string;
   ipAddress?: string;
+};
+
+export type BookingUpdateEmailInput = {
+  email: string;
+  firstName: string;
+  subject: string;
+  paragraphs: string[];
+  details: { label: string; value: string }[];
+  ctaLabel: string;
+  /** Path on the web app, e.g. /mentor/bookings?tab=pending */
+  ctaPath: string;
+  /** Same booking + event must not email twice if a request is retried */
+  idempotencyKey: string;
 };
 
 @Injectable()
@@ -93,7 +110,10 @@ export class EmailService {
     }
 
     const payload = this.buildVerificationEmailPayload(input, from);
-    await this.sendEmail(payload, `verification-email:${input.email}:${input.verificationCode}`);
+    await this.sendEmail(
+      payload,
+      `verification-email:${input.email}:${input.verificationCode}`,
+    );
   }
 
   async sendPasswordResetEmail(input: PasswordResetEmailInput) {
@@ -131,7 +151,57 @@ export class EmailService {
     );
   }
 
+  async sendBookingUpdate(input: BookingUpdateEmailInput) {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM;
+
+    if (!apiKey || !from) {
+      this.logger.warn(
+        'Skipping booking email because RESEND_API_KEY or EMAIL_FROM is not configured.',
+      );
+      return;
+    }
+
+    const replyTo = process.env.EMAIL_REPLY_TO;
+    const siteUrl = this.getSiteUrl();
+    const template = buildBookingUpdateTemplate({
+      firstName: input.firstName,
+      subject: input.subject,
+      paragraphs: input.paragraphs,
+      details: input.details,
+      ctaLabel: input.ctaLabel,
+      ctaUrl: `${siteUrl}${input.ctaPath}`,
+      instagramUrl: SOCIAL_LINKS.instagram,
+      twitterUrl: SOCIAL_LINKS.twitter,
+      linkedinUrl: SOCIAL_LINKS.linkedin,
+      sentYear: new Date().getFullYear(),
+      siteUrl,
+      assetUrl: this.getEmailAssetUrl(siteUrl),
+    });
+
+    await this.sendEmail(
+      {
+        from,
+        to: [input.email],
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      },
+      input.idempotencyKey,
+    );
+  }
+
   private async sendEmail(payload: ResendEmailPayload, idempotencyKey: string) {
+    const to = payload.to.filter(
+      (email) => !email.toLowerCase().endsWith(DEMO_EMAIL_DOMAIN),
+    );
+    if (to.length === 0) {
+      this.logger.log(`Skipping "${payload.subject}" email to a demo account.`);
+      return;
+    }
+    payload = { ...payload, to };
+
     const apiKey = process.env.RESEND_API_KEY;
     const response = await fetch(RESEND_EMAILS_URL, {
       method: 'POST',
@@ -204,7 +274,7 @@ export class EmailService {
     const instagramUrl = SOCIAL_LINKS.instagram;
     const twitterUrl = SOCIAL_LINKS.twitter;
     const linkedinUrl = SOCIAL_LINKS.linkedin;
-    
+
     const templateInput = {
       firstName: input.firstName,
       verificationCode: input.verificationCode,
@@ -215,7 +285,7 @@ export class EmailService {
       siteUrl,
       assetUrl,
     };
-    
+
     const template = buildEmailVerificationTemplate(templateInput);
 
     return {
@@ -238,7 +308,7 @@ export class EmailService {
     const instagramUrl = SOCIAL_LINKS.instagram;
     const twitterUrl = SOCIAL_LINKS.twitter;
     const linkedinUrl = SOCIAL_LINKS.linkedin;
-    
+
     const templateInput = {
       firstName: input.firstName,
       resetLink: input.resetLink,
@@ -249,7 +319,7 @@ export class EmailService {
       siteUrl,
       assetUrl,
     };
-    
+
     const template = buildResetPasswordTemplate(templateInput);
 
     return {

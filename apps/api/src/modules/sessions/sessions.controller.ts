@@ -14,5 +14,4 @@ export class SessionsController {
   @UseGuards(AuthGuard) @Put('mentor/availability') saveAvailability(@CurrentUser() user: AuthUser, @Body() slots: AvailabilityDto[]) { return this.sessionsService.saveAvailability(user, slots); }
   @UseGuards(AuthGuard) @Patch('mentor/:id') update(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: UpdateMentorSessionDto) { return this.sessionsService.update(user, id, dto); }
   @UseGuards(AuthGuard) @Delete('mentor/:id') remove(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.sessionsService.remove(user, id); }
-  @Patch(':bookingId/complete') complete(@Param('bookingId') bookingId: string) { return this.sessionsService.complete(bookingId); }
 }

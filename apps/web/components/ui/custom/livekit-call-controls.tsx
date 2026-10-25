@@ -15,7 +15,7 @@
 import { useCallback, useState } from "react";
 import { useLocalParticipant, useRoomContext } from "@livekit/components-react";
 import { Mic, MicOff, Video, VideoOff, ScreenShare, PhoneOff } from "lucide-react";
-import { stopAllMediaTracks } from "@/components/mentee-booking-session/media-utils";
+import { stopAllMediaTracks } from "@/components/bookings/media-utils";
 
 interface LiveKitCallControlsProps {
   /** Called when the user clicks "End call" — caller handles modal/routing */

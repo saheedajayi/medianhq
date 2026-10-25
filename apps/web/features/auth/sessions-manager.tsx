@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/base/card";
-import { authService } from "@/services/auth";
+import { useRevokeOtherSessions } from "@/services/auth/queries/auth.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -28,15 +28,16 @@ export function SessionsManager({
 }) {
   const [isRevoking, setIsRevoking] = useState(false);
   const [revokedSuccess, setRevokedSuccess] = useState(false);
+  const revokeOtherSessionsMutation = useRevokeOtherSessions();
 
   async function handleRevokeOtherSessions() {
     setIsRevoking(true);
     setRevokedSuccess(false);
 
     try {
-      const response = await authService.revokeOtherSessions();
+      const data = await revokeOtherSessionsMutation.mutateAsync();
       toast.success("Other sessions revoked", {
-        description: response.data.message || "All other sessions have been signed out.",
+        description: data.message || "All other sessions have been signed out.",
       });
       setRevokedSuccess(true);
       onRevoked?.();

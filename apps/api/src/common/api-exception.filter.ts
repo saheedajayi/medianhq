@@ -6,6 +6,21 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
+
+// Prisma codes for "database unreachable", not a bug in our code.
+const DB_UNAVAILABLE_CODES = new Set([
+  'P1001',
+  'P1002',
+  'P1008',
+  'P1017',
+  'P2024',
+]);
+
+const isDatabaseUnavailable = (exception: unknown) =>
+  exception instanceof Prisma.PrismaClientInitializationError ||
+  (exception instanceof Prisma.PrismaClientKnownRequestError &&
+    DB_UNAVAILABLE_CODES.has(exception.code));
 
 type ErrorBody = {
   message?: string | string[];
@@ -22,6 +37,27 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<{ url?: string }>();
+
+    if (isDatabaseUnavailable(exception)) {
+      httpAdapter.reply(
+        ctx.getResponse(),
+        {
+          success: false,
+          message: 'Service temporarily unavailable. Please try again shortly.',
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+          },
+          meta: {
+            path: request.url ?? '',
+            timestamp: new Date().toISOString(),
+          },
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+      return;
+    }
+
     const statusCode =
       exception instanceof HttpException
         ? exception.getStatus()

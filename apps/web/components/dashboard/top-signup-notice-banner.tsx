@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock } from "iconsax-react";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 
 function formatSignupAge(createdAt?: string | Date): string {
   if (!createdAt) return "24 hours";

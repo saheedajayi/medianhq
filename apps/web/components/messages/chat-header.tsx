@@ -10,7 +10,7 @@ export interface ChatHeaderProps {
 }
 
 export function ChatHeader({ participant, sessionBadge }: ChatHeaderProps) {
-  const isOnline = participant?.isOnline ?? true;
+  const isOnline = participant?.isOnline ?? false;
 
   return (
     <>
@@ -19,8 +19,8 @@ export function ChatHeader({ participant, sessionBadge }: ChatHeaderProps) {
         <div className="flex items-center gap-3">
           <div className="relative size-11 sm:size-12 shrink-0 rounded-full">
             <Image
-              src={participant?.avatar || "/mentors/mentor-1.png"}
-              alt={participant?.name || "Mentor"}
+              src={participant?.avatar || "/default-avatar.svg"}
+              alt={participant?.name || ""}
               fill
               className="rounded-full object-cover"
             />
@@ -32,7 +32,11 @@ export function ChatHeader({ participant, sessionBadge }: ChatHeaderProps) {
             <h2 className="text-sm sm:text-base font-semibold text-[#101828]">
               {participant?.name}
             </h2>
-            <span className="text-xs font-medium text-[#12B76A]">Online</span>
+            {isOnline ? (
+              <span className="text-xs font-medium text-[#12B76A]">Online</span>
+            ) : (
+              <span className="text-xs font-medium text-[#98A2B3]">Offline</span>
+            )}
           </div>
         </div>
 

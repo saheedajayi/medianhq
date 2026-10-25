@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit",
-    "test": "node --experimental-strip-types --test **/*.test.ts"
+    "test": "node --experimental-strip-types --test \"**/*.test.ts\""
   },
   "dependencies": {
     "@livekit/components-react": "^2.9.24",

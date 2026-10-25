@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Bookings | Median",
-  description: "Review your booked mentor sessions and confirm attendance.",
+  title: "Bookings",
+  description: "Review your sessions with mentors.",
 };
 
 export default function MenteeBookingsPage() {

@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { MenteeBookingSessionView } from "@/components/mentee-booking-session/mentee-booking-session-view";
-export const metadata = { title: "Booking session | Median", description: "Review your mentor booking sessions." };
+import { BookingsView } from "@/components/bookings/bookings-view";
+export const metadata = { title: "Booking session", description: "Review your mentor booking sessions." };
 export default function MenteeBookingSessionPage() {
   return (
     <Suspense>
-      <MenteeBookingSessionView />
+      <BookingsView viewerRole="mentee" />
     </Suspense>
   );
 }

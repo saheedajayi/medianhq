@@ -32,10 +32,11 @@ export interface ExploreMentorItem {
   tags: string[];
   avatarUrl: string;
   isFeatured: boolean;
+  /** First open slot in the next two weeks; null when the mentor has none */
   nextAvailability: {
     relative: string;
     formattedDate: string;
-  };
+  } | null;
   price: string;
   pricePerSession: number;
   currency: string;

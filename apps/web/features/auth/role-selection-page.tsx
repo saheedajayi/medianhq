@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { usersService } from "@/services/users";
+import { useUpdateRole } from "@/services/users/queries/users.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -49,13 +49,14 @@ export function RoleSelectionPage() {
   const { role, setRole } = useOnboarding();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const updateRoleMutation = useUpdateRole();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
 
-    usersService
-      .updateRole({ role })
+    updateRoleMutation
+      .mutateAsync({ role })
       .then(() => {
         router.refresh();
         router.push(role === "MENTEE" ? "/mentee-onboarding" : "/mentor-onboarding");

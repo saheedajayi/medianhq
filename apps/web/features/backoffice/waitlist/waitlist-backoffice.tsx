@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import {
   useEffect,
   useRef,
@@ -25,6 +26,7 @@ import {
   CardTitle,
 } from "@/components/ui/base/card";
 import { verifyBackofficeAccessKey } from "@/features/backoffice/actions";
+import { MentorApplications } from "@/features/backoffice/mentors/mentor-applications";
 import { useBackofficeStore } from "@/features/backoffice/store";
 
 type WaitlistAudience = "MENTEE" | "MENTOR";
@@ -77,6 +79,7 @@ const PAGE_SIZE = 20;
 
 async function getWaitlistDashboard(
   page: number,
+  accessKey: string,
   signal?: AbortSignal,
 ): Promise<WaitlistDashboard> {
   const params = new URLSearchParams({
@@ -87,6 +90,7 @@ async function getWaitlistDashboard(
     `${API_BASE_URL}/api/${API_VERSION}/waitlist/entries?${params}`,
     {
       cache: "no-store",
+      headers: { "x-backoffice-key": accessKey },
       signal,
     },
   );
@@ -368,7 +372,7 @@ function AccessKeyGate({
 }
 
 export default function BackofficePage() {
-  const { isAccessGranted, grantAccess } = useBackofficeStore();
+  const { isAccessGranted, accessKey, grantAccess } = useBackofficeStore();
   const [accessKeyInput, setAccessKeyInput] = useState("");
   const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(
     null,
@@ -383,7 +387,7 @@ export default function BackofficePage() {
   const shouldResetEntriesScrollRef = useRef(false);
 
   useEffect(() => {
-    if (!isAccessGranted) {
+    if (!isAccessGranted || !accessKey) {
       return;
     }
 
@@ -392,7 +396,7 @@ export default function BackofficePage() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    getWaitlistDashboard(page, abortController.signal)
+    getWaitlistDashboard(page, accessKey, abortController.signal)
       .then((data) => {
         setDashboard(data);
         if (data.pagination.page !== page) {
@@ -419,7 +423,7 @@ export default function BackofficePage() {
     return () => {
       abortController.abort();
     };
-  }, [isAccessGranted, page]);
+  }, [isAccessGranted, accessKey, page]);
 
   useEffect(() => {
     if (!dashboard || !shouldResetEntriesScrollRef.current) {
@@ -456,7 +460,7 @@ export default function BackofficePage() {
       }
 
       setAccessErrorMessage(null);
-      grantAccess();
+      grantAccess(accessKeyInput.trim());
     } catch {
       setAccessErrorMessage("Unable to verify access key.");
     } finally {
@@ -499,13 +503,27 @@ export default function BackofficePage() {
   if (!dashboard) {
     return (
       <BackofficeShell>
-        <Card className="border-text-200 bg-white shadow-none">
-          <CardContent className="py-10">
-            <p className="text-sm font-semibold text-text-700">
-              Loading waitlist dashboard...
-            </p>
-          </CardContent>
-        </Card>
+        {/* Mirrors the dashboard: four stat cards, then the entries table */}
+        <SkeletonGroup label="Loading waitlist dashboard" className="flex flex-col gap-5 sm:gap-8">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="space-y-3 rounded-xl border border-text-200 bg-white p-5">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3 rounded-xl border border-text-200 bg-white p-5">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 flex-1" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))}
+          </div>
+        </SkeletonGroup>
       </BackofficeShell>
     );
   }
@@ -522,6 +540,8 @@ export default function BackofficePage() {
 
   return (
     <BackofficeShell>
+      {accessKey && <MentorApplications accessKey={accessKey} />}
+
       <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total signups"

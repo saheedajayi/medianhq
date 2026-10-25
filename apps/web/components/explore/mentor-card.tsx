@@ -61,7 +61,9 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
           <div className="flex items-center gap-1">
             <Star className="size-3.5 fill-[#FDB022] text-[#FDB022] shrink-0" />
             <span>
-              {mentor.rating} ({mentor.reviewCount} Reviews)
+              {mentor.reviewCount > 0
+                ? `${mentor.rating} (${mentor.reviewCount} Reviews)`
+                : "New mentor"}
             </span>
           </div>
         </div>
@@ -91,12 +93,14 @@ export function MentorCard({ mentor, showFeaturedBadge }: MentorCardProps) {
             <span className="text-xs font-semibold text-[#FF5500]">
               Next availability
             </span>
-            <span className="rounded-full bg-[#FFEEE8] px-2 py-0.5 text-[11px] font-medium text-[#FF5500]">
-              {mentor.nextAvailability.relative}
-            </span>
+            {mentor.nextAvailability && (
+              <span className="rounded-full bg-[#FFEEE8] px-2 py-0.5 text-[11px] font-medium text-[#FF5500]">
+                {mentor.nextAvailability.relative}
+              </span>
+            )}
           </div>
           <span className="mt-0.5 text-xs text-[#667085]">
-            {mentor.nextAvailability.formattedDate}
+            {mentor.nextAvailability?.formattedDate ?? "No open times this fortnight"}
           </span>
         </div>
 

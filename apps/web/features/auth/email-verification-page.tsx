@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getAuthDestination } from "@/lib/auth-routing";
 import { authService } from "@/services/auth";
+import {
+  useResendVerification,
+  useVerifyEmail,
+} from "@/services/auth/queries/auth.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -34,6 +38,8 @@ export function EmailVerificationPage({
   const [currentEmail, setCurrentEmail] = useState(email?.trim() || "");
   const [isLoadingUser, setIsLoadingUser] = useState(!email?.trim());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { mutateAsync: resendVerification } = useResendVerification();
+  const verifyEmailMutation = useVerifyEmail();
   const [cooldownSeconds, setCooldownSeconds] = useState(COOLDOWN_INITIAL_SECONDS);
   const hasRetried = useRef(false);
 
@@ -72,8 +78,7 @@ export function EmailVerificationPage({
   useEffect(() => {
     if (retryEmail && currentEmail && !hasRetried.current) {
       hasRetried.current = true;
-      authService
-        .resendVerification({ email: currentEmail })
+      resendVerification({ email: currentEmail })
         .then(() => {
           setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);
         })
@@ -85,7 +90,7 @@ export function EmailVerificationPage({
           });
         });
     }
-  }, [retryEmail, currentEmail]);
+  }, [retryEmail, currentEmail, resendVerification]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,12 +106,12 @@ export function EmailVerificationPage({
     const formData = new FormData(event.currentTarget);
     const code = String(formData.get("verificationCode")).trim().toUpperCase();
 
-    authService
-      .verifyEmail({ email: currentEmail, code })
-      .then((response) => {
+    verifyEmailMutation
+      .mutateAsync({ email: currentEmail, code })
+      .then((data) => {
         router.refresh();
-        const dest = getAuthDestination(response.data.user);
-        if (response.data.user.accountStage === "READY") {
+        const dest = getAuthDestination(data.user);
+        if (data.user.accountStage === "READY") {
           toast.success("Welcome to Median!", {
             description: "Email verified successfully.",
           });
@@ -126,7 +131,7 @@ export function EmailVerificationPage({
   function handleResend() {
     if (cooldownSeconds > 0 || !currentEmail) return;
 
-    toast.promise(authService.resendVerification({ email: currentEmail }), {
+    toast.promise(resendVerification({ email: currentEmail }), {
       loading: "Sending new code...",
       success: () => {
         setCooldownSeconds(COOLDOWN_INITIAL_SECONDS);

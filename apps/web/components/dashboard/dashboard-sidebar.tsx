@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Element3,
   Global,
@@ -20,8 +19,8 @@ import {
   Logout,
   Add,
 } from "iconsax-react";
-import { authService } from "@/services/auth";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { useLogout } from "@/services/auth/queries/auth.queries";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 
 interface NavItem {
   label: string;
@@ -67,20 +66,20 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
   const isMentor = (userRole ?? user?.role) === "MENTOR";
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const logoutMutation = useLogout();
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     try {
-      await authService.logout();
+      // Clears the query cache once the request settles
+      await logoutMutation.mutateAsync();
     } catch (error) {
       console.error("Logout request failed:", error);
     } finally {
-      queryClient.clear();
       router.push("/signin");
       router.refresh();
     }

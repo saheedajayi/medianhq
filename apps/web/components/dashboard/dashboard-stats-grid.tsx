@@ -1,5 +1,7 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/base/skeleton";
+
 interface StatItem {
   label: string;
   value: number | string;
@@ -8,6 +10,8 @@ interface StatItem {
 
 interface DashboardStatsGridProps {
   stats?: StatItem[];
+  /** Shows the real labels with placeholder numbers until bookings arrive */
+  isLoading?: boolean;
 }
 
 const defaultStats: StatItem[] = [
@@ -17,7 +21,7 @@ const defaultStats: StatItem[] = [
   { label: "MENTORS MATCHED", value: 0, subtext: "0 this week" },
 ];
 
-export function DashboardStatsGrid({ stats = defaultStats }: DashboardStatsGridProps) {
+export function DashboardStatsGrid({ stats = defaultStats, isLoading = false }: DashboardStatsGridProps) {
   return (
     <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4 md:gap-4">
       {stats.map((stat) => (
@@ -29,13 +33,22 @@ export function DashboardStatsGrid({ stats = defaultStats }: DashboardStatsGridP
             {stat.label}
           </span>
 
-          <div className="my-2 text-3xl font-bold text-[#2C1810] font-[family-name:var(--font-neco)] md:my-3 md:text-4xl">
-            {stat.value}
-          </div>
+          {isLoading ? (
+            <>
+              <Skeleton className="my-2 h-9 w-12 md:my-3 md:h-10" />
+              <Skeleton className="h-3 w-20" />
+            </>
+          ) : (
+            <>
+              <div className="my-2 text-3xl font-bold text-[#2C1810] font-[family-name:var(--font-neco)] md:my-3 md:text-4xl">
+                {stat.value}
+              </div>
 
-          <span className="text-[11px] font-medium text-[#667085] md:text-xs">
-            {stat.subtext}
-          </span>
+              <span className="text-[11px] font-medium text-[#667085] md:text-xs">
+                {stat.subtext}
+              </span>
+            </>
+          )}
         </div>
       ))}
     </div>

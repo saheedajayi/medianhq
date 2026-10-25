@@ -30,16 +30,13 @@ function formatNaira(value: number) {
   return `₦${value.toLocaleString()}`;
 }
 
-/** Lists the filters currently applied so results are easy to understand and undo. */
+/**
+ * Lists the filters applied from the Filters dialog so results are easy to understand and undo.
+ * The category tabs and search box already show their own state, so they get no chips.
+ */
 export function ActiveFilterChips({ filters, onChange, onClearAll }: ActiveFilterChipsProps) {
   const chips: Chip[] = [];
 
-  if (filters.search.trim()) {
-    chips.push({ key: "search", label: `“${filters.search.trim()}”`, remove: { search: "" } });
-  }
-  if (filters.category !== "All") {
-    chips.push({ key: "category", label: filters.category, remove: { category: "All" } });
-  }
   filters.expertise?.forEach((value) =>
     chips.push({ key: `expertise-${value}`, label: value, remove: { expertise: without(filters.expertise, value) } })
   );

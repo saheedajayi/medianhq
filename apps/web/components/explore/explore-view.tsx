@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { isMockDataEnabled, mockExploreMentors } from "@/mocks";
+import { useMemo, useState } from "react";
 import {
   ExploreCategory,
   ExploreFilterState,
@@ -14,38 +13,19 @@ import { FeaturedMentorsSection } from "./featured-mentors-section";
 import { MentorsGridSection } from "./mentors-grid-section";
 import { FiltersDialog } from "./filters-dialog";
 import { Global, SearchNormal } from "iconsax-react";
-import { mentorsService } from "@/services/mentors";
+import { useExploreMentors } from "@/services/mentors/queries/mentors.queries";
 import { applyMentorFilters, countActiveFilters } from "./filter-options";
 import { ActiveFilterChips } from "./active-filter-chips";
+import { MentorCardGridSkeleton } from "./mentor-card-skeleton";
 
-const USE_MOCKS = isMockDataEnabled("explore");
 
 export function ExploreView() {
-  const [mentors, setMentors] = useState<ExploreMentor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: apiMentors, isLoading } = useExploreMentors({ limit: 50 });
 
-  useEffect(() => {
-    let isMounted = true;
-    mentorsService
-      .explore({ limit: 50 })
-      .then((res: any) => {
-        if (!isMounted) return;
-        const apiMentors = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
-        // Preview data only fills in when there are no real mentors yet
-        setMentors(apiMentors.length > 0 || !USE_MOCKS ? apiMentors : mockExploreMentors);
-      })
-      .catch((err) => {
-        console.warn("Could not load mentors from backend API:", err);
-        if (isMounted && USE_MOCKS) setMentors(mockExploreMentors);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const mentors = useMemo<ExploreMentor[]>(
+    () => (Array.isArray(apiMentors) ? (apiMentors as ExploreMentor[]) : []),
+    [apiMentors]
+  );
 
   const [filters, setFilters] = useState<ExploreFilterState>({
     search: "",
@@ -124,6 +104,11 @@ export function ExploreView() {
     });
   };
 
+  // Chips' "Clear all" only undoes the Filters dialog, keeping the tab, search and sort
+  const handleClearPanelFilters = () => {
+    setFilters((prev) => ({ search: prev.search, category: prev.category, sortBy: prev.sortBy }));
+  };
+
   return (
     <div className="relative w-full flex-1 flex flex-col gap-6 pb-12">
       {/* 1. Header: Page title and subtitle */}
@@ -159,19 +144,12 @@ export function ExploreView() {
           <ActiveFilterChips
             filters={filters}
             onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
-            onClearAll={handleResetFilters}
+            onClearAll={handleClearPanelFilters}
           />
 
           {/* Loading, no mentors at all, no match, or results */}
           {isLoading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-[400px] animate-pulse rounded-[20px] border border-[#F2F2F7] bg-[#F7F8FB]"
-                />
-              ))}
-            </div>
+            <MentorCardGridSkeleton className="gap-6" />
           ) : mentors.length === 0 ? (
             /* No mentors on Median yet: nothing to search or filter */
             <div className="flex flex-col items-center justify-center py-16 text-center">

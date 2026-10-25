@@ -25,6 +25,8 @@ describe('MentorsService', () => {
       findExploreMentors: jest.fn(),
       countExploreMentors: jest.fn(),
       findFeaturedMentors: jest.fn(),
+      findAvailabilityContext: jest.fn().mockResolvedValue({ windows: [], bookings: [] }),
+      findBookableSessions: jest.fn().mockResolvedValue([]),
     };
 
     service = new MentorsService(repository as unknown as MentorsRepository);

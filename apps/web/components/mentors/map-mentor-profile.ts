@@ -2,7 +2,7 @@ import type { MentorDetailProfile, MentorReview } from "./types";
 
 /**
  * Builds a profile page model from the GET /mentors/:id response alone (no preview data).
- * Fields the API does not provide yet (dates, group sessions, socials) stay empty.
+ * Open dates are loaded separately per session length; group sessions and most socials stay empty.
  */
 export function mapApiMentorProfile(res: any): MentorDetailProfile {
   const role = res.role || "Mentor";
@@ -27,6 +27,7 @@ export function mapApiMentorProfile(res: any): MentorDetailProfile {
 
   return {
     id: String(res.id),
+    mentorUserId: res.mentorUserId,
     name: res.name || "Mentor",
     role,
     company,
@@ -40,16 +41,18 @@ export function mapApiMentorProfile(res: any): MentorDetailProfile {
     expertise: Array.isArray(res.tags) ? res.tags : [],
     experience: [{ role, company, period: "Present" }],
     reviews,
-    packages: [
-      {
-        id: "standard",
-        title: "1:1 Mentorship Session",
-        durationMinutes: 30,
-        price: res.price || "Free",
-        numericPrice: res.pricePerSession ?? 0,
-        description: "A one-on-one session with this mentor.",
-      },
-    ],
+    // The API lists the mentor's live 1:1 sessions, or a standard 1:1 at their profile price
+    packages: Array.isArray(res.packages)
+      ? res.packages.map((pkg: any) => ({
+          id: String(pkg.id),
+          mentorSessionId: pkg.mentorSessionId ?? null,
+          title: pkg.title,
+          durationMinutes: pkg.durationMinutes,
+          price: pkg.price,
+          numericPrice: pkg.numericPrice ?? 0,
+          description: pkg.description || "",
+        }))
+      : [],
     availableDates: [],
     groupSessions: [],
   };

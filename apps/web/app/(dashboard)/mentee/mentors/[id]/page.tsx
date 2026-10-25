@@ -1,8 +1,6 @@
 import { Metadata } from "next";
 import { MentorProfileView } from "@/components/mentors/mentor-profile-view";
-import { isMockDataEnabled, mentorsDirectory } from "@/mocks";
-
-const USE_MOCKS = isMockDataEnabled("mentorProfile");
+import { getMentorMetadata } from "@/components/mentors/mentor-metadata";
 
 export async function generateMetadata({
   params,
@@ -10,14 +8,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const mentor = USE_MOCKS ? mentorsDirectory[id] : undefined;
-  if (!mentor) {
-    return { title: "Mentor Profile | Median Mentorship" };
-  }
-  return {
-    title: `${mentor.name} - ${mentor.role} @ ${mentor.company} | Median Mentorship`,
-    description: mentor.bio,
-  };
+  return getMentorMetadata(id);
 }
 
 export default async function MenteeMentorProfilePage({

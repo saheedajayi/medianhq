@@ -28,6 +28,8 @@ export const authService = {
     return apiClient.post<AuthResponse>(`${AUTH_PATH}/login`, payload);
   },
 
+  // Components read the user through useCurrentUser. Route guards call this directly
+  // because redirect decisions need a fresh server answer, not a cached one.
   me() {
     return apiClient.get<AuthUser>(`${AUTH_PATH}/me`);
   },

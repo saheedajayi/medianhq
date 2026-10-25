@@ -2,20 +2,26 @@
 
 import { useEffect, useRef } from "react";
 import { Room, RoomEvent } from "livekit-client";
-import { messagesService, Message } from "@/services/messages";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import type { Message } from "@/services/messages";
+import { useRealtimeToken } from "@/services/messages/queries/messages.queries";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 
 export interface RealtimeMessageEvent {
-  type: "NEW_MESSAGE" | "EDIT_MESSAGE" | "DELETE_MESSAGE";
+  type: "NEW_MESSAGE" | "EDIT_MESSAGE" | "DELETE_MESSAGE" | "MESSAGES_DELIVERED" | "MESSAGES_READ";
   message?: Message;
   messageId?: string;
   conversationId?: string;
+  deliveredAt?: string;
 }
 
 interface UseMessagesRealtimeOptions {
   onNewMessage?: (message: Message) => void;
   onEditMessage?: (message: Partial<Message> & { id: string; conversationId: string }) => void;
   onDeleteMessage?: (messageId: string, conversationId: string) => void;
+  /** The other person's app received your messages in this conversation */
+  onMessagesDelivered?: (conversationId: string, deliveredAt: string) => void;
+  /** The other person opened this conversation */
+  onMessagesRead?: (conversationId: string) => void;
 }
 
 /**
@@ -25,6 +31,7 @@ interface UseMessagesRealtimeOptions {
 export function useMessagesRealtime(options: UseMessagesRealtimeOptions = {}) {
   const { data: user } = useCurrentUser();
   const roomRef = useRef<Room | null>(null);
+  const { mutateAsync: fetchRealtimeToken } = useRealtimeToken();
 
   const optionsRef = useRef(options);
   optionsRef.current = options;
@@ -37,7 +44,7 @@ export function useMessagesRealtime(options: UseMessagesRealtimeOptions = {}) {
 
     async function connectInbox() {
       try {
-        const { token, serverUrl } = await messagesService.getLiveKitToken();
+        const { token, serverUrl } = await fetchRealtimeToken();
         if (isCancelled || !token || !serverUrl) return;
 
         activeRoom = new Room({
@@ -57,6 +64,13 @@ export function useMessagesRealtime(options: UseMessagesRealtimeOptions = {}) {
               optionsRef.current.onEditMessage?.(data.message);
             } else if (data.type === "DELETE_MESSAGE" && data.messageId && data.conversationId) {
               optionsRef.current.onDeleteMessage?.(data.messageId, data.conversationId);
+            } else if (data.type === "MESSAGES_DELIVERED" && data.conversationId) {
+              optionsRef.current.onMessagesDelivered?.(
+                data.conversationId,
+                data.deliveredAt ?? new Date().toISOString()
+              );
+            } else if (data.type === "MESSAGES_READ" && data.conversationId) {
+              optionsRef.current.onMessagesRead?.(data.conversationId);
             }
           } catch (err) {
             console.warn("[LiveKit Realtime] Error parsing packet:", err);
@@ -81,7 +95,7 @@ export function useMessagesRealtime(options: UseMessagesRealtimeOptions = {}) {
         roomRef.current = null;
       }
     };
-  }, [user?.id]);
+  }, [user?.id, fetchRealtimeToken]);
 
   return { room: roomRef.current };
 }

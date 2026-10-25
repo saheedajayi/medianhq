@@ -52,7 +52,9 @@ export function MentorHeroCard({ mentor }: MentorHeroCardProps) {
         <div className="flex items-center gap-1">
           <Star className="size-4 fill-[#FDB022] text-[#FDB022] shrink-0" />
           <span>
-            {mentor.rating} ({mentor.reviewCount} Reviews)
+            {mentor.reviewCount > 0
+              ? `${mentor.rating} (${mentor.reviewCount} Reviews)`
+              : "New mentor"}
           </span>
         </div>
       </div>

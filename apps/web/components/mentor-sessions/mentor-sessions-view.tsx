@@ -1,13 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { Plus, Link2, Check, AlertCircle, Calendar } from "lucide-react";
+import type { MentorSessionDto, MentorSessionInput } from "@/services/mentor-sessions";
 import {
-  mentorSessionsService,
-  type MentorSessionDto,
-  type MentorSessionInput,
-} from "@/services/mentor-sessions";
+  useCreateMentorSession,
+  useDeleteMentorSession,
+  useMentorSessions,
+  useUpdateMentorSession,
+} from "@/services/mentor-sessions/queries/mentor-sessions.queries";
+import { mentorSessionsQueryKeys } from "@/services/mentor-sessions/queries/query-keys";
 import { MentorSessionDrawer } from "./mentor-session-drawer";
 import { MentorSessionDetails } from "./mentor-session-details";
 import {
@@ -16,9 +21,27 @@ import {
 } from "./mentor-session-modals";
 
 export function MentorSessionsView() {
-  const [sessions, setSessions] = useState<MentorSessionDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const sessionsQuery = useMentorSessions();
+  const sessions = sessionsQuery.data ?? [];
+  // Show the loader on retry too, not just the first load
+  const isLoading =
+    sessionsQuery.isLoading || (sessionsQuery.isError && sessionsQuery.isFetching);
+  const error = sessionsQuery.isError
+    ? "We couldn't load your sessions. Please try again."
+    : null;
+  const fetchSessions = () => sessionsQuery.refetch();
+
+  // Local edits go straight into the cached list; mutations refetch it afterwards
+  const setSessions = (update: (prev: MentorSessionDto[]) => MentorSessionDto[]) =>
+    queryClient.setQueryData<MentorSessionDto[]>(
+      mentorSessionsQueryKeys.list(),
+      (prev) => update(prev ?? [])
+    );
+
+  const createSessionMutation = useCreateMentorSession();
+  const updateSessionMutation = useUpdateMentorSession();
+  const deleteSessionMutation = useDeleteMentorSession();
 
   // Selected session for detail page view (Available Sessions-1.svg)
   const [selectedSession, setSelectedSession] = useState<MentorSessionDto | null>(null);
@@ -41,24 +64,6 @@ export function MentorSessionsView() {
   // Copied session link feedback
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSessions();
-  }, []);
-
-  const fetchSessions = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await mentorSessionsService.list();
-      setSessions(res.data || []);
-    } catch (err: any) {
-      console.error("Failed to load sessions:", err);
-      setError("We couldn't load your sessions. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleCreateOpen = () => {
     setEditingSession(null);
     setIsDrawerOpen(true);
@@ -73,8 +78,10 @@ export function MentorSessionsView() {
     setIsSaving(true);
     try {
       if (editingSession) {
-        const res = await mentorSessionsService.update(editingSession.id, payload);
-        const updated = res.data;
+        const updated = await updateSessionMutation.mutateAsync({
+          id: editingSession.id,
+          payload,
+        });
         setSessions((prev) =>
           prev.map((s) => (s.id === updated.id ? updated : s))
         );
@@ -84,12 +91,14 @@ export function MentorSessionsView() {
         setIsDrawerOpen(false);
         setSuccessModal({ type: "updated", session: updated });
       } else {
-        const res = await mentorSessionsService.create(payload);
-        const created = res.data;
+        const created = await createSessionMutation.mutateAsync(payload);
         // Newly created session is set to live per design flow
-        await mentorSessionsService.update(created.id, { isLive: true });
+        await updateSessionMutation.mutateAsync({
+          id: created.id,
+          payload: { isLive: true },
+        });
         const liveCreated = { ...created, isLive: true };
-        setSessions((prev) => [liveCreated, ...prev]);
+        setSessions((prev) => [liveCreated, ...prev.filter((s) => s.id !== liveCreated.id)]);
         setIsDrawerOpen(false);
         setSuccessModal({ type: "live", session: liveCreated });
       }
@@ -112,7 +121,10 @@ export function MentorSessionsView() {
     }
 
     try {
-      await mentorSessionsService.update(session.id, { isLive: nextLive });
+      await updateSessionMutation.mutateAsync({
+        id: session.id,
+        payload: { isLive: nextLive },
+      });
     } catch {
       // Revert on error
       setSessions((prev) =>
@@ -128,7 +140,7 @@ export function MentorSessionsView() {
     if (!deletingSession) return;
     setIsDeleting(true);
     try {
-      await mentorSessionsService.remove(deletingSession.id);
+      await deleteSessionMutation.mutateAsync(deletingSession.id);
       setSessions((prev) => prev.filter((s) => s.id !== deletingSession.id));
       if (selectedSession?.id === deletingSession.id) {
         setSelectedSession(null);
@@ -202,9 +214,38 @@ export function MentorSessionsView() {
   return (
     <div className="w-full">
       {isLoading ? (
-        <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center text-sm font-medium text-[#667085]">
-          Loading sessions...
-        </div>
+        /* Mirrors the sessions page: header row, then a grid of session cards */
+        <SkeletonGroup label="Loading sessions">
+          <div className="flex flex-col justify-between gap-4 pb-6 sm:flex-row sm:items-center">
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-32" />
+              <Skeleton className="h-4 w-72" />
+            </div>
+            <Skeleton className="h-10 w-40 rounded-full" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="rounded-[20px] border border-[#F2F2F7] bg-white p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                  <Skeleton className="h-5 w-9 rounded-full" />
+                </div>
+                <Skeleton className="mt-5 h-5 w-40" />
+                <div className="mt-3 space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
+                </div>
+                <div className="mt-6 flex gap-3">
+                  <Skeleton className="h-9 flex-1 rounded-full" />
+                  <Skeleton className="h-9 flex-1 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </SkeletonGroup>
       ) : error ? (
         <div className="rounded-2xl border border-[#FDA29B] bg-[#FEF3F2] p-8 text-center text-sm text-[#B42318]">
           <AlertCircle className="mx-auto mb-2 size-6" />

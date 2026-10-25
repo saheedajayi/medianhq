@@ -19,6 +19,8 @@ export interface AvailableDateSlot {
   month: string; // "Jun"
   slotsCount: number;
   times: string[]; // ["3:00PM", "3:30PM", "4:00PM", "4:30PM"]
+  /** Exact ISO start for each entry in times, when the dates come from the API */
+  slotIsos?: string[];
 }
 
 export interface AvailableDatesProps {

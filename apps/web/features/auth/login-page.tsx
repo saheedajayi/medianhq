@@ -28,6 +28,7 @@ import { SocialAuthButtons } from "./social-auth-buttons";
 import { getAuthDestination } from "@/lib/auth-routing";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth";
+import { useLogin } from "@/services/auth/queries/auth.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -46,6 +47,7 @@ export function LoginPage() {
   const [isNavigatingToReset, startTransition] = useTransition();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const loginMutation = useLogin();
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
     {},
   );
@@ -118,20 +120,20 @@ export function LoginPage() {
 
     setIsSubmitting(true);
 
-    authService
-      .login(result.data)
-      .then((response) => {
+    loginMutation
+      .mutateAsync(result.data)
+      .then((data) => {
         toast.success("Logged in", {
           description: `Welcome back.`,
         });
-        const stage = response.data.user.accountStage;
+        const stage = data.user.accountStage;
         const targetUrl =
           (stage === "READY" || stage === "MENTOR_PENDING") &&
           redirectParam &&
           redirectParam.startsWith("/")
             ? redirectParam
-            : getAuthDestination(response.data.user, {
-                retryEmail: response.data.emailSent === false,
+            : getAuthDestination(data.user, {
+                retryEmail: data.emailSent === false,
               });
 
         window.location.href = targetUrl;
@@ -153,31 +155,52 @@ export function LoginPage() {
           typeof navigator !== "undefined" &&
           !navigator.onLine;
 
-        const isNetworkOrConnectionError =
-          isOffline ||
-          status === 0 ||
-          status === 502 ||
-          status === 503 ||
-          status === 504 ||
-          code === "ERR_NETWORK" ||
+        if (isOffline) {
+          toast.error("Connection Error", {
+            description:
+              "You appear to be offline. Please check your internet connection and try again.",
+          });
+          return;
+        }
+
+        // Our server answered but couldn't serve the request (API down, DB unreachable).
+        // The user's internet is fine here, so don't point at it.
+        if (status === 502 || status === 503 || status === 504) {
+          toast.error("Service Unavailable", {
+            description:
+              "We're having trouble connecting right now. Please try again in a moment.",
+          });
+          return;
+        }
+
+        const isTimeout =
           code === "ECONNABORTED" ||
           code === "ETIMEDOUT" ||
+          lowerMessage.includes("timeout");
+
+        if (isTimeout) {
+          toast.error("Request Timed Out", {
+            description:
+              "This is taking longer than expected. Please check your connection and try again.",
+          });
+          return;
+        }
+
+        // No response at all: could be the user's network or ours, the browser can't tell.
+        const isNetworkError =
+          status === 0 ||
+          code === "ERR_NETWORK" ||
           code === "ECONNREFUSED" ||
           code === "ENOTFOUND" ||
           code === "ERR_CONNECTION_REFUSED" ||
           lowerMessage.includes("network") ||
-          lowerMessage.includes("timeout") ||
-          lowerMessage.includes("econnrefused") ||
           lowerMessage.includes("failed to fetch") ||
-          lowerMessage.includes("connection refused") ||
-          lowerMessage.includes("bad gateway") ||
-          lowerMessage.includes("gateway timeout");
+          lowerMessage.includes("connection refused");
 
-        if (isNetworkOrConnectionError) {
+        if (isNetworkError) {
           toast.error("Connection Error", {
-            description: isOffline
-              ? "You appear to be offline. Please check your internet connection and try again."
-              : "Unable to connect to the server. Please check your internet connection and try again.",
+            description:
+              "We couldn't connect to our servers. Please check your internet connection, or try again in a moment.",
           });
           return;
         }

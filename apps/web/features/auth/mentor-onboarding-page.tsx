@@ -4,8 +4,9 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FileText, X, Loader2 } from "lucide-react";
-import { mentorsService } from "@/services/mentors";
+import { useApplyMentor } from "@/services/mentors/queries/mentors.queries";
 import { uploadsService } from "@/services/uploads";
+import { useUploadCv } from "@/services/uploads/queries/uploads.queries";
 import type { ApiError } from "@/services/api-client";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -25,8 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { taxonomyService } from "@/services/taxonomy";
+import { useCreateRole, useIndustries } from "@/services/taxonomy/queries/taxonomy.queries";
 
 import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries";
 
@@ -78,18 +78,11 @@ export function MentorOnboardingPage() {
     } catch {}
   }, [currentSubStep, router]);
 
-  const { data: taxonomyData, refetch: refetchTaxonomy } = useQuery({
-    queryKey: ["taxonomy"],
-    queryFn: taxonomyService.getIndustries,
-  });
+  const { data: taxonomyData } = useIndustries();
 
-  const createRoleMutation = useMutation({
-    mutationFn: (roleName: string) =>
-      taxonomyService.createRole(industry, roleName),
-    onSuccess: () => {
-      refetchTaxonomy();
-    },
-  });
+  const applyMentorMutation = useApplyMentor();
+  const createRoleMutation = useCreateRole();
+  const uploadCvMutation = useUploadCv();
 
   const INDUSTRIES = ALLOWED_INDUSTRIES;
   const INDUSTRY_ROLES: Record<string, string[]> = {
@@ -150,13 +143,13 @@ export function MentorOnboardingPage() {
         toast.info("Uploading CV...", {
           description: "Please wait while your document is being uploaded.",
         });
-        const uploadRes: any = await uploadsService.uploadCv(cvFile);
+        const uploadRes: any = await uploadCvMutation.mutateAsync(cvFile);
         finalCvUrl =
           uploadRes?.url || uploadRes?.data?.url || uploadRes?.publicId || "";
         setCvUrl(finalCvUrl);
       }
 
-      await mentorsService.apply({
+      await applyMentorMutation.mutateAsync({
         currentRole,
         company,
         industry,
@@ -243,7 +236,7 @@ export function MentorOnboardingPage() {
               onValueChange={setCurrentRole}
               onCreate={(val) => {
                 setCurrentRole(val);
-                createRoleMutation.mutate(val);
+                createRoleMutation.mutate({ industryName: industry, roleName: val });
               }}
               placeholder="Select a role..."
               emptyText={

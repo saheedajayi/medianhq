@@ -24,10 +24,11 @@ export interface ExploreMentor {
   tags: string[];
   avatarUrl: string;
   isFeatured?: boolean;
+  /** First open slot in the next two weeks; null when the mentor has none */
   nextAvailability: {
     relative: string; // e.g., "in 3 days"
     formattedDate: string; // e.g., "Wed, 12 August 11:30 AM"
-  };
+  } | null;
   price?: string;
   pricePerSession?: number;
   experienceLevel?: ExperienceLevel;

@@ -4,14 +4,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar } from "iconsax-react";
 import { Clock } from "lucide-react";
-import type { Booking } from "@/components/mentee-booking-session/types";
+import type { Booking } from "@/components/bookings/types";
+import { DashboardListCardSkeleton } from "./dashboard-list-card-skeleton";
 
 interface UpcomingSessionsCardProps {
   sessions?: Booking[];
+  isLoading?: boolean;
 }
 
-export function UpcomingSessionsCard({ sessions }: UpcomingSessionsCardProps) {
+export function UpcomingSessionsCard({ sessions, isLoading = false }: UpcomingSessionsCardProps) {
   const upcomingList = sessions || [];
+
+  if (isLoading) {
+    return <DashboardListCardSkeleton title="Upcoming Sessions" rows={2} withAvatar />;
+  }
 
   if (upcomingList.length > 0) {
     return (
@@ -37,18 +43,18 @@ export function UpcomingSessionsCard({ sessions }: UpcomingSessionsCardProps) {
               <div className="flex items-center gap-3">
                 <div className="relative size-11 shrink-0 overflow-hidden rounded-full border border-white">
                   <Image
-                    src={session.mentorAvatar || "/default-avatar.svg"}
-                    alt={session.mentorName}
+                    src={session.participantAvatar || "/default-avatar.svg"}
+                    alt={session.participantName}
                     fill
                     className="object-cover"
                   />
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-[#101828]">
-                    {session.mentorName}
+                    {session.participantName}
                   </h4>
                   <p className="text-xs text-[#667085]">
-                    {session.title || session.mentorRole}
+                    {session.title || session.participantRole}
                   </p>
                   <div className="mt-1 flex items-center gap-1.5 text-xs text-[#475467]">
                     <Clock className="size-3 text-[#FF5500]" />
