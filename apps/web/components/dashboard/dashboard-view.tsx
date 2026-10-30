@@ -5,12 +5,17 @@ import Link from "next/link";
 import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 import { TopSignupNoticeBanner } from "@/components/dashboard/top-signup-notice-banner";
 import type { SessionHint } from "@/lib/session-hint";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DashboardHeroBanner } from "@/components/dashboard/dashboard-hero-banner";
-import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
-import { MentorApplicationStatusCard } from "@/components/dashboard/mentor-application-status-card";
+import {
+  ProfileCompletionCard,
+  ProfileCompletionCardSkeleton,
+} from "@/components/dashboard/profile-completion-card";
+import {
+  MentorApplicationStatusCard,
+  MentorApplicationStatusCardSkeleton,
+} from "@/components/dashboard/mentor-application-status-card";
 import { MentorDashboardView } from "@/components/dashboard/mentor-dashboard-view";
 import { MentorsForYouSection } from "@/components/dashboard/mentors-for-you-section";
 import { UpcomingSessionsCard } from "@/components/dashboard/upcoming-sessions-card";
@@ -174,7 +179,8 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
       )}
 
       {/* Application status and profile progress both depend on the fetched user */}
-      {!user && <Skeleton className="h-24 w-full rounded-2xl" />}
+      {!user && isMentor && <MentorApplicationStatusCardSkeleton />}
+      {!user && <ProfileCompletionCardSkeleton />}
 
       {user && isMentor && user.mentorStatus !== "APPROVED" && (
         <MentorApplicationStatusCard status={user?.mentorStatus} />

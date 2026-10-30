@@ -1,12 +1,58 @@
 "use client";
 
 import { useState } from "react";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { ProfileUpdateModal } from "./profile-update-modal";
 
 interface ProfileCompletionCardProps {
   percentage?: number;
   /** Optional subtitle; mentors see copy about how mentees find them */
   description?: string;
+}
+
+// The default grey disappears on this card's peach background
+const SKELETON_TINT = "bg-[#FFE3D6]!";
+
+/** Same layout as the card below, so nothing shifts when the percentage arrives */
+export function ProfileCompletionCardSkeleton() {
+  return (
+    <SkeletonGroup
+      label="Loading your profile progress"
+      className="flex flex-col gap-4 rounded-2xl border border-[#FFDEC9] bg-[#FFF9F6] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3.5"
+    >
+      <div className="flex flex-1 items-center gap-4 sm:gap-5">
+        {/* Progress ring: a tinted circle with the card colour punched out of the middle */}
+        <div className="relative flex size-16 shrink-0 items-center justify-center sm:size-20">
+          <Skeleton className={`absolute inset-[3px] rounded-full ${SKELETON_TINT}`} />
+          <span className="absolute inset-[11px] rounded-full bg-[#FFF9F6]" />
+          <Skeleton className={`relative h-4 w-7 sm:w-8 ${SKELETON_TINT}`} />
+        </div>
+
+        {/* Same line heights as the real title and description */}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div>
+            <div className="flex h-6 items-center sm:h-7">
+              <Skeleton className={`h-4 w-full sm:h-5 sm:w-64 ${SKELETON_TINT}`} />
+            </div>
+            {/* Both lines of text wrap on a phone */}
+            <div className="flex h-6 items-center sm:hidden">
+              <Skeleton className={`h-4 w-2/5 ${SKELETON_TINT}`} />
+            </div>
+          </div>
+          <div>
+            <div className="flex h-4 items-center sm:h-5">
+              <Skeleton className={`h-3 w-full sm:h-3.5 sm:w-72 ${SKELETON_TINT}`} />
+            </div>
+            <div className="flex h-4 items-center sm:hidden">
+              <Skeleton className={`h-3 w-1/3 ${SKELETON_TINT}`} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Skeleton className={`h-9 w-full shrink-0 rounded-full sm:h-10 sm:w-36 ${SKELETON_TINT}`} />
+    </SkeletonGroup>
+  );
 }
 
 export function ProfileCompletionCard({

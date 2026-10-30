@@ -42,10 +42,13 @@ function Toggle({
   );
 }
 
-const CHANNELS: { value: NotificationChannel; label: string }[] = [
-  { value: "email", label: "Email" },
-  { value: "inApp", label: "In-app" },
+// Email sits left-aligned in its column and In-app against the card's edge, as in the design
+const CHANNELS: { value: NotificationChannel; label: string; alignClass: string }[] = [
+  { value: "email", label: "Email", alignClass: "justify-self-start" },
+  { value: "inApp", label: "In-app", alignClass: "justify-self-end" },
 ];
+
+const ROW_CLASS = "grid grid-cols-[1fr_72px_48px] items-center whitespace-nowrap text-sm sm:grid-cols-[1fr_83px_48px]";
 
 export function NotificationsTab() {
   const { data, isLoading, isError, isFetching, refetch } = useMySettings();
@@ -73,28 +76,30 @@ export function NotificationsTab() {
         Manage how you receive notifications by email and in-app.
       </p>
 
-      <div className="mt-5 grid grid-cols-[1fr_56px_56px] items-center gap-y-5 text-sm">
-        <span className="text-[#475467]">Notification type</span>
+      <div className={`${ROW_CLASS} mt-5 text-[#667085]`}>
+        <span>Notification type</span>
         {CHANNELS.map((channel) => (
-          <span key={channel.value} className="justify-self-end text-[#475467]">
+          <span key={channel.value} className={channel.alignClass}>
             {channel.label}
           </span>
         ))}
+      </div>
 
+      <div className="mt-4 border-b border-[#EAECF0] pb-2">
         {NOTIFICATION_TYPES.map((type) => (
-          <div key={type.value} className="contents">
+          <div key={type.value} className={`${ROW_CLASS} h-11`}>
             <span className="text-[#101828]">{type.label}</span>
             {CHANNELS.map((channel) =>
               isLoading ? (
                 <SkeletonGroup
                   key={channel.value}
                   label={`Loading ${type.label}`}
-                  className="justify-self-end"
+                  className={channel.alignClass}
                 >
                   <Skeleton className="h-4 w-[30px] rounded-full" />
                 </SkeletonGroup>
               ) : (
-                <div key={channel.value} className="justify-self-end">
+                <div key={channel.value} className={channel.alignClass}>
                   <Toggle
                     label={`${type.label} by ${channel.label}`}
                     checked={preferences[type.value]?.[channel.value] !== false}
