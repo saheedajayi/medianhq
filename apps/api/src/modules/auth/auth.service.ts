@@ -20,6 +20,7 @@ import { getAccountStage } from './account-stage';
 import { PwnedPasswordService } from './pwned-password.service';
 import { AuthRateLimiterService } from './auth-rate-limiter.service';
 import { SecurityAuditService } from './security-audit.service';
+import { DeviceSessionsService } from './device-sessions.service';
 import type {
   AuthUser,
   LoginDto,
@@ -82,6 +83,7 @@ export class AuthService {
     private readonly pwnedPasswordService: PwnedPasswordService,
     private readonly rateLimiterService: AuthRateLimiterService,
     private readonly securityAuditService: SecurityAuditService,
+    private readonly deviceSessions: DeviceSessionsService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthPayload> {
@@ -508,6 +510,7 @@ export class AuthService {
       passwordHash,
       sessionVersion: { increment: 1 },
     });
+    await this.deviceSessions.removeAll(user.id);
     await this.authRepository.deleteVerificationToken(tokenRecord.id);
 
     await this.securityAuditService.record({
@@ -587,6 +590,7 @@ export class AuthService {
       passwordHash: this.hashPassword(password),
       sessionVersion: { increment: 1 },
     });
+    await this.deviceSessions.removeAll(user.id);
 
     await this.securityAuditService.record({
       userId: user.id,
@@ -844,7 +848,7 @@ export class AuthService {
     response.clearCookie(REFRESH_COOKIE_NAME, options);
   }
 
-  private getCookieOptions() {
+  getCookieOptions() {
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
@@ -1055,6 +1059,9 @@ export class AuthService {
             location: user.mentorProfile.location,
             bio: user.mentorProfile.bio,
             avatarUrl: user.mentorProfile.avatarUrl,
+            skills: user.mentorProfile.skills,
+            tools: user.mentorProfile.tools,
+            certificates: user.mentorProfile.certificates,
           }
         : null,
     };

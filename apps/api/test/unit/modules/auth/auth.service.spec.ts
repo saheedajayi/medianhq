@@ -50,6 +50,7 @@ describe('AuthService', () => {
       pwnedPasswordService,
       rateLimiterService,
       securityAuditService,
+      { removeAll: jest.fn().mockResolvedValue(undefined) } as any,
     );
   });
 

@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+import { DeviceSessionsService } from './device-sessions.service';
 import {
   Body,
   Controller,
@@ -27,11 +29,15 @@ import type {
 import { AUTH_COOKIE_NAME, REFRESH_COOKIE_NAME } from './auth.service';
 import { AuthRateLimiterService } from './auth-rate-limiter.service';
 
+const DEVICE_COOKIE_NAME = 'median_device';
+const DEVICE_COOKIE_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly rateLimiterService: AuthRateLimiterService,
+    private readonly deviceSessions: DeviceSessionsService,
   ) {}
 
   @Post('register')
@@ -86,14 +92,40 @@ export class AuthController {
   }
 
   @Get('me')
-  me(@Req() request: Request) {
-    return this.authService.getCurrentUser(
+  async me(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const user = await this.authService.getCurrentUser(
       this.getCookieValue(request.headers.cookie, AUTH_COOKIE_NAME),
     );
+    // Every page load comes through here, so this keeps "last active" current.
+    // These calls run in parallel, so only read the device cookie here: issuing one
+    // would give each call its own ID and list one browser as several devices.
+    const deviceId = this.getCookieValue(request.headers.cookie, DEVICE_COOKIE_NAME);
+    if (deviceId) void this.deviceSessions.track(user.id, deviceId, this.getDeviceContext(request));
+    return user;
+  }
+
+  @Get('sessions')
+  @UseGuards(AuthGuard)
+  async getSessions(
+    @Req() request: Request & { user: AuthUser },
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    // Browsers signed in before device tracking get their cookie here
+    const deviceId = this.ensureDeviceCookie(request, response);
+    await this.deviceSessions.track(request.user.id, deviceId, this.getDeviceContext(request));
+    return this.deviceSessions.list(request.user.id, deviceId);
   }
 
   @Post('logout')
-  logout(@Res({ passthrough: true }) response: Response) {
+  async logout(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const deviceId = this.getCookieValue(request.headers.cookie, DEVICE_COOKIE_NAME);
+    if (deviceId) await this.deviceSessions.removeDevice(deviceId);
     this.clearAuthCookies(response);
 
     return {
@@ -243,6 +275,10 @@ export class AuthController {
       },
     );
     this.setAuthCookies(response, payload);
+    await this.deviceSessions.removeOthers(
+      request.user.id,
+      this.getCookieValue(request.headers.cookie, DEVICE_COOKIE_NAME),
+    );
     return {
       success: true,
       message: 'All other sessions have been signed out.',
@@ -260,6 +296,7 @@ export class AuthController {
     response: Response,
     tokens: { sessionToken: string; refreshToken: string },
   ) {
+    this.ensureDeviceCookie(response.req, response);
     this.authService.setAuthCookies(response, tokens);
   }
 
@@ -293,6 +330,38 @@ export class AuthController {
       case 'MENTOR_PENDING':
       case 'READY':
         return '/dashboard';
+    }
+  }
+
+  /** Returns this browser's device ID, issuing a cookie the first time it's seen */
+  private ensureDeviceCookie(request: Request, response: Response) {
+    const existing = this.getCookieValue(request.headers.cookie, DEVICE_COOKIE_NAME);
+    if (existing) return existing;
+
+    const deviceId = randomUUID();
+    response.cookie(DEVICE_COOKIE_NAME, deviceId, {
+      ...this.authService.getCookieOptions(),
+      maxAge: DEVICE_COOKIE_MAX_AGE_MS,
+    });
+    return deviceId;
+  }
+
+  private getDeviceContext(request: Request) {
+    return {
+      userAgent: this.getUserAgent(request),
+      ipAddress: this.getClientIp(request),
+      location: this.getClientCity(request),
+    };
+  }
+
+  /** City from the hosting platform's geo headers, when it's behind one */
+  private getClientCity(request: Request) {
+    const city = request.headers['cf-ipcity'] ?? request.headers['x-vercel-ip-city'];
+    if (typeof city !== 'string' || !city) return null;
+    try {
+      return decodeURIComponent(city);
+    } catch {
+      return city;
     }
   }
 

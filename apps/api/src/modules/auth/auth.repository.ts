@@ -17,6 +17,9 @@ const MENTOR_PROFILE_SELECT = {
   location: true,
   bio: true,
   avatarUrl: true,
+  skills: true,
+  tools: true,
+  certificates: true,
 };
 
 @Injectable()

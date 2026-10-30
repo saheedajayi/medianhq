@@ -138,7 +138,10 @@ apiClient.interceptors.response.use(
       } catch (refreshErr) {
         processQueue(refreshErr);
 
-        if (typeof window !== "undefined") {
+        // Only a rejected refresh means signed out; a server or network failure isn't the user's session
+        const refreshStatus = (refreshErr as AxiosError).response?.status ?? 0;
+
+        if (refreshStatus === 401 && typeof window !== "undefined") {
           const pathname = window.location.pathname;
           const isDashboard =
             pathname.startsWith("/dashboard") ||
@@ -155,7 +158,7 @@ apiClient.interceptors.response.use(
         }
 
         const apiError: ApiError = {
-          status: (refreshErr as AxiosError).response?.status ?? 401,
+          status: refreshStatus,
           message: getErrorMessage(
             (refreshErr as AxiosError).response?.data,
             "Session expired. Please sign in again.",

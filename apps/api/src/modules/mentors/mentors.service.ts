@@ -20,6 +20,8 @@ import { MentorsRepository } from './mentors.repository';
 import { buildAvailableDays } from '../bookings/availability-slots';
 import { MIN_LEAD_TIME_MS } from '../bookings/booking-policy';
 
+const MAX_PROFILE_LIST_ITEMS = 20;
+
 @Injectable()
 export class MentorsService {
   private readonly logger = new Logger(MentorsService.name);
@@ -373,11 +375,21 @@ export class MentorsService {
       throw new BadRequestException('Bio must be less than 300 words.');
     }
 
+    const skills = this.cleanList(dto.skills, 'Skills');
+    const tools = this.cleanList(dto.tools, 'Tools');
+    const certificates = this.cleanList(dto.certificates, 'Certificates');
+    if (certificates?.some((url) => !url.startsWith('https://'))) {
+      throw new BadRequestException('Certificates must be https URLs.');
+    }
+
     const profile = await this.mentorsRepository.updateProfileByUserId(userId, {
       ...(gender && { gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase() }),
       ...(dto.location?.trim() && { location: dto.location.trim() }),
       ...(bio && { bio }),
       ...(avatarUrl && { avatarUrl }),
+      ...(skills && { skills }),
+      ...(tools && { tools }),
+      ...(certificates && { certificates }),
     });
 
     return {
@@ -385,5 +397,20 @@ export class MentorsService {
       message: 'Mentor profile updated successfully',
       profile,
     };
+  }
+
+  /** Trims and de-duplicates a list field; undefined leaves the saved list alone */
+  private cleanList(values: string[] | undefined, label: string) {
+    if (values === undefined) return undefined;
+    if (!Array.isArray(values) || values.some((value) => typeof value !== 'string')) {
+      throw new BadRequestException(`${label} must be a list of text values.`);
+    }
+    const cleaned = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+    if (cleaned.length > MAX_PROFILE_LIST_ITEMS) {
+      throw new BadRequestException(
+        `${label} cannot have more than ${MAX_PROFILE_LIST_ITEMS} items.`,
+      );
+    }
+    return cleaned;
   }
 }

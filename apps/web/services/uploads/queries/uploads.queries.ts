@@ -25,6 +25,13 @@ export const useUploadAvatar = () => {
   });
 };
 
+export const useUploadCertificate = () => {
+  return useMutation<UploadResponse, Error, File>({
+    mutationKey: uploadsQueryKeys.certificate(),
+    mutationFn: (file) => uploadsService.uploadCertificate(file),
+  });
+};
+
 export const useUploadCv = () => {
   return useMutation<UploadResponse, Error, File>({
     mutationKey: uploadsQueryKeys.cv(),

@@ -38,6 +38,9 @@ export type AuthUser = {
     location?: string | null;
     bio?: string | null;
     avatarUrl?: string | null;
+    skills?: string[];
+    tools?: string[];
+    certificates?: string[];
   } | null;
 };
 

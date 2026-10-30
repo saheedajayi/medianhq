@@ -87,9 +87,16 @@ export function middleware(request: NextRequest) {
     const stageRedirect = sessionPayload?.accountStage
       ? ONBOARDING_REDIRECTS[sessionPayload.accountStage]
       : null;
-    const destination =
-      stageRedirect ||
-      (sessionPayload?.role === "MENTOR" ? "/mentor/sessions" : "/dashboard");
+    // Only same-site paths: "//host" would leave the site, and auth pages would loop
+    const redirectParam = request.nextUrl.searchParams.get("redirect");
+    const safeRedirect =
+      redirectParam?.startsWith("/") &&
+      !redirectParam.startsWith("//") &&
+      !redirectParam.startsWith("/\\") &&
+      !AUTH_ROUTES.has(redirectParam.split(/[?#]/)[0] ?? "")
+        ? redirectParam
+        : null;
+    const destination = stageRedirect || safeRedirect || "/dashboard";
     return NextResponse.redirect(new URL(destination, request.url));
   }
 

@@ -79,6 +79,10 @@ model User {
   mentorEarnings     MentorEarning[]
   payoutRequests     PayoutRequest[]
   securityAuditLogs  SecurityAuditLog[]
+  deviceSessions     DeviceSession[]
+  workExperiences    WorkExperience[]
+  educations         Education[]
+  socialLinks        SocialLink[]
 
   googleId       String?        @unique
   linkedinId     String?        @unique
@@ -99,6 +103,9 @@ model MentorProfile {
   company           String?
   jobTitle          String?
   location          String?
+  skills            String[]     @default([])
+  tools             String[]     @default([])
+  certificates      String[]     @default([])
   linkedinUrl       String?
   pricePerSession   Int          @default(0)
   currency          String       @default("NGN")
@@ -311,6 +318,8 @@ model UserSettings {
   emailNotifications Boolean  @default(true)
   marketingEmails    Boolean  @default(false)
   timezone           String   @default("Africa/Lagos")
+  /// { [type]: { email: boolean, inApp: boolean } }; a missing type means on
+  notificationPreferences Json @default("{}")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
@@ -466,4 +475,72 @@ model SecurityAuditLog {
   @@index([email])
   @@index([action])
   @@index([createdAt])
+}
+
+// A browser the user is signed in on, identified by a long-lived device cookie
+model DeviceSession {
+  id           String   @id
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent    String?
+  ipAddress    String?
+  location     String?
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WorkExperience {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         String
+  company      String
+  industry     String?
+  startMonth   Int
+  startYear    Int
+  endMonth     Int?
+  endYear      Int?
+  isCurrent    Boolean  @default(false)
+  contribution String?
+  skills       String[] @default([])
+  tools        String[] @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Education {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fieldOfStudy String
+  school       String
+  startMonth   Int
+  startYear    Int
+  endMonth     Int?
+  endYear      Int?
+  isCurrent    Boolean  @default(false)
+  learnings    String?
+  skills       String[] @default([])
+  tools        String[] @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// kind is LINKEDIN, X, WEBSITE or CUSTOM; only custom links have a title
+model SocialLink {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  title     String?
+  url       String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

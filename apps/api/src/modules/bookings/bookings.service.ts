@@ -863,6 +863,7 @@ export class BookingsService {
       note,
       meetingUrl: b.meetingUrl,
       respondBy: b.respondBy?.toISOString(),
+      requestedAt: b.createdAt.toISOString(),
       isReadyToJoin:
         b.status === BookingStatus.CONFIRMED &&
         now.getTime() >= startsAt.getTime() - JOIN_WINDOW_MS &&

@@ -16,4 +16,8 @@ export type UpdateMentorProfileDto = {
   gender?: string;
   location?: string;
   bio?: string;
+  skills?: string[];
+  tools?: string[];
+  /** URLs of uploaded certificate images */
+  certificates?: string[];
 };

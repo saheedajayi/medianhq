@@ -3,6 +3,7 @@ export type CreateMentorProfilePayload = {
   company?: string;
   industry: string;
   experience: string;
+  location: string;
   /** Answer to "Why do you want to mentor?" (private, for application review) */
   motivation: string;
   cvUrl?: string;
@@ -13,6 +14,10 @@ export type UpdateMentorProfilePayload = {
   location?: string;
   bio?: string;
   avatarUrl?: string;
+  skills?: string[];
+  tools?: string[];
+  /** URLs of uploaded certificate images */
+  certificates?: string[];
 };
 
 export type MentorProfileMutationResponse = {

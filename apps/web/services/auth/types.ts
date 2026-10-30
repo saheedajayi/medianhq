@@ -32,6 +32,9 @@ export type AuthUser = {
     location?: string | null;
     bio?: string | null;
     avatarUrl?: string | null;
+    skills?: string[];
+    tools?: string[];
+    certificates?: string[];
   } | null;
 };
 
@@ -84,6 +87,15 @@ export type SecurityEvent = {
   ipAddress: string | null;
   userAgent: string | null;
   createdAt: string;
+};
+
+export type DeviceSession = {
+  id: string;
+  label: string;
+  isMobile: boolean;
+  location: string | null;
+  lastActiveAt: string;
+  isCurrent: boolean;
 };
 
 export type RevokeSessionsResponse = {

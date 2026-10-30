@@ -73,6 +73,8 @@ export interface BookingResponse {
   meetingUrl?: string;
   /** When the mentor's 24 hours to accept run out (pending requests only) */
   respondBy?: string;
+  /** When the mentee made the booking */
+  requestedAt?: string;
   isReadyToJoin?: boolean;
   /** The mentee's review of the session */
   rating?: number;

@@ -10,9 +10,10 @@ interface DashboardHeroBannerProps {
   stats?: {
     label: string;
     value: number | string;
-    subtext: string;
+    subtext?: string;
   }[];
   isLoading?: boolean;
+  showBookButton?: boolean;
 }
 
 export function DashboardHeroBanner({
@@ -20,6 +21,7 @@ export function DashboardHeroBanner({
   upcomingCount = 0,
   stats,
   isLoading = false,
+  showBookButton = true,
 }: DashboardHeroBannerProps) {
   const { data: user } = useCurrentUser();
   const displayFirstName = userName || user?.firstName || "";
@@ -40,6 +42,7 @@ export function DashboardHeroBanner({
           userName={displayFirstName}
           upcomingCount={upcomingCount}
           isLoading={isLoading}
+          showBookButton={showBookButton}
         />
         <DashboardStatsGrid stats={stats} isLoading={isLoading} />
       </div>

@@ -11,7 +11,17 @@ export type BookingEvent =
   | 'CANCELLED'
   | 'RESCHEDULED';
 
-type Person = { email: string; firstName: string; lastName: string };
+type Person = { id: string; email: string; firstName: string; lastName: string };
+
+// Which notification preference controls each email; new requests have no toggle
+// because mentors must always hear about them before the 24-hour deadline
+const EVENT_PREFERENCE: Partial<Record<BookingEvent, string>> = {
+  ACCEPTED: 'bookingUpdates',
+  DECLINED: 'bookingUpdates',
+  EXPIRED: 'bookingUpdates',
+  RESCHEDULED: 'bookingUpdates',
+  CANCELLED: 'cancellations',
+};
 
 /**
  * Emails the other person when a booking changes. Failures are logged, never
@@ -35,8 +45,8 @@ export class BookingNotificationsService {
       const booking = await this.prisma.booking.findUnique({
         where: { id: bookingId },
         include: {
-          mentor: { select: { email: true, firstName: true, lastName: true } },
-          mentee: { select: { email: true, firstName: true, lastName: true } },
+          mentor: { select: { id: true, email: true, firstName: true, lastName: true } },
+          mentee: { select: { id: true, email: true, firstName: true, lastName: true } },
           payment: { select: { currency: true } },
         },
       });
@@ -57,14 +67,15 @@ export class BookingNotificationsService {
       const fullName = (person: Person) =>
         `${person.firstName} ${person.lastName}`.trim();
 
-      const send = (
+      const send = async (
         to: Person,
         subject: string,
         paragraphs: (string | null)[],
         ctaLabel: string,
         ctaPath: string,
-      ) =>
-        this.emailService.sendBookingUpdate({
+      ) => {
+        if (!(await this.wantsEmail(to.id, event))) return;
+        await this.emailService.sendBookingUpdate({
           email: to.email,
           firstName: to.firstName,
           subject,
@@ -74,6 +85,7 @@ export class BookingNotificationsService {
           ctaPath,
           idempotencyKey: `booking:${booking.id}:${event}:${booking.updatedAt.getTime()}:${to.email}`,
         });
+      };
 
       switch (event) {
         case 'REQUESTED':
@@ -171,6 +183,21 @@ export class BookingNotificationsService {
   }
 
   /** "Tue, 27 Oct 2026, 3:00 PM - 3:30 PM WAT" in the mentor's time zone */
+  private async wantsEmail(userId: string, event: BookingEvent) {
+    const preference = EVENT_PREFERENCE[event];
+    if (!preference) return true;
+
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { notificationPreferences: true },
+    });
+    const preferences = (settings?.notificationPreferences ?? {}) as Record<
+      string,
+      { email?: boolean } | undefined
+    >;
+    return preferences[preference]?.email !== false;
+  }
+
   private formatWhen(startsAt: Date, durationMinutes: number) {
     const shift = (date: Date) =>
       new Date(date.getTime() + MENTOR_UTC_OFFSET_MINUTES * 60 * 1000);

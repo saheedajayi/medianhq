@@ -48,6 +48,8 @@ export interface Booking {
   isReadyToJoin?: boolean;
   /** When the mentor's 24 hours to accept run out (pending requests only) */
   respondBy?: string;
+  /** When the mentee made the booking */
+  requestedAt?: string;
   rating?: number;
   review?: string;
   actionItems?: ActionItem[];

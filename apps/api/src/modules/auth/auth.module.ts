@@ -13,6 +13,7 @@ import { OAuthExceptionFilter } from './filters/oauth-exception.filter';
 import { PwnedPasswordService } from './pwned-password.service';
 import { AuthRateLimiterService } from './auth-rate-limiter.service';
 import { SecurityAuditService } from './security-audit.service';
+import { DeviceSessionsService } from './device-sessions.service';
 
 @Global()
 @Module({
@@ -30,6 +31,7 @@ import { SecurityAuditService } from './security-audit.service';
     PwnedPasswordService,
     AuthRateLimiterService,
     SecurityAuditService,
+    DeviceSessionsService,
   ],
   exports: [AuthService, AuthRateLimiterService, SecurityAuditService, AdminGuard],
 })

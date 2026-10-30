@@ -1,6 +1,7 @@
 export const authQueryKeys = {
   all: ["auth"] as const,
   me: () => [...authQueryKeys.all, "me"] as const,
+  deviceSessions: () => [...authQueryKeys.all, "device-sessions"] as const,
   securityEvents: () => [...authQueryKeys.all, "security-events"] as const,
   resetToken: (token: string) => [...authQueryKeys.all, "reset-token", token] as const,
   login: () => [...authQueryKeys.all, "login"] as const,
