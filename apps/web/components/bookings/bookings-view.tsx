@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useBookingEvents } from "@/hooks/use-booking-events";
 import { CheckCircle2 } from "lucide-react";
 import { Calendar } from "iconsax-react";
 import {
@@ -88,6 +89,7 @@ export function BookingsView({ viewerRole }: { viewerRole: ViewerRole }) {
     window.history.replaceState(null, "", `?${params.toString()}`);
   };
   const { data: apiBookings, isLoading } = useMyBookings();
+  useBookingEvents();
   const rescheduleBookingMutation = useRescheduleBooking();
   const cancelBookingMutation = useCancelBooking();
   const acceptBookingMutation = useAcceptBooking();
@@ -401,7 +403,12 @@ export function BookingsView({ viewerRole }: { viewerRole: ViewerRole }) {
 
       {/* Booking Details Drawer */}
       <BookingDetailsDrawer
-        booking={selectedBooking}
+        // The list can update while this is open, so show the latest copy of the booking
+        booking={
+          selectedBooking
+            ? (bookings.find((b) => b.id === selectedBooking.id) ?? selectedBooking)
+            : null
+        }
         viewerRole={viewerRole}
         onClose={() => setSelectedBooking(null)}
         onJoinSession={(b) => handleStartMeetingFlow(b)}

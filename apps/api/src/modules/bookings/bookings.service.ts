@@ -22,6 +22,8 @@ import {
 } from './bookings.repository';
 import { PaymentsService } from '../payments/payments.service';
 import { BookingNotificationsService } from '../booking-notifications/booking-notifications.service';
+import { BookingEventsService } from '../booking-notifications/booking-events.service';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import { buildAvailableDays, type AvailableDay } from './availability-slots';
 import {
   JOIN_WINDOW_MS,
@@ -64,6 +66,8 @@ export class BookingsService {
     private readonly configService: ConfigService,
     private readonly paymentsService: PaymentsService,
     private readonly bookingNotifications: BookingNotificationsService,
+    private readonly exchangeRates: ExchangeRatesService,
+    private readonly bookingEvents: BookingEventsService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -198,6 +202,8 @@ export class BookingsService {
     });
 
     const isFree = price <= 0;
+    // Checkout is in NGN, so the charge is fixed now and every later step uses it
+    const charge = isFree ? null : await this.exchangeRates.convertToNgn(price, currency);
     let notes = dto.notes?.trim() || '';
     if (dto.goals && dto.goals.length > 0) {
       notes = `${notes} (Goals: ${dto.goals.join(', ')})`.trim();
@@ -222,8 +228,13 @@ export class BookingsService {
         },
         !isFree
           ? {
-              amount: price,
-              currency,
+              amount: charge!.amount,
+              currency: 'NGN',
+              ...(charge!.exchangeRate && {
+                listedAmount: price,
+                listedCurrency: currency,
+                exchangeRate: charge!.exchangeRate,
+              }),
               status: PaymentStatus.PENDING,
               provider: 'PAYSTACK',
             }
@@ -604,6 +615,8 @@ export class BookingsService {
           booking.durationMinutes,
         );
         if (paid > 0) await this.recordEarning(booking, paid, currency);
+        // No email for these outcomes, so notify() won't reach open dashboards
+        this.bookingEvents.publish(booking.mentorId, booking.menteeId);
         continue;
       }
 
@@ -625,6 +638,7 @@ export class BookingsService {
       } else {
         await this.paymentsService.refund(booking.id, paid);
       }
+      this.bookingEvents.publish(booking.mentorId, booking.menteeId);
     }
   }
 

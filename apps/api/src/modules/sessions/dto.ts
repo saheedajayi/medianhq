@@ -3,6 +3,7 @@ export type CreateMentorSessionDto = {
   description: string;
   durationMinutes: number;
   price?: number;
+  currency?: 'NGN' | 'USD';
   type?: 'ONE_ON_ONE' | 'GROUP';
   maxCapacity?: number;
   flyerUrl?: string;

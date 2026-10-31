@@ -50,6 +50,7 @@ export function mapApiMentorProfile(res: any): MentorDetailProfile {
           durationMinutes: pkg.durationMinutes,
           price: pkg.price,
           numericPrice: pkg.numericPrice ?? 0,
+          currency: pkg.currency,
           description: pkg.description || "",
         }))
       : [],

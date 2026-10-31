@@ -95,6 +95,7 @@ export class PaymentsService {
           body: JSON.stringify({
             email: user.email,
             amount: amount * 100, // Paystack operates in kobo
+            currency: 'NGN',
             reference,
             callback_url: callbackUrl,
             metadata: {
@@ -130,7 +131,7 @@ export class PaymentsService {
     // Save payment record in DB
     const payment = await this.paymentsRepository.upsertPayment(bookingId, {
       amount,
-      currency: booking.mentor.mentorProfile?.currency || 'NGN',
+      currency: 'NGN',
       status: PaymentStatus.PENDING,
       provider: 'PAYSTACK',
       providerReference: reference,

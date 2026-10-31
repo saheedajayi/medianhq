@@ -203,8 +203,13 @@ model Payment {
   id                String        @id @default(cuid())
   bookingId         String        @unique
   booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  // What's actually charged; checkout is always in NGN
   amount            Int
   currency          String        @default("NGN")
+  // The price as listed and the USD to NGN rate used, when it wasn't listed in NGN
+  listedAmount      Int?
+  listedCurrency    String?
+  exchangeRate      Float?
   status            PaymentStatus @default(PENDING)
   provider          String        @default("PAYSTACK")
   providerReference String?       @unique

@@ -21,6 +21,8 @@ export interface SessionPackage {
   durationMinutes: number;
   price: string; // "Free" or "₦20,000"
   numericPrice: number; // 0 or 20000
+  /** The currency the mentor listed it in */
+  currency?: string;
   description: string;
 }
 

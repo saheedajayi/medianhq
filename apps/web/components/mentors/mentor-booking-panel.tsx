@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Clock3 } from "lucide-react";
 import { Calendar2 } from "iconsax-react";
 import { SegmentedTabs } from "@/components/ui/custom/segmented-tabs";
+import { useFormatPrice } from "@/hooks/use-currency";
 import { AvailableDateSlot, GroupSessionEvent, SessionPackage } from "./types";
 import { AvailableDates } from "@/components/ui/custom/available-dates";
 import { AvailableDatesSkeleton } from "@/components/ui/custom/available-dates-skeleton";
@@ -39,6 +40,7 @@ export function MentorBookingPanel({
   onSelectTime,
   onProceedToConfirm,
 }: MentorBookingPanelProps) {
+  const formatPrice = useFormatPrice();
   const [sessionMode, setSessionMode] = useState<"1on1" | "group">("1on1");
   const [isViewingDates, setIsViewingDates] = useState(false);
 
@@ -93,7 +95,7 @@ export function MentorBookingPanel({
                       {pkg.title}
                     </span>
                     <span className="shrink-0 text-sm font-bold text-[#FF5500]">
-                      {pkg.price}
+                      {formatPrice(pkg.numericPrice, pkg.currency)}
                     </span>
                   </div>
 

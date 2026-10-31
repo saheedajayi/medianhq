@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  Sse,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -13,13 +14,24 @@ import {
   type ExtendedCreateBookingDto,
   type MenteeFeedbackDto,
 } from './bookings.service';
+import { BookingEventsService } from '../booking-notifications/booking-events.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/dto/auth.dto';
 
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly bookingEvents: BookingEventsService,
+  ) {}
+
+  /** Stays open and says when this user's bookings change, so pages needn't poll */
+  @UseGuards(AuthGuard)
+  @Sse('events')
+  events(@CurrentUser() user: AuthUser) {
+    return this.bookingEvents.streamFor(user.id);
+  }
 
   @UseGuards(AuthGuard)
   @Post()

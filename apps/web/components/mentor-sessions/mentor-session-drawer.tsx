@@ -11,6 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { SegmentedTabs, type SegmentedTabItem } from "@/components/ui/custom/segmented-tabs";
+import { toast } from "sonner";
+import { useExchangeRate, useLocalCurrency } from "@/hooks/use-currency";
+import { convertAmount, type Currency } from "@/lib/currency";
 import type { MentorSessionDto, MentorSessionInput } from "@/services/mentor-sessions";
 
 export interface SessionFormData {
@@ -56,13 +59,15 @@ export function MentorSessionDrawer({
   editingSession,
   isSaving = false,
 }: MentorSessionModalProps) {
+  const localCurrency = useLocalCurrency();
+  const usdToNgn = useExchangeRate();
   const [formData, setFormData] = useState<SessionFormData>({
     title: "",
     description: "",
     durationMinutes: 15,
     isPaid: false,
     price: 0,
-    currency: "USD",
+    currency: localCurrency,
     type: "ONE_ON_ONE",
     feeHandling: "absorb",
     maxCapacity: 15,
@@ -82,7 +87,7 @@ export function MentorSessionDrawer({
         durationMinutes: editingSession.durationMinutes || 15,
         isPaid,
         price: editingSession.price ?? 0,
-        currency: "USD",
+        currency: editingSession.currency ?? "NGN",
         type: editingSession.type === "GROUP" ? "GROUP" : "ONE_ON_ONE",
         feeHandling: "absorb",
         maxCapacity: editingSession.maxCapacity ?? 15,
@@ -98,7 +103,7 @@ export function MentorSessionDrawer({
         durationMinutes: 15,
         isPaid: false,
         price: 0,
-        currency: "USD",
+        currency: localCurrency,
         type: "ONE_ON_ONE",
         feeHandling: "absorb",
         maxCapacity: 15,
@@ -123,6 +128,21 @@ export function MentorSessionDrawer({
 
   if (!isOpen) return null;
 
+  // Switching currency converts the amount, so $20 becomes its naira equivalent rather than ₦20
+  const handleCurrencyChange = (next: Currency) => {
+    const amount = Number(priceInput);
+    if (amount > 0 && next !== formData.currency) {
+      if (!usdToNgn) {
+        toast.error("We can't convert prices right now", {
+          description: "Please try again shortly, or keep the current currency.",
+        });
+        return;
+      }
+      setPriceInput(String(convertAmount(amount, usdToNgn, next)));
+    }
+    setFormData((prev) => ({ ...prev, currency: next }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
@@ -131,7 +151,8 @@ export function MentorSessionDrawer({
       title: formData.title.trim(),
       description: formData.description.trim(),
       durationMinutes: formData.durationMinutes,
-      price: formData.isPaid ? Number(priceInput.replace(/[^0-9.]/g, "")) || 0 : 0,
+      price: formData.isPaid ? Number(priceInput) || 0 : 0,
+      currency: formData.currency,
       type: formData.type,
       maxCapacity: formData.type === "GROUP" ? formData.maxCapacity : undefined,
       flyerUrl: formData.flyerUrl,
@@ -326,12 +347,7 @@ export function MentorSessionDrawer({
                   <div className="w-32 shrink-0">
                     <Select
                       value={formData.currency}
-                      onValueChange={(val) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          currency: val as "NGN" | "USD",
-                        }))
-                      }
+                      onValueChange={(val) => handleCurrencyChange(val as Currency)}
                     >
                       <SelectTrigger className="h-12 w-full rounded-xl border border-[#D0D5DD] px-3.5 py-3 text-sm font-medium text-[#101828] bg-white focus-visible:border-[#FF5514] focus-visible:ring-2 focus-visible:ring-[#FF5514]/20">
                         <SelectValue />
@@ -347,11 +363,19 @@ export function MentorSessionDrawer({
                     type="text"
                     required
                     value={priceInput}
-                    onChange={(e) => setPriceInput(e.target.value)}
-                    placeholder="0.00"
+                    inputMode="numeric"
+                    // Whole amounts only; drop anything after a point so 20.50 can't become 2050
+                    onChange={(e) => setPriceInput(e.target.value.split(".")[0]!.replace(/\D/g, ""))}
+                    placeholder="0"
                     className="flex-1 h-12 rounded-xl border border-[#D0D5DD] px-4 py-3 text-sm text-[#101828] placeholder:text-[#98A2B3] focus:border-[#FF5514] focus:outline-hidden focus:ring-2 focus:ring-[#FF5514]/20 transition"
                   />
                 </div>
+                {usdToNgn && (
+                  <p className="text-xs text-[#667085]">
+                    Today&apos;s rate: $1 = ₦{Math.round(usdToNgn).toLocaleString()}. Mentees see
+                    their local currency and pay in naira.
+                  </p>
+                )}
                 <p className="text-xs text-[#667085]">
                   Set your per-session rate. Median charges 10% + $1 (USD)
                 </p>

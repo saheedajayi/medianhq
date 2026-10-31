@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { isSameMonth } from "date-fns";
 import type { Booking } from "@/components/bookings/types";
 import type { AuthUser } from "@/services/auth/types";
+import { useBookingEvents } from "@/hooks/use-booking-events";
 import { useMyBookings } from "@/services/bookings/queries/bookings.queries";
 import { useMentorEarningsSummary } from "@/services/earnings/queries/earnings.queries";
 import { useMentorAvailability } from "@/services/mentor-sessions/queries/mentor-sessions.queries";
@@ -16,10 +17,13 @@ import { BookingRequestsCard, MentorUpcomingSessionsCard } from "./mentor-sessio
 const isThisMonth = (booking: Booking) =>
   !!booking.startsAt && isSameMonth(new Date(booking.startsAt), new Date());
 
+const REFRESH_ON_RETURN = { refetchOnWindowFocus: true };
+
 /** The dashboard for approved mentors */
 export function MentorDashboardView({ user }: { user?: AuthUser }) {
-  const bookingsQuery = useMyBookings();
-  const earningsQuery = useMentorEarningsSummary();
+  useBookingEvents();
+  const bookingsQuery = useMyBookings(REFRESH_ON_RETURN);
+  const earningsQuery = useMentorEarningsSummary(REFRESH_ON_RETURN);
   const availabilityQuery = useMentorAvailability();
   const { data: bookingsData, isLoading: isLoadingBookings } = bookingsQuery;
   const { data: earnings, isLoading: isLoadingEarnings } = earningsQuery;
@@ -41,8 +45,11 @@ export function MentorDashboardView({ user }: { user?: AuthUser }) {
     { label: "PENDING REQUESTS", value: bookingRequests.length },
     {
       label: "PENDING PAYOUT",
+      // Everything earned but not paid out yet, requested or not.
       // The stat font has no ₦ glyph, so this follows the design's "N21,000"
-      value: earnings ? `N${earnings.pendingPayout.toLocaleString()}` : "-",
+      value: earnings
+        ? `N${(earnings.availableBalance + earnings.pendingPayout).toLocaleString()}`
+        : "-",
     },
     { label: "RATING", value: reviews?.count ? reviews.avgRating.toFixed(1) : "-" },
   ];

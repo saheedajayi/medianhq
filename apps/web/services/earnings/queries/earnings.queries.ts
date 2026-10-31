@@ -6,7 +6,7 @@ import type { ApiError } from "@/services/api-client";
 import { earningsService, type MentorEarningsSummary } from "@/services/earnings";
 import { earningsQueryKeys } from "./query-keys";
 
-export const useMentorEarningsSummary = (options?: { enabled?: boolean }) => {
+export const useMentorEarningsSummary = (options?: { enabled?: boolean; refetchOnWindowFocus?: boolean }) => {
   return useQuery<MentorEarningsSummary, ApiError>({
     queryKey: earningsQueryKeys.mentorSummary(),
     queryFn: async () => {
@@ -14,5 +14,6 @@ export const useMentorEarningsSummary = (options?: { enabled?: boolean }) => {
       return response.data;
     },
     enabled: options?.enabled,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus,
   });
 };

@@ -40,6 +40,8 @@ describe('BookingsService money flows', () => {
       {} as never,
       payments as never,
       notifications as never,
+      { convertToNgn: jest.fn().mockImplementation((amount) => Promise.resolve({ amount, exchangeRate: null })) } as never,
+      { publish: jest.fn() } as never,
     );
   });
 

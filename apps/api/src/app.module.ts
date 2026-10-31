@@ -21,6 +21,7 @@ import { CommunityModule } from './modules/community/community.module';
 import { AchievementsModule } from './modules/achievements/achievements.module';
 import { AsyncQaModule } from './modules/async-qa/async-qa.module';
 import { EarningsModule } from './modules/earnings/earnings.module';
+import { ExchangeRatesModule } from './modules/exchange-rates/exchange-rates.module';
 import { SettingsModule } from './modules/settings/settings.module';
 
 const envFilePath = [
@@ -52,6 +53,7 @@ const envFilePath = [
     AchievementsModule,
     AsyncQaModule,
     EarningsModule,
+    ExchangeRatesModule,
     SettingsModule,
   ],
   controllers: [AppController],

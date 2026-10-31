@@ -112,6 +112,9 @@ export class BookingsRepository {
     paymentData?: {
       amount: number;
       currency: string;
+      listedAmount?: number;
+      listedCurrency?: string;
+      exchangeRate?: number;
       status: PaymentStatus;
       provider: string;
     },
@@ -127,6 +130,9 @@ export class BookingsRepository {
           bookingId: booking.id,
           amount: paymentData.amount,
           currency: paymentData.currency,
+          listedAmount: paymentData.listedAmount,
+          listedCurrency: paymentData.listedCurrency,
+          exchangeRate: paymentData.exchangeRate,
           status: paymentData.status,
           provider: paymentData.provider,
         },

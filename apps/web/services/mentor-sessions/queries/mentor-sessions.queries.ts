@@ -8,6 +8,7 @@ import {
   type AvailabilityInput,
   type MentorSessionDto,
   type MentorSessionInput,
+  type MentorSessionStats,
   type UpdateMentorSessionPayload,
 } from "@/services/mentor-sessions";
 import { mentorSessionsQueryKeys } from "./query-keys";
@@ -29,6 +30,18 @@ export const useMentorAvailability = () => {
       const response = await mentorSessionsService.getAvailability();
       return response.data;
     },
+  });
+};
+
+export const useMentorSessionStats = (id: string) => {
+  return useQuery<MentorSessionStats, ApiError>({
+    queryKey: mentorSessionsQueryKeys.stats(id),
+    queryFn: async () => {
+      const response = await mentorSessionsService.getStats(id);
+      return response.data;
+    },
+    // Bookings change without this page knowing, so don't trust an old count
+    staleTime: 0,
   });
 };
 

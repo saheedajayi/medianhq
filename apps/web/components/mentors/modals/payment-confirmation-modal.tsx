@@ -1,5 +1,7 @@
 "use client";
 
+import { useFormatPrice, useLocalCurrency } from "@/hooks/use-currency";
+import { formatAmount } from "@/lib/currency";
 import { toast } from "sonner";
 
 import { useState } from "react";
@@ -20,6 +22,8 @@ interface PaymentConfirmationModalProps {
   selectedPackage: SessionPackage;
   dateTimeDisplay: string;
   bookingId?: string;
+  /** What this booking will charge, in naira */
+  chargedAmount?: number;
   onPaySuccess: () => void;
 }
 
@@ -30,12 +34,17 @@ export function PaymentConfirmationModal({
   selectedPackage,
   dateTimeDisplay,
   bookingId,
+  chargedAmount,
   onPaySuccess,
 }: PaymentConfirmationModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const formatPrice = useFormatPrice();
+  const localCurrency = useLocalCurrency();
   const initializePaymentMutation = useInitializePayment();
   // Mentees pay exactly the listed price; Median's fee comes out of the mentor's side
-  const formattedTotal = `₦${selectedPackage.numericPrice.toLocaleString()}`;
+  // The booking fixed the naira charge, so show that rather than recalculating it
+  const formattedTotal = chargedAmount ? formatAmount(chargedAmount, "NGN") : formatPrice(selectedPackage.numericPrice, selectedPackage.currency);
+  const localPrice = formatPrice(selectedPackage.numericPrice, selectedPackage.currency);
 
   const handlePay = async () => {
     if (!bookingId) {
@@ -104,6 +113,12 @@ export function PaymentConfirmationModal({
                 <span>Total</span>
                 <span className="text-[#FF5500]">{formattedTotal}</span>
               </div>
+              {localCurrency !== "NGN" && (
+                <p className="pt-2 text-xs font-normal text-[#667085]">
+                  About {localPrice}. You&apos;ll pay in naira, and your bank may convert it at its
+                  own rate.
+                </p>
+              )}
             </div>
           </div>
 

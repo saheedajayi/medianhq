@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { EmailService } from '../email/email.service';
+import { BookingEventsService } from './booking-events.service';
 import { MENTOR_UTC_OFFSET_MINUTES } from '../bookings/availability-slots';
 
 export type BookingEvent =
@@ -34,6 +35,7 @@ export class BookingNotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly bookingEvents: BookingEventsService,
   ) {}
 
   async notify(
@@ -51,6 +53,9 @@ export class BookingNotificationsService {
         },
       });
       if (!booking) return;
+
+      // Before the emails, so a slow or failed send can't hold up open dashboards
+      this.bookingEvents.publish(booking.mentor.id, booking.mentee.id);
 
       const title = booking.title || 'Mentorship session';
       const when = this.formatWhen(booking.startsAt, booking.durationMinutes);

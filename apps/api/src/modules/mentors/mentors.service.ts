@@ -264,6 +264,7 @@ export class MentorsService {
             durationMinutes: session.durationMinutes,
             price: this.formatPrice(session.price, session.currency),
             numericPrice: session.price,
+            currency: session.currency,
           }))
         : [
             {
@@ -274,6 +275,7 @@ export class MentorsService {
               durationMinutes: 30,
               price: item.price,
               numericPrice: item.pricePerSession,
+              currency: item.currency,
             },
           ];
 
