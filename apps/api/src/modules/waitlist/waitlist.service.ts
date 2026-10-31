@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Prisma, WaitlistAudience } from '@prisma/client';
-import { EmailService } from '../email/email.service';
+import { EmailService } from '../platform/email/email.service';
 import type { CreateWaitlistEntryDto } from './dto/create-waitlist-entry.dto';
 import { WaitlistRepository } from './waitlist.repository';
 
