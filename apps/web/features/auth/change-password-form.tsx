@@ -20,7 +20,7 @@ import { PasswordInput } from "@/components/ui/custom/password-input";
 import { useChangePassword } from "@/services/auth/queries/auth.queries";
 import type { ApiError } from "@/services/api-client";
 
-const changePasswordSchema = z
+export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required"),
     password: z

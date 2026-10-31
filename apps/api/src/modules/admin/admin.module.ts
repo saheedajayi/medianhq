@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
-import { EmailModule } from '../email/email.module';
-import { UploadsModule } from '../uploads/uploads.module';
+import { AuthModule } from '../identity/auth/auth.module';
+import { EmailModule } from '../platform/email/email.module';
+import { UploadsModule } from '../platform/uploads/uploads.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 

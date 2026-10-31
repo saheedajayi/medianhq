@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { noIndexMetadata } from "@/lib/page-metadata";
+import { getSessionHint } from "@/lib/session-hint";
 
 export const metadata: Metadata = noIndexMetadata;
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  const { role } = await getSessionHint();
+  return <DashboardShell initialRole={role}>{children}</DashboardShell>;
 }

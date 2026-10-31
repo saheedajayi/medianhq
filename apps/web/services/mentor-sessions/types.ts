@@ -4,10 +4,22 @@ export type MentorSessionDto = {
   description: string;
   durationMinutes: number;
   price: number;
+  currency: "NGN" | "USD";
   type: "ONE_ON_ONE" | "GROUP";
   isLive: boolean;
   maxCapacity?: number | null;
   flyerUrl?: string | null;
+  createdAt?: string;
+};
+
+export type MentorSessionStats = {
+  totalBookings: number;
+  completed: number;
+  pending: number;
+  /** After Median's fee */
+  earnings: number;
+  paidSessions: number;
+  currency: string;
 };
 
 export type MentorSessionInput = {
@@ -15,6 +27,7 @@ export type MentorSessionInput = {
   description: string;
   durationMinutes: number;
   price?: number;
+  currency?: "NGN" | "USD";
   type?: "ONE_ON_ONE" | "GROUP";
   maxCapacity?: number;
   flyerUrl?: string;

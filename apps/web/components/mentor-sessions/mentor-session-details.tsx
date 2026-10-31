@@ -1,16 +1,54 @@
 "use client";
 
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { format, isToday, isYesterday } from "date-fns";
 import { ChevronRight, Share2, Check } from "lucide-react";
 import { Edit2 } from "iconsax-react";
+import { Skeleton } from "@/components/ui/base/skeleton";
+import { formatAmount } from "@/lib/currency";
 import type { MentorSessionDto } from "@/services/mentor-sessions";
+import { useMentorSessionStats } from "@/services/mentor-sessions/queries/mentor-sessions.queries";
 
 interface MentorSessionDetailsProps {
   session: MentorSessionDto;
   onBack: () => void;
   onEdit: (session: MentorSessionDto) => void;
   onDelete: (session: MentorSessionDto) => void;
+}
+
+const formatCreatedAt = (value?: string) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (isToday(date)) return `Today, ${format(date, "h:mm a")}`;
+  if (isYesterday(date)) return `Yesterday, ${format(date, "h:mm a")}`;
+  return format(date, "d MMM yyyy, h:mm a");
+};
+
+function StatCard({
+  label,
+  value,
+  note,
+  isLoading,
+}: {
+  label: string;
+  value?: string | number;
+  note?: string;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="rounded-xl bg-white p-4">
+      <div className="flex items-center justify-between text-xs font-medium text-[#667085]">
+        <span>{label}</span>
+        {note && <span className="text-[#98A2B3]">{note}</span>}
+      </div>
+      {isLoading ? (
+        <Skeleton className="mt-3 h-8 w-20 sm:h-9" />
+      ) : (
+        <p className="mt-3 text-2xl font-bold tracking-tight text-[#3E0A00] sm:text-3xl">{value}</p>
+      )}
+    </div>
+  );
 }
 
 export function MentorSessionDetails({
@@ -20,6 +58,7 @@ export function MentorSessionDetails({
   onDelete,
 }: MentorSessionDetailsProps) {
   const [copied, setCopied] = useState(false);
+  const stats = useMentorSessionStats(session.id);
 
   const handleCopy = () => {
     if (typeof window !== "undefined") {
@@ -30,16 +69,18 @@ export function MentorSessionDetails({
     }
   };
 
-  const formattedPrice =
-    session.price && session.price > 0
-      ? `₦${session.price.toLocaleString()}`
-      : "Free";
+  const formattedPrice = formatAmount(session.price, session.currency);
 
   const sessionTypeLabel = session.type === "GROUP" ? "Group" : "1 on 1";
 
-  const createdFormatted = React.useMemo(() => {
-    return "Today, 10:00 AM";
-  }, []);
+  const createdFormatted = formatCreatedAt(session.createdAt);
+  // formatAmount reads 0 as "Free", but here it means nothing earned yet
+  const earnings = stats.data
+    ? stats.data.earnings > 0
+      ? formatAmount(stats.data.earnings, stats.data.currency)
+      : "₦0"
+    : undefined;
+  const paidSessions = stats.data?.paidSessions ?? 0;
 
   return (
     <div className="w-full flex-1 flex flex-col justify-between min-h-full">
@@ -63,9 +104,17 @@ export function MentorSessionDetails({
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#101828]">
               {session.title}
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ECFDF3] px-2.5 py-0.5 text-xs font-medium text-[#027A48] border border-[#ABEFC6]">
-              <span className="size-1.5 rounded-full bg-[#12B76A]" />
-              Live
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                session.isLive
+                  ? "border-[#ABEFC6] bg-[#ECFDF3] text-[#027A48]"
+                  : "border-[#EAECF0] bg-[#F2F4F7] text-[#475467]"
+              }`}
+            >
+              <span
+                className={`size-1.5 rounded-full ${session.isLive ? "bg-[#12B76A]" : "bg-[#98A2B3]"}`}
+              />
+              {session.isLive ? "Live" : "Not live"}
             </span>
           </div>
 
@@ -132,55 +181,38 @@ export function MentorSessionDetails({
               backgroundColor: "#4D0D00",
             }}
           >
-            <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Total Earnings */}
-              <div className="rounded-xl bg-white p-4">
-                <div className="flex items-center justify-between text-xs text-[#667085] font-medium">
-                  <span>Total Earnings</span>
-                  <span className="text-[#98A2B3]">12 Sessions</span>
-                </div>
-                <p className="mt-3 text-2xl sm:text-3xl font-semibold tracking-tight text-[#3E0A00]">
-                  ₦180,000
-                </p>
+            {stats.isError && !stats.data ? (
+              <div role="alert" className="relative flex items-center justify-between gap-4 rounded-xl bg-white p-4">
+                <p className="text-sm text-[#475467]">We couldn&apos;t load these stats.</p>
+                <button
+                  type="button"
+                  disabled={stats.isFetching}
+                  onClick={() => stats.refetch()}
+                  className="shrink-0 rounded-full border border-[#FF8D62] px-3.5 py-1.5 text-xs font-semibold text-[#FF5514] transition hover:bg-[#FDF9F6] disabled:opacity-60"
+                >
+                  {stats.isFetching ? "Trying again..." : "Try again"}
+                </button>
               </div>
-
-              {/* Total Bookings */}
-              <div className="rounded-xl bg-white p-4">
-                <div className="text-xs text-[#667085] font-medium">
-                  <span>Total Bookings</span>
-                </div>
-                <p className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-[#3E0A00]">
-                  12
-                </p>
+            ) : (
+              <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard
+                  label="Total Earnings"
+                  value={earnings}
+                  note={stats.data ? `${paidSessions} ${paidSessions === 1 ? "Session" : "Sessions"}` : undefined}
+                  isLoading={stats.isLoading}
+                />
+                <StatCard label="Total Bookings" value={stats.data?.totalBookings} isLoading={stats.isLoading} />
+                <StatCard label="Completed" value={stats.data?.completed} isLoading={stats.isLoading} />
+                <StatCard label="Pending" value={stats.data?.pending} isLoading={stats.isLoading} />
               </div>
-
-              {/* Completed */}
-              <div className="rounded-xl bg-white p-4">
-                <div className="text-xs text-[#667085] font-medium">
-                  <span>Completed</span>
-                </div>
-                <p className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-[#3E0A00]">
-                  8
-                </p>
-              </div>
-
-              {/* Pending */}
-              <div className="rounded-xl bg-white p-4">
-                <div className="text-xs text-[#667085] font-medium">
-                  <span>Pending</span>
-                </div>
-                <p className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-[#3E0A00]">
-                  2
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Footer Meta & Actions (pinned to bottom of page) */}
       <div className="mt-auto pt-10 flex items-center justify-between text-xs text-[#667085]">
-        <span>Created: {createdFormatted}</span>
+        <span>{createdFormatted && `Created: ${createdFormatted}`}</span>
 
         <button
           type="button"

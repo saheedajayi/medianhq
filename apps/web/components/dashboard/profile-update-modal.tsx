@@ -3,13 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { User, GalleryAdd, Add } from "iconsax-react";
-import { Loader2 } from "lucide-react";
+import { Loader2, UploadCloud, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import type { ApiError } from "@/services/api-client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useCreateMenteeProfile } from "@/services/mentees/queries/mentees.queries";
 import { useUpdateMentorProfile } from "@/services/mentors/queries/mentors.queries";
-import { useUploadAvatar } from "@/services/uploads/queries/uploads.queries";
+import { uploadsService } from "@/services/uploads";
+import { useUploadAvatar, useUploadCertificate } from "@/services/uploads/queries/uploads.queries";
 import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 import { authQueryKeys } from "@/services/auth/queries/query-keys";
 import {
@@ -20,6 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { ProgressiveLocationSelect } from "@/components/ui/custom/progressive-location-select";
+import { CreatableMultiSelect } from "@/components/ui/custom/creatable-multi-select";
+import {
+  MAX_MENTOR_PROFILE_ITEMS,
+  MENTOR_SKILL_SUGGESTIONS,
+  MENTOR_TOOL_SUGGESTIONS,
+} from "@/constants/mentor-profile";
 
 // Zod Validation Schema for Profile Update
 const profileUpdateSchema = z.object({
@@ -45,6 +53,13 @@ const profileUpdateSchema = z.object({
     .optional(),
 });
 
+// Mentors give their location when applying, so their profile asks for skills and tools instead
+const mentorProfileUpdateSchema = z.object({
+  gender: z.string().min(1, "Please select your gender"),
+  skills: z.array(z.string()).min(1, "Please add at least one skill"),
+  tools: z.array(z.string()).min(1, "Please add at least one tool"),
+});
+
 interface ProfileUpdateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -60,20 +75,28 @@ export function ProfileUpdateModal({
   const updateMentorProfileMutation = useUpdateMentorProfile();
   const createMenteeProfileMutation = useCreateMenteeProfile();
   const uploadAvatarMutation = useUploadAvatar();
+  const uploadCertificateMutation = useUploadCertificate();
   const { data: user, refetch } = useCurrentUser();
   // Mentors and mentees share this modal; each saves to their own profile
   const isMentor = user?.role === "MENTOR";
   const savedProfile = isMentor ? user?.mentorProfile : user?.menteeProfile;
+  const savedMentorProfile = user?.mentorProfile;
 
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [tools, setTools] = useState<string[]>([]);
+  const [certificates, setCertificates] = useState<string[]>([]);
+  const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
+  const [isDraggingCertificate, setIsDraggingCertificate] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImageFetching, setIsImageFetching] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const certificateInputRef = useRef<HTMLInputElement>(null);
 
   // Refetch user session when modal opens to ensure fresh data
   useEffect(() => {
@@ -111,7 +134,41 @@ export function ProfileUpdateModal({
     }
   }, [isOpen, savedProfile]);
 
+  useEffect(() => {
+    if (isOpen && savedMentorProfile) {
+      setSkills(savedMentorProfile.skills ?? []);
+      setTools(savedMentorProfile.tools ?? []);
+      setCertificates(savedMentorProfile.certificates ?? []);
+    }
+  }, [isOpen, savedMentorProfile]);
+
   if (!isOpen) return null;
+
+  const handleCertificates = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const remaining = MAX_MENTOR_PROFILE_ITEMS - certificates.length;
+    if (files.length > remaining) {
+      toast.error(
+        remaining > 0
+          ? `You can add up to ${MAX_MENTOR_PROFILE_ITEMS} certificates, so only the first ${remaining} will be uploaded.`
+          : `You can add up to ${MAX_MENTOR_PROFILE_ITEMS} certificates. Remove one to add another.`
+      );
+    }
+    const filesToUpload = Array.from(files).slice(0, Math.max(remaining, 0));
+    if (filesToUpload.length === 0) return;
+    setIsUploadingCertificate(true);
+    try {
+      for (const file of filesToUpload) {
+        uploadsService.validateAvatar(file);
+        const { url } = await uploadCertificateMutation.mutateAsync(file);
+        setCertificates((prev) => [...prev, url]);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload certificate.");
+    } finally {
+      setIsUploadingCertificate(false);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,7 +185,9 @@ export function ProfileUpdateModal({
     setErrors({});
 
     // Validate form values using Zod schema
-    const validation = profileUpdateSchema.safeParse({ gender, location, bio });
+    const validation = isMentor
+      ? mentorProfileUpdateSchema.safeParse({ gender, skills, tools })
+      : profileUpdateSchema.safeParse({ gender, location, bio });
     if (!validation.success) {
       const fieldErrors: Record<string, string> = {};
       validation.error.issues.forEach((issue) => {
@@ -144,25 +203,36 @@ export function ProfileUpdateModal({
     setIsSubmitting(true);
 
     try {
-      let avatarUrl = savedProfile?.avatarUrl || undefined;
+      let uploadedAvatarUrl: string | undefined;
 
       // Upload profile image to Cloudinary if new image file selected
       if (avatarFile) {
         try {
           const uploadRes = await uploadAvatarMutation.mutateAsync(avatarFile);
           if (uploadRes?.url) {
-            avatarUrl = uploadRes.url;
+            uploadedAvatarUrl = uploadRes.url;
           }
         } catch (uploadErr) {
           console.warn("Avatar upload to Cloudinary failed:", uploadErr);
         }
       }
 
-      const payload = { gender, location, bio, avatarUrl };
       if (isMentor) {
-        await updateMentorProfileMutation.mutateAsync(payload);
+        // Only a new photo is sent; saved ones may be relative paths the API won't accept back
+        await updateMentorProfileMutation.mutateAsync({
+          gender,
+          avatarUrl: uploadedAvatarUrl,
+          skills,
+          tools,
+          certificates,
+        });
       } else {
-        await createMenteeProfileMutation.mutateAsync(payload);
+        await createMenteeProfileMutation.mutateAsync({
+          gender,
+          location,
+          bio,
+          avatarUrl: uploadedAvatarUrl ?? savedProfile?.avatarUrl ?? undefined,
+        });
       }
 
       toast.success("Profile updated successfully");
@@ -172,7 +242,13 @@ export function ProfileUpdateModal({
       onClose();
     } catch (err) {
       console.error("Profile update failed:", err);
-      toast.error("Failed to update profile. Please try again.");
+      // Validation messages say what to fix; anything else gets the generic message
+      const { status, message } = err as Partial<ApiError>;
+      toast.error(
+        status && status >= 400 && status < 500 && message
+          ? message
+          : "Failed to update profile. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -188,7 +264,7 @@ export function ProfileUpdateModal({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-[24px] bg-white p-7 transition-all md:p-8 animate-in zoom-in-95 duration-200">
+      <div className="relative z-10 max-h-[90vh] w-full max-w-[480px] overflow-y-auto rounded-[24px] bg-white p-7 transition-all md:p-8 animate-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           type="button"
@@ -306,57 +382,163 @@ export function ProfileUpdateModal({
             )}
           </div>
 
-          {/* Form Field: Location */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[#101828]">
-              Where are you based? <span className="text-[#FF5500]">*</span>
-            </label>
-            <ProgressiveLocationSelect
-              id="profile-location"
-              value={location}
-              onChange={(val) => {
-                setLocation(val);
-                setErrors((prev) => ({ ...prev, location: "" }));
-              }}
-              error={errors.location}
-              placeholder="Select your location..."
-              triggerClassName="py-3 h-auto text-sm text-[#101828] placeholder-[#98A2B3] rounded-xl"
-            />
-            {errors.location && (
-              <span className="text-xs font-medium text-[#D92D20]">{errors.location}</span>
-            )}
-          </div>
+          {isMentor ? (
+            <>
+              <CreatableMultiSelect
+                id="profile-skills"
+                label="Skills"
+                required
+                values={skills}
+                onChange={(next) => {
+                  setSkills(next);
+                  setErrors((prev) => ({ ...prev, skills: "" }));
+                }}
+                options={MENTOR_SKILL_SUGGESTIONS}
+                maxItems={MAX_MENTOR_PROFILE_ITEMS}
+                error={errors.skills}
+              />
 
-          {/* Form Field: Bio */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[#101828]">
-              Write your Median bio <span className="text-xs text-[#667085]">(Less than 300 words)</span>
-            </label>
-            <textarea
-              rows={4}
-              value={bio}
-              onChange={(e) => {
-                setBio(e.target.value);
-                setErrors((prev) => ({ ...prev, bio: "" }));
-              }}
-              placeholder="Select area..."
-              className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] outline-none transition-all focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 resize-none ${
-                errors.bio ? "border-[#D92D20]" : "border-[#D0D5DD]"
-              }`}
-            />
-            {errors.bio && (
-              <span className="text-xs font-medium text-[#D92D20]">{errors.bio}</span>
-            )}
-          </div>
+              <CreatableMultiSelect
+                id="profile-tools"
+                label="Tools"
+                required
+                values={tools}
+                onChange={(next) => {
+                  setTools(next);
+                  setErrors((prev) => ({ ...prev, tools: "" }));
+                }}
+                options={MENTOR_TOOL_SUGGESTIONS}
+                maxItems={MAX_MENTOR_PROFILE_ITEMS}
+                error={errors.tools}
+              />
+
+              {/* Form Field: Certificates */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-[#101828]">Certificates</span>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => certificateInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      certificateInputRef.current?.click();
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDraggingCertificate(true);
+                  }}
+                  onDragLeave={() => setIsDraggingCertificate(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingCertificate(false);
+                    handleCertificates(e.dataTransfer.files);
+                  }}
+                  className={`flex cursor-pointer flex-col items-center rounded-xl border px-4 py-4 text-center transition-colors ${
+                    isDraggingCertificate ? "border-[#FF5500] bg-[#FFF9F6]" : "border-[#D0D5DD]"
+                  }`}
+                >
+                  <span className="flex size-10 items-center justify-center rounded-lg border border-[#EAECF0]">
+                    {isUploadingCertificate ? (
+                      <Loader2 className="size-5 animate-spin text-[#FF5500]" />
+                    ) : (
+                      <UploadCloud className="size-5 text-[#344054]" />
+                    )}
+                  </span>
+                  <p className="mt-3 text-sm text-[#475467]">
+                    <span className="font-medium text-[#FF5500]">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="mt-1 text-xs text-[#667085]">SVG, PNG, JPG or GIF (max. 800x400px)</p>
+                </div>
+                <input
+                  ref={certificateInputRef}
+                  type="file"
+                  multiple
+                  accept="image/svg+xml,image/png,image/jpeg,image/gif"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleCertificates(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                {certificates.length > 0 && (
+                  <ul className="mt-1 flex flex-wrap gap-2">
+                    {certificates.map((url, index) => (
+                      <li key={url} className="relative size-14 overflow-hidden rounded-lg border border-[#EAECF0]">
+                        {/* Certificates can be SVGs, which next/image won't optimise */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`Certificate ${index + 1}`} className="size-full object-cover" />
+                        <button
+                          type="button"
+                          aria-label={`Remove certificate ${index + 1}`}
+                          onClick={() => setCertificates((prev) => prev.filter((item) => item !== url))}
+                          className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-white text-[#344054]"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Form Field: Location */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[#101828]">
+                  Where are you based? <span className="text-[#FF5500]">*</span>
+                </label>
+                <ProgressiveLocationSelect
+                  id="profile-location"
+                  value={location}
+                  onChange={(val) => {
+                    setLocation(val);
+                    setErrors((prev) => ({ ...prev, location: "" }));
+                  }}
+                  error={errors.location}
+                  placeholder="Select your location..."
+                  triggerClassName="py-3 h-auto text-sm text-[#101828] placeholder-[#98A2B3] rounded-xl"
+                />
+                {errors.location && (
+                  <span className="text-xs font-medium text-[#D92D20]">{errors.location}</span>
+                )}
+              </div>
+
+              {/* Form Field: Bio */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[#101828]">
+                  Write your Median bio <span className="text-xs text-[#667085]">(Less than 300 words)</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={bio}
+                  onChange={(e) => {
+                    setBio(e.target.value);
+                    setErrors((prev) => ({ ...prev, bio: "" }));
+                  }}
+                  placeholder="Select area..."
+                  className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-[#101828] placeholder-[#98A2B3] outline-none transition-all focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 resize-none ${
+                    errors.bio ? "border-[#D92D20]" : "border-[#D0D5DD]"
+                  }`}
+                />
+                {errors.bio && (
+                  <span className="text-xs font-medium text-[#D92D20]">{errors.bio}</span>
+                )}
+              </div>
+
+            </>
+          )}
 
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingCertificate}
             className="mt-2 flex w-full items-center justify-center rounded-full bg-[#FF5500] py-3.5 text-base font-semibold text-white transition-all hover:bg-[#E04B00] active:scale-[0.98] disabled:opacity-50"
           >
             <span className="text-white font-medium">
-              {isSubmitting ? "Updating..." : "Update Profile"}
+              {isSubmitting ? "Updating..." : "Update profile"}
             </span>
           </button>
         </form>

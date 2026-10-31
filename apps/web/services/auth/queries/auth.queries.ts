@@ -16,6 +16,7 @@ import {
   type RevokeSessionsResponse,
   type SecurityEvent,
   type VerifyEmailPayload,
+  type DeviceSession,
 } from "@/services/auth";
 import { authQueryKeys } from "./query-keys";
 
@@ -28,12 +29,24 @@ export const useCurrentUser = () => {
       try {
         const response = await authService.me();
         return response.data;
-      } catch {
-        return null;
+      } catch (error) {
+        // Null means signed out; anything else is a failure callers can show and retry
+        if ((error as Partial<ApiError>)?.status === 401) return null;
+        throw error;
       }
     },
     staleTime: 10 * 1000, // 10 seconds for immediate reactivity
     refetchOnWindowFocus: true,
+  });
+};
+
+export const useDeviceSessions = () => {
+  return useQuery<DeviceSession[], ApiError>({
+    queryKey: authQueryKeys.deviceSessions(),
+    queryFn: async () => {
+      const response = await authService.getDeviceSessions();
+      return response.data;
+    },
   });
 };
 
@@ -175,6 +188,7 @@ export const useRevokeOtherSessions = () => {
       return response.data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authQueryKeys.deviceSessions() });
       queryClient.invalidateQueries({ queryKey: authQueryKeys.securityEvents() });
     },
   });

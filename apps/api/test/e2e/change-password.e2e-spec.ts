@@ -3,11 +3,11 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../../src/app.module';
-import { AuthService } from '../../src/modules/auth/auth.service';
-import { AuthRepository } from '../../src/modules/auth/auth.repository';
-import { PwnedPasswordService } from '../../src/modules/auth/pwned-password.service';
-import { EmailService } from '../../src/modules/email/email.service';
-import { SecurityAuditService } from '../../src/modules/auth/security-audit.service';
+import { AuthService } from '../../src/modules/identity/auth/auth.service';
+import { AuthRepository } from '../../src/modules/identity/auth/auth.repository';
+import { PwnedPasswordService } from '../../src/modules/identity/auth/pwned-password.service';
+import { EmailService } from '../../src/modules/platform/email/email.service';
+import { SecurityAuditService } from '../../src/modules/identity/auth/security-audit.service';
 import type { Prisma } from '@prisma/client';
 
 type TestUser = {

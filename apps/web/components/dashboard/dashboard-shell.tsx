@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { HambergerMenu, Notification, User } from "iconsax-react";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
+import type { ApiError } from "@/services/api-client";
 import { authService } from "@/services/auth";
 import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 import { getAuthDestination } from "@/lib/auth-routing";
@@ -13,8 +14,11 @@ import { cn } from "@/lib/utils";
 
 export function DashboardShell({
   children,
+  initialRole = null,
 }: {
   children: React.ReactNode;
+  /** Role from the session cookie, so the sidebar has the right links on first paint */
+  initialRole?: "MENTEE" | "MENTOR" | "ADMIN" | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -30,7 +34,7 @@ export function DashboardShell({
     pathname?.startsWith("/messages/");
 
   const { data: user } = useCurrentUser();
-  const [role, setRole] = useState<"MENTEE" | "MENTOR" | "ADMIN" | null>(null);
+  const [role, setRole] = useState<"MENTEE" | "MENTOR" | "ADMIN" | null>(initialRole);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const effectiveRole = user?.role ?? role;
 
@@ -63,9 +67,10 @@ export function DashboardShell({
           return;
         }
       })
-      .catch(() => {
+      .catch((error: Partial<ApiError>) => {
         if (isCancelled) return;
-        router.replace("/signin");
+        // A server or network failure doesn't mean they're signed out, so stay on the page
+        if (error?.status === 401) router.replace("/signin");
       });
 
     return () => {

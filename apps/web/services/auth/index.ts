@@ -11,6 +11,7 @@ import type {
   ChangePasswordPayload,
   SecurityEvent,
   RevokeSessionsResponse,
+  DeviceSession,
 } from "./types";
 
 const AUTH_PATH = "/auth";
@@ -83,6 +84,10 @@ export const authService = {
     );
   },
 
+  getDeviceSessions() {
+    return apiClient.get<DeviceSession[]>(`${AUTH_PATH}/sessions`);
+  },
+
   revokeOtherSessions() {
     return apiClient.post<RevokeSessionsResponse>(
       `${AUTH_PATH}/revoke-other-sessions`,
@@ -107,4 +112,5 @@ export type {
   ChangePasswordPayload,
   SecurityEvent,
   RevokeSessionsResponse,
+  DeviceSession,
 } from "./types";

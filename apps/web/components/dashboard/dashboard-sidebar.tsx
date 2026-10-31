@@ -19,6 +19,7 @@ import {
   Logout,
   Add,
 } from "iconsax-react";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { useLogout } from "@/services/auth/queries/auth.queries";
 import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 
@@ -67,7 +68,8 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
   const pathname = usePathname();
   const router = useRouter();
   const { data: user } = useCurrentUser();
-  const isMentor = (userRole ?? user?.role) === "MENTOR";
+  const role = userRole ?? user?.role;
+  const isMentor = role === "MENTOR";
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const logoutMutation = useLogout();
 
@@ -114,7 +116,18 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
 
         {/* Main Navigation Items */}
         <nav className="flex flex-col gap-1">
-          {(isMentor ? mentorNavItems : menteeNavItems).map((item) => {
+          {/* Mentors and mentees have different links, so wait until we know which this is */}
+          {!role && (
+            <SkeletonGroup label="Loading navigation" className="flex flex-col gap-1">
+              {Array.from({ length: menteeNavItems.length }).map((_, index) => (
+                <div key={index} className="flex items-center gap-3.5 px-3.5 py-2.5">
+                  <Skeleton className="size-[18px] shrink-0 rounded" />
+                  <Skeleton className="h-3.5 w-24" />
+                </div>
+              ))}
+            </SkeletonGroup>
+          )}
+          {role && (isMentor ? mentorNavItems : menteeNavItems).map((item) => {
             const Icon = item.icon;
             const isActive =
               pathname === item.href ||

@@ -141,6 +141,14 @@ export const uploadsService = {
   },
 
   /**
+   * Validates and uploads a certificate image (same formats and size limit as avatars)
+   */
+  uploadCertificate(file: File) {
+    this.validateAvatar(file);
+    return this.uploadFile(file, "attachments");
+  },
+
+  /**
    * Requests a short-lived (1 hour) signed private URL from NestJS backend API.
    */
   async getSignedUrl(publicIdOrUrl: string): Promise<string> {

@@ -17,7 +17,7 @@ import {
 } from "@/services/bookings";
 import { bookingsQueryKeys } from "./query-keys";
 
-export const useMyBookings = (options?: { enabled?: boolean }) => {
+export const useMyBookings = (options?: { enabled?: boolean; refetchOnWindowFocus?: boolean }) => {
   return useQuery<BookingResponse[], ApiError>({
     queryKey: bookingsQueryKeys.mine(),
     queryFn: async () => {
@@ -25,6 +25,7 @@ export const useMyBookings = (options?: { enabled?: boolean }) => {
       return response.data;
     },
     enabled: options?.enabled,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus,
   });
 };
 

@@ -3,6 +3,7 @@ import type {
   AvailabilityInput,
   MentorSessionDto,
   MentorSessionInput,
+  MentorSessionStats,
   UpdateMentorSessionPayload,
 } from "./types";
 
@@ -11,6 +12,9 @@ const MENTOR_SESSIONS_PATH = "/sessions/mentor";
 export const mentorSessionsService = {
   list() {
     return apiClient.get<MentorSessionDto[]>(MENTOR_SESSIONS_PATH);
+  },
+  getStats(id: string) {
+    return apiClient.get<MentorSessionStats>(`${MENTOR_SESSIONS_PATH}/${id}/stats`);
   },
   create(payload: MentorSessionInput) {
     return apiClient.post<MentorSessionDto>(MENTOR_SESSIONS_PATH, payload);
@@ -38,5 +42,6 @@ export type {
   AvailabilityInput,
   MentorSessionDto,
   MentorSessionInput,
+  MentorSessionStats,
   UpdateMentorSessionPayload,
 } from "./types";

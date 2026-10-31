@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { MentorStatus } from '@prisma/client';
-import { AdminGuard } from '../auth/guards/admin.guard';
+import { AdminGuard } from '../identity/auth/guards/admin.guard';
 import { AdminService } from './admin.service';
 
 @Controller('admin')

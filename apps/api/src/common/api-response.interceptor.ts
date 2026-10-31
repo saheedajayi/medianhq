@@ -17,7 +17,8 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<T> {
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<T> {
     const request = context.switchToHttp().getRequest<{ url?: string }>();
 
-    if (request.url === '/health') {
+    // Event streams must reach the client as they are: wrapping one drops the event name
+    if (request.url === '/health' || request.url?.endsWith('/bookings/events')) {
       return next.handle();
     }
 

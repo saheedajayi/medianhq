@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
-import { EmailModule } from '../email/email.module';
+import { AuthModule } from '../identity/auth/auth.module';
+import { EmailModule } from '../platform/email/email.module';
 import { WaitlistController } from './waitlist.controller';
 import { WaitlistRepository } from './waitlist.repository';
 import { WaitlistService } from './waitlist.service';

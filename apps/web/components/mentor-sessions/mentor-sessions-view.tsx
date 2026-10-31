@@ -5,6 +5,9 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { Plus, Link2, Check, AlertCircle, Calendar } from "lucide-react";
+import { toast } from "sonner";
+import { formatAmount } from "@/lib/currency";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 import type { MentorSessionDto, MentorSessionInput } from "@/services/mentor-sessions";
 import {
   useCreateMentorSession,
@@ -20,8 +23,14 @@ import {
   SessionSuccessModal,
 } from "./mentor-session-modals";
 
+const APPROVAL_REQUIRED_MESSAGE = "You can create sessions once your mentor application is approved.";
+const CREATE_BUTTON_LOCKED_CLASS = "disabled:cursor-not-allowed disabled:bg-[#F2F4F7] disabled:text-[#98A2B3]";
+
 export function MentorSessionsView() {
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
+  // The API enforces this too; here it's so mentors know why they can't create yet
+  const isAwaitingApproval = !!user && user.mentorStatus !== "APPROVED";
   const sessionsQuery = useMentorSessions();
   const sessions = sessionsQuery.data ?? [];
   // Show the loader on retry too, not just the first load
@@ -65,6 +74,10 @@ export function MentorSessionsView() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCreateOpen = () => {
+    if (isAwaitingApproval) {
+      toast.error(APPROVAL_REQUIRED_MESSAGE);
+      return;
+    }
     setEditingSession(null);
     setIsDrawerOpen(true);
   };
@@ -104,7 +117,12 @@ export function MentorSessionsView() {
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to save session. Please try again.");
+      const { status, message } = err as { status?: number; message?: string };
+      toast.error(
+        status && status >= 400 && status < 500 && message
+          ? message
+          : "Failed to save session. Please try again."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -112,6 +130,10 @@ export function MentorSessionsView() {
 
   const handleToggleLive = async (session: MentorSessionDto) => {
     const nextLive = !session.isLive;
+    if (nextLive && isAwaitingApproval) {
+      toast.error("You can put sessions live once your mentor application is approved.");
+      return;
+    }
     // Optimistic UI update
     setSessions((prev) =>
       prev.map((s) => (s.id === session.id ? { ...s, isLive: nextLive } : s))
@@ -269,14 +291,16 @@ export function MentorSessionsView() {
           </h2>
 
           <p className="mt-2.5 max-w-md text-sm text-[#475467] leading-relaxed">
-            Create your first session offering so mentees can book time with you.
-            You can offer free intro calls, paid sessions, or both.
+            {isAwaitingApproval
+              ? APPROVAL_REQUIRED_MESSAGE
+              : "Create your first session offering so mentees can book time with you. You can offer free intro calls, paid sessions, or both."}
           </p>
 
           <button
             type="button"
             onClick={handleCreateOpen}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#FF5514] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#E0480F]"
+            disabled={isAwaitingApproval}
+            className={`mt-6 inline-flex items-center gap-2 rounded-full bg-[#FF5514] px-6 py-3 text-sm font-semibold text-white transition enabled:hover:bg-[#E0480F] ${CREATE_BUTTON_LOCKED_CLASS}`}
           >
             <Plus className="size-4" />
             <span>Create session</span>
@@ -290,14 +314,17 @@ export function MentorSessionsView() {
             <div>
               <h1 className="text-2xl font-bold text-[#101828]">Sessions</h1>
               <p className="mt-1 text-sm text-[#475467]">
-                Set up times when you're available for bookings during the week.
+                {isAwaitingApproval
+                  ? APPROVAL_REQUIRED_MESSAGE
+                  : "Set up times when you're available for bookings during the week."}
               </p>
             </div>
 
             <button
               type="button"
               onClick={handleCreateOpen}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#FF5514] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E0480F] shrink-0"
+              disabled={isAwaitingApproval}
+              className={`inline-flex items-center justify-center gap-2 rounded-full bg-[#FF5514] px-5 py-2.5 text-sm font-semibold text-white transition enabled:hover:bg-[#E0480F] shrink-0 ${CREATE_BUTTON_LOCKED_CLASS}`}
             >
               <Plus className="size-4" />
               <span>Create session</span>
@@ -307,10 +334,7 @@ export function MentorSessionsView() {
           {/* Cards Grid: 3 columns matching Figma */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">
             {sessions.map((session) => {
-              const formattedPrice =
-                session.price && session.price > 0
-                  ? `₦${session.price.toLocaleString()}`
-                  : "Free";
+              const formattedPrice = formatAmount(session.price, session.currency);
               const isCopied = copiedId === session.id;
 
               return (

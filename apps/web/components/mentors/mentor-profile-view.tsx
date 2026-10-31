@@ -95,6 +95,7 @@ function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
+  const [chargedAmount, setChargedAmount] = useState<number | undefined>();
   // The slot that was booked: booking refreshes the open slots, which moves the picker on
   const [bookedSlot, setBookedSlot] = useState<{ date: string; time: string } | null>(null);
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
@@ -167,6 +168,7 @@ function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
       });
 
       setCreatedBookingId(res.booking?.id ?? null);
+      setChargedAmount(res.booking?.payment?.amount);
       setBookedSlot({ date: dateSlotDisplay, time: selectedTime });
       setIsConfirmOpen(false);
       // Free sessions go straight to the mentor; paid ones go to checkout first
@@ -243,6 +245,7 @@ function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
         selectedPackage={selectedPackage}
         dateTimeDisplay={bookedSlot ? `${bookedSlot.date} - ${bookedSlot.time} WAT` : dateTimeDisplay}
         bookingId={createdBookingId || undefined}
+        chargedAmount={chargedAmount}
         onPaySuccess={handlePaymentSuccess}
       />
 

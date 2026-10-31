@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/base/skeleton";
 interface StatItem {
   label: string;
   value: number | string;
-  subtext: string;
+  subtext?: string;
 }
 
 interface DashboardStatsGridProps {
@@ -36,7 +36,7 @@ export function DashboardStatsGrid({ stats = defaultStats, isLoading = false }: 
           {isLoading ? (
             <>
               <Skeleton className="my-2 h-9 w-12 md:my-3 md:h-10" />
-              <Skeleton className="h-3 w-20" />
+              {stat.subtext && <Skeleton className="h-3 w-20" />}
             </>
           ) : (
             <>
@@ -44,9 +44,11 @@ export function DashboardStatsGrid({ stats = defaultStats, isLoading = false }: 
                 {stat.value}
               </div>
 
-              <span className="text-[11px] font-medium text-[#667085] md:text-xs">
-                {stat.subtext}
-              </span>
+              {stat.subtext && (
+                <span className="text-[11px] font-medium text-[#667085] md:text-xs">
+                  {stat.subtext}
+                </span>
+              )}
             </>
           )}
         </div>

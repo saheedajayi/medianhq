@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
+import { ProgressiveLocationSelect } from "@/components/ui/custom/progressive-location-select";
 import { useCreateRole, useIndustries } from "@/services/taxonomy/queries/taxonomy.queries";
 
 import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries";
@@ -51,6 +52,7 @@ export function MentorOnboardingPage() {
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [experience, setExperience] = useState("");
+  const [location, setLocation] = useState("");
   const [motivation, setMotivation] = useState("");
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvFileName, setCvFileName] = useState("");
@@ -69,6 +71,7 @@ export function MentorOnboardingPage() {
         if (parsed.company) setCompany(parsed.company);
         if (parsed.industry) setIndustry(parsed.industry);
         if (parsed.experience) setExperience(parsed.experience);
+        if (parsed.location) setLocation(parsed.location);
         // Older drafts stored this answer as `bio`
         if (parsed.motivation || parsed.bio) setMotivation(parsed.motivation || parsed.bio);
       } else if (currentSubStep === 2) {
@@ -106,7 +109,7 @@ export function MentorOnboardingPage() {
 
   function handleSubStep1Submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!industry || !currentRole) {
+    if (!industry || !currentRole || !location.trim()) {
       toast.error("Missing information", {
         description: "Please complete all required fields.",
       });
@@ -117,7 +120,7 @@ export function MentorOnboardingPage() {
       try {
         sessionStorage.setItem(
           MENTOR_DRAFT_KEY,
-          JSON.stringify({ currentRole, company, industry, experience, motivation }),
+          JSON.stringify({ currentRole, company, industry, experience, location, motivation }),
         );
       } catch {}
     }
@@ -154,6 +157,7 @@ export function MentorOnboardingPage() {
         company,
         industry,
         experience,
+        location,
         motivation,
         cvUrl: finalCvUrl || undefined,
       });
@@ -277,6 +281,19 @@ export function MentorOnboardingPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-[#111827]">
+              Where are you based? *
+            </label>
+            <ProgressiveLocationSelect
+              id="mentor-location"
+              value={location}
+              onChange={setLocation}
+              placeholder="Enter your location"
+              triggerClassName="h-[46px] rounded-xl border-[#e2e8f0] bg-transparent px-3.5 text-[15px] shadow-none"
+            />
           </div>
 
           <div className="mt-2">

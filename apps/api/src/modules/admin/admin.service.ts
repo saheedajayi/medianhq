@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { MentorStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
-import { EmailService } from '../email/email.service';
-import { UploadsService } from '../uploads/uploads.service';
+import { EmailService } from '../platform/email/email.service';
+import { UploadsService } from '../platform/uploads/uploads.service';
 
 @Injectable()
 export class AdminService {

@@ -4,9 +4,19 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 import { TopSignupNoticeBanner } from "@/components/dashboard/top-signup-notice-banner";
+import type { SessionHint } from "@/lib/session-hint";
+import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DashboardHeroBanner } from "@/components/dashboard/dashboard-hero-banner";
-import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
-import { MentorApplicationStatusCard } from "@/components/dashboard/mentor-application-status-card";
+import {
+  ProfileCompletionCard,
+  ProfileCompletionCardSkeleton,
+} from "@/components/dashboard/profile-completion-card";
+import {
+  MentorApplicationStatusCard,
+  MentorApplicationStatusCardSkeleton,
+} from "@/components/dashboard/mentor-application-status-card";
+import { MentorDashboardView } from "@/components/dashboard/mentor-dashboard-view";
 import { MentorsForYouSection } from "@/components/dashboard/mentors-for-you-section";
 import { UpcomingSessionsCard } from "@/components/dashboard/upcoming-sessions-card";
 import { ActionItemsCard } from "@/components/dashboard/action-items-card";
@@ -18,26 +28,56 @@ function calculateCompletionPercentage(userProfile?: {
   gender?: string | null;
   location?: string | null;
   bio?: string | null;
-} | null): number {
+  skills?: string[];
+  tools?: string[];
+} | null, isMentor = false): number {
   if (!userProfile) return 80;
   let filledCount = 0;
   if (userProfile.avatarUrl) filledCount++;
   if (userProfile.gender) filledCount++;
-  if (userProfile.location) filledCount++;
-  if (userProfile.bio) filledCount++;
+  // Mentors give their location when applying and fill in skills and tools afterwards
+  if (isMentor ? userProfile.skills?.length : userProfile.location) filledCount++;
+  if (isMentor ? userProfile.tools?.length : userProfile.bio) filledCount++;
 
   return 80 + filledCount * 5;
 }
 
-export function DashboardView() {
+export function DashboardView({ sessionHint }: { sessionHint: SessionHint }) {
+  const { data: user, isError, isFetching, refetch } = useCurrentUser();
+
+  if (!user && isError) {
+    return <DashboardErrorState onRetry={() => refetch()} isRetrying={isFetching} />;
+  }
+
+  // Only reached without a session cookie, while the shell redirects to sign in
+  if (!user && !sessionHint.role) return <DashboardSkeleton />;
+
+  // The session cookie picks the layout until the fetched user confirms it
+  const isApprovedMentor = user
+    ? user.role === "MENTOR" && user.mentorStatus === "APPROVED"
+    : sessionHint.isApprovedMentor;
+
+  if (isApprovedMentor) return <MentorDashboardView user={user ?? undefined} />;
+
+  return <ApplicantOrMenteeDashboardView role={user?.role ?? sessionHint.role} />;
+}
+
+function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] }) {
   const { data: user } = useCurrentUser();
-  const isMentor = user?.role === "MENTOR";
+  const isMentor = role === "MENTOR";
   const completionPercentage = calculateCompletionPercentage(
-    isMentor ? user?.mentorProfile : user?.menteeProfile
+    isMentor ? user?.mentorProfile : user?.menteeProfile,
+    isMentor
   );
   const is100PercentComplete = completionPercentage === 100;
 
-  const { data: bookings, isLoading: isLoadingBookings } = useMyBookings({ enabled: !!user });
+  const {
+    data: bookings,
+    isLoading: isLoadingBookings,
+    isError: isBookingsError,
+    isFetching: isFetchingBookings,
+    refetch: refetchBookings,
+  } = useMyBookings({ enabled: !!user });
   // Mentee stats come from bookings; until they arrive, show placeholders rather than zeros
   const isLoadingStats = !user || (!isMentor && isLoadingBookings);
   // Mentors answer requests from their bookings page; the dashboard points them there
@@ -106,6 +146,11 @@ export function DashboardView() {
     };
   }, [bookings, isMentor]);
 
+  // Without bookings the stats would read as real zeros
+  if (isBookingsError && !bookings) {
+    return <DashboardErrorState onRetry={() => refetchBookings()} isRetrying={isFetchingBookings} />;
+  }
+
   return (
     <div className="flex flex-col gap-6 md:gap-8">
       {/* Top Notice Banner (Visible strictly when completion reaches 100% for mentees) */}
@@ -133,15 +178,19 @@ export function DashboardView() {
         </Link>
       )}
 
-      {isMentor && user?.mentorStatus !== "APPROVED" && (
+      {/* Application status and profile progress both depend on the fetched user */}
+      {!user && isMentor && <MentorApplicationStatusCardSkeleton />}
+      {!user && <ProfileCompletionCardSkeleton />}
+
+      {user && isMentor && user.mentorStatus !== "APPROVED" && (
         <MentorApplicationStatusCard status={user?.mentorStatus} />
       )}
-      {!is100PercentComplete && (
+      {user && !is100PercentComplete && (
         <ProfileCompletionCard
           percentage={completionPercentage}
           description={
             isMentor
-              ? "Add your photo, location and bio so mentees can get to know you."
+              ? "Add your photo, skills and tools so mentees can find you."
               : undefined
           }
         />

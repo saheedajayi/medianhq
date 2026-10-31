@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { AdminGuard } from '../auth/guards/admin.guard';
+import { AdminGuard } from '../identity/auth/guards/admin.guard';
 import type { CreateWaitlistEntryDto } from './dto/create-waitlist-entry.dto';
 import { WaitlistService } from './waitlist.service';
 
