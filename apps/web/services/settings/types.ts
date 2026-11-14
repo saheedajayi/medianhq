@@ -6,6 +6,7 @@ export const NOTIFICATION_TYPES = [
   { value: "actionItems", label: "Action items" },
   { value: "community", label: "Community activity" },
   { value: "achievements", label: "Achievements" },
+  { value: "tips", label: "Tips and getting started" },
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]["value"];
