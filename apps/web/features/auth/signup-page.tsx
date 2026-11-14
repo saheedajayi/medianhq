@@ -45,7 +45,6 @@ export function SignupPage() {
   const defaultEmail = searchParams.get("email") ?? "";
   const errorParam = searchParams.get("error");
 
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const registerMutation = useRegister();
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
@@ -63,6 +62,7 @@ export function SignupPage() {
     }
   }, [errorParam]);
 
+  // Signed-in visitors are sent on in the background, so nobody waits on this check
   useEffect(() => {
     let isCancelled = false;
 
@@ -73,24 +73,14 @@ export function SignupPage() {
         const destination = getAuthDestination(response.data);
         router.replace(destination);
       })
-      .catch(() => {
-        if (!isCancelled) {
-          setIsCheckingAuth(false);
-        }
-      });
+      // Signed out: the form is already showing
+      .catch(() => undefined);
 
     return () => {
       isCancelled = true;
     };
   }, [router]);
 
-  if (isCheckingAuth) {
-    return (
-      <p className="py-10 text-center text-sm text-[#667085]">
-        Checking account...
-      </p>
-    );
-  }
 
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
