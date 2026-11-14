@@ -147,7 +147,10 @@ export class BookingsService {
         'You cannot book a mentorship session with yourself.',
       );
     }
-    if (mentorUser.mentorProfile?.status !== MentorStatus.APPROVED) {
+    if (
+      mentorUser.mentorProfile?.status !== MentorStatus.APPROVED ||
+      mentorUser.suspendedAt
+    ) {
       throw new BadRequestException('This mentor is not taking bookings yet.');
     }
 

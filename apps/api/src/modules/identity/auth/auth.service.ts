@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
   Logger,
@@ -151,6 +152,7 @@ export class AuthService {
     ) {
       throw new UnauthorizedException('Invalid email or password.');
     }
+    this.assertNotSuspended(user);
 
     let emailSent = true;
     if (!user.emailVerifiedAt) {
@@ -173,6 +175,15 @@ export class AuthService {
     };
   }
 
+  /** Suspending also ends existing sessions, so this stops a new one being started */
+  private assertNotSuspended(user: { suspendedAt?: Date | null }) {
+    if (user.suspendedAt) {
+      throw new ForbiddenException(
+        'This account has been suspended. Contact support for help.',
+      );
+    }
+  }
+
   async getCurrentUser(sessionToken: string | undefined): Promise<AuthUser> {
     if (!sessionToken) {
       throw new UnauthorizedException('Authentication is required.');
@@ -188,6 +199,7 @@ export class AuthService {
     if (user.sessionVersion !== payload.sessionVersion) {
       throw new UnauthorizedException('Authentication is required.');
     }
+    this.assertNotSuspended(user);
 
     return this.toAuthUser(user);
   }
@@ -225,6 +237,7 @@ export class AuthService {
         user = await this.authRepository.create(createData);
       }
     }
+    this.assertNotSuspended(user!);
 
     return {
       sessionToken: this.signAccessToken(user!),
@@ -325,7 +338,8 @@ export class AuthService {
     );
     if (
       existingToken &&
-      Date.now() - new Date(existingToken.createdAt).getTime() < PASSWORD_RESET_COOLDOWN_MS
+      Date.now() - new Date(existingToken.createdAt).getTime() <
+        PASSWORD_RESET_COOLDOWN_MS
     ) {
       await this.securityAuditService.record({
         userId: user.id,
@@ -799,6 +813,7 @@ export class AuthService {
     if (user.sessionVersion !== payload.sessionVersion) {
       throw new UnauthorizedException('Authentication is required.');
     }
+    this.assertNotSuspended(user);
 
     return {
       sessionToken: this.signAccessToken(user),

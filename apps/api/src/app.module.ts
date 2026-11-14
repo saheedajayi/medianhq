@@ -4,6 +4,14 @@ import { existsSync } from 'node:fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AdminModule } from './modules/admin/admin.module';
+import { AdminAnalyticsModule } from './modules/admin/analytics/admin-analytics.module';
+import { AdminApplicationsModule } from './modules/admin/applications/admin-applications.module';
+import { AdminFinanceModule } from './modules/admin/finance/admin-finance.module';
+import { AdminModerationModule } from './modules/admin/moderation/admin-moderation.module';
+import { AdminOverviewModule } from './modules/admin/overview/admin-overview.module';
+import { AdminSessionsModule } from './modules/admin/sessions/admin-sessions.module';
+import { AdminSettingsModule } from './modules/admin/settings/admin-settings.module';
+import { AdminUsersModule } from './modules/admin/users/admin-users.module';
 import { AuthModule } from './modules/identity/auth/auth.module';
 import { BookingsModule } from './modules/scheduling/bookings/bookings.module';
 import { DatabaseModule } from './database/database.module';
@@ -24,10 +32,9 @@ import { EarningsModule } from './modules/finance/earnings/earnings.module';
 import { ExchangeRatesModule } from './modules/finance/exchange-rates/exchange-rates.module';
 import { SettingsModule } from './modules/identity/settings/settings.module';
 
-const envFilePath = [
-  'apps/api/.env.local',
-  '.env.local',
-].filter((path) => existsSync(path));
+const envFilePath = ['apps/api/.env.local', '.env.local'].filter((path) =>
+  existsSync(path),
+);
 
 @Module({
   imports: [
@@ -45,6 +52,14 @@ const envFilePath = [
     SessionsModule,
     ReviewsModule,
     AdminModule,
+    AdminOverviewModule,
+    AdminUsersModule,
+    AdminApplicationsModule,
+    AdminSessionsModule,
+    AdminModerationModule,
+    AdminFinanceModule,
+    AdminAnalyticsModule,
+    AdminSettingsModule,
     WaitlistModule,
     TaxonomyModule,
     UploadsModule,

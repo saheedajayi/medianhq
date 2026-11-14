@@ -127,7 +127,8 @@ export class MentorsRepository {
     location?: string;
     approvedOnly?: boolean;
   }) {
-    const where: any = {};
+    // Suspended mentors are never listed
+    const where: any = { user: { suspendedAt: null } };
 
     if (params.approvedOnly !== false) {
       where.status = MentorStatus.APPROVED;
@@ -236,6 +237,7 @@ export class MentorsRepository {
     return this.prisma.mentorProfile.findMany({
       where: {
         status: MentorStatus.APPROVED,
+        user: { suspendedAt: null },
       },
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -303,6 +305,16 @@ export class MentorsRepository {
         motivation,
         cvUrl,
         status: MentorStatus.PENDING_REVIEW,
+        // A fresh submission starts a fresh review; resaving a pending one keeps its place
+        ...(existing?.status !== MentorStatus.PENDING_REVIEW && {
+          submittedAt: new Date(),
+          reviewerId: null,
+          reviewChecklist: {},
+          reviewNote: null,
+          reviewNoteAt: null,
+          reviewNoteBy: null,
+          decidedAt: null,
+        }),
       },
       create: {
         userId,
@@ -314,6 +326,7 @@ export class MentorsRepository {
         motivation,
         cvUrl,
         status: MentorStatus.PENDING_REVIEW,
+        submittedAt: new Date(),
       },
     });
   }
