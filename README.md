@@ -37,10 +37,10 @@ follow the same layout in `apps/api/test/unit/modules`:
 ```txt
 identity/    auth, users, settings
 profiles/    mentors, mentees, taxonomy
-scheduling/  bookings, sessions, booking-notifications
+scheduling/  bookings, sessions, booking-notifications, recordings
 finance/     payments, earnings, exchange-rates
 engagement/  messages, community, reviews, achievements, async-qa
-platform/    email, uploads
+platform/    email, onboarding-emails, contact, analytics, health-checks, moderation, uploads
 admin/
 waitlist/
 ```
@@ -139,15 +139,24 @@ so add it yourself. Locally it matches `DATABASE_URL`. With a connection pooler,
 | `WEB_ORIGIN`, `WEB_ORIGINS`                      | Redirect target and allowed CORS origins    |
 | `COOKIE_DOMAIN`                                  | Empty locally; `.medianhq.co` when deployed |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | Email delivery                              |
+| `EMAIL_FROM_MIDE`, `EMAIL_FROM_FOUNDER`          | Optional senders for personal emails        |
+| `EMAIL_LINK_SECRET`                              | Signs unsubscribe links in emails           |
+| `WHATSAPP_URL`                                   | Optional WhatsApp button in email footers   |
+| `ONBOARDING_EMAILS_DISABLED`                     | `true` stops the 5-day onboarding emails    |
+| `CONTACT_INBOX`                                  | Where Contact Us messages go                |
 | `CLOUDINARY_*`                                   | Signed file uploads                         |
 | `GOOGLE_*`, `LINKEDIN_*`                         | Social sign-in                              |
 | `PAYSTACK_SECRET_KEY`                            | Payments                                    |
 | `EXCHANGE_RATE_USD_NGN`                          | Backup USD to NGN rate (see below)          |
 | `LIVEKIT_*`                                      | Video sessions and realtime messaging       |
+| `RECORDINGS_S3_*`, `RECORDING_RETENTION_DAYS`    | Session recording storage and retention     |
 | `BACKOFFICE_ACCESS_KEY`                          | Admin and waitlist endpoints                |
 
-If `RESEND_API_KEY` or `EMAIL_FROM` is missing, the API saves waitlist entries but
-skips the confirmation email.
+If `RESEND_API_KEY` or `EMAIL_FROM` is missing, the API still works but sends no
+email. Without `EMAIL_FROM_MIDE` or `EMAIL_FROM_FOUNDER`, personal emails use the
+sender's name with `EMAIL_FROM`'s address. Without `EMAIL_LINK_SECRET`,
+unsubscribe links are signed with `RESEND_API_KEY`; changing either breaks links
+in emails already sent.
 
 ### Web
 
@@ -203,6 +212,29 @@ list is for display and sign-out; the auth tokens are what grant access.
 Mentors apply and are reviewed before going public. Until approved, they can't
 create sessions, put sessions live or be booked.
 
+### Emails from Mide and the founder
+
+Personal emails are written as content blocks in
+`apps/api/src/modules/platform/email/letters`, so the same content renders the
+sent email and the admin's decision preview.
+
+- **Mentor applications:** "application received" goes when a mentor applies.
+  The Founding Mentor welcome (approve) and the decline letter (reject) come from
+  the founder. Feedback the admin writes when rejecting goes in the decline letter.
+- **5-day onboarding series:** mentors get day 1 the day after approval; mentees
+  get day 1 straight after signing up. A sweeper sends whatever fell due every 30
+  minutes. Nothing is stored per email, and Resend drops a repeat within a day,
+  so a restart or a second server doesn't double-send. People who joined before
+  the series went live don't get it.
+- **Unsubscribe:** the series carries a signed link to `/unsubscribe`, which
+  turns off the "Tips and getting started" setting. Account, booking and payment
+  emails keep coming.
+
+The series stays off when `WEB_ORIGIN` is localhost, so a laptop pointed at a
+shared database can't email real people. **If two deployments share a database,
+set `ONBOARDING_EMAILS_DISABLED=true` on all but one**, or people may get links
+to the wrong site.
+
 ## Testing
 
 ```bash
@@ -240,4 +272,7 @@ your host restarts it automatically.
   earnings (4% + ₦100).
 - The "fee handling" options on the session form aren't saved.
 - Explore price filters assume naira and only use a mentor's profile price.
-- Mentor settings still use the older settings page.
+- Mentor settings still use the older settings page, so mentors can only turn
+  off onboarding emails through the email's Unsubscribe link.
+- The application emails promise 3 months of Mentor Pro or Mentee Pro free, but
+  nothing in the app grants it yet.
