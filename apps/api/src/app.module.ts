@@ -7,6 +7,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ContentScannerModule } from './modules/platform/moderation/content-scanner.module';
 import { AnalyticsModule } from './modules/platform/analytics/analytics.module';
 import { HealthChecksModule } from './modules/platform/health-checks/health-checks.module';
+import { ContactModule } from './modules/platform/contact/contact.module';
 import { AdminAnalyticsModule } from './modules/admin/analytics/admin-analytics.module';
 import { AdminApplicationsModule } from './modules/admin/applications/admin-applications.module';
 import { AdminFinanceModule } from './modules/admin/finance/admin-finance.module';
@@ -51,6 +52,7 @@ const envFilePath = ['apps/api/.env.local', '.env.local'].filter((path) =>
     ContentScannerModule,
     AnalyticsModule,
     HealthChecksModule,
+    ContactModule,
     AuthModule,
     UsersModule,
     MentorsModule,

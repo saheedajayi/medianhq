@@ -6,6 +6,10 @@ import { buildEmailVerificationTemplate } from './templates/email-verification.t
 import { buildResetPasswordTemplate } from './templates/reset-password.template';
 import { buildPasswordChangedTemplate } from './templates/password-changed.template';
 import { buildBookingUpdateTemplate } from './templates/booking-update.template';
+import {
+  buildContactMessageTemplate,
+  type ContactMessageTemplateInput,
+} from './templates/contact-message.template';
 import { SOCIAL_LINKS } from '../../../common/constants/social-links.constant';
 
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
@@ -190,6 +194,39 @@ export class EmailService {
       },
       input.idempotencyKey,
     );
+  }
+
+  /**
+   * Passes a Contact Us message to the team inbox, with the sender as the
+   * reply-to so the team can answer them directly. Returns false when email
+   * isn't configured, so the caller can say the message wasn't delivered.
+   */
+  async sendContactMessage(
+    input: ContactMessageTemplateInput & { inbox: string },
+  ) {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM;
+
+    if (!apiKey || !from) {
+      this.logger.warn(
+        'Skipping contact message because RESEND_API_KEY or EMAIL_FROM is not configured.',
+      );
+      return false;
+    }
+
+    const template = buildContactMessageTemplate(input);
+    await this.sendEmail(
+      {
+        from,
+        to: [input.inbox],
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+        reply_to: input.email,
+      },
+      `contact:${input.email}:${Date.now()}`,
+    );
+    return true;
   }
 
   private async sendEmail(payload: ResendEmailPayload, idempotencyKey: string) {

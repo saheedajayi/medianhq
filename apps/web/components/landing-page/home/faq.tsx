@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { LandingAudience } from "../audience";
+import { MedianMark } from "../shared/median-mark";
+import { cn } from "@/lib/utils";
 
 const FAQS = [
   {
@@ -46,11 +48,28 @@ const FAQS = [
   },
 ];
 
-export function LandingFAQ({ audience = "mentee" }: { audience?: LandingAudience }) {
-  const [openIndices, setOpenIndices] = useState<number[]>([0]);
-  const faqs = audience === "mentor"
-    ? FAQS.filter((faq) => faq.question !== "What if a mentor doesn't show up?")
+interface LandingFAQProps {
+  audience?: LandingAudience;
+  /** Only these questions, in this order; every question when left out */
+  questions?: string[];
+  /** Questions shown open to begin with; the first one when left out */
+  defaultOpen?: string[];
+  /** "warm" is the cream band with the Median mark behind it */
+  tone?: "white" | "warm";
+}
+
+export function LandingFAQ({ audience = "mentee", questions, defaultOpen, tone = "white" }: LandingFAQProps) {
+  const chosen = questions
+    ? questions.flatMap((question) => FAQS.filter((faq) => faq.question === question))
     : FAQS;
+  const faqs = audience === "mentor"
+    ? chosen.filter((faq) => faq.question !== "What if a mentor doesn't show up?")
+    : chosen;
+  const [openIndices, setOpenIndices] = useState<number[]>(() =>
+    defaultOpen
+      ? faqs.flatMap((faq, index) => (defaultOpen.includes(faq.question) ? [index] : []))
+      : [0]
+  );
 
   const toggleIndex = (index: number) => {
     setOpenIndices((prev) =>
@@ -59,8 +78,11 @@ export function LandingFAQ({ audience = "mentee" }: { audience?: LandingAudience
   };
 
   return (
-    <section className="relative overflow-hidden bg-white py-20 sm:py-28">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <section className={cn("relative overflow-hidden py-20 sm:py-28", tone === "warm" ? "bg-[#FFFAF5]" : "bg-white")}>
+      {tone === "warm" && (
+        <MedianMark className="pointer-events-none absolute left-1/2 top-1/2 h-[85%] -translate-x-1/2 -translate-y-1/2 text-[#FDEDE3]" />
+      )}
+      <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Title */}
         <h2 className="text-center text-2xl font-semibold tracking-tight text-[#FF5514] sm:text-3xl lg:text-4xl">
           Frequently asked questions
