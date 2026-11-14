@@ -1,5 +1,8 @@
 import { renderLetter } from '../../../../../src/modules/platform/email/letters/letter.layout';
-import { letterFrom } from '../../../../../src/modules/platform/email/email.service';
+import {
+  EmailService,
+  letterFrom,
+} from '../../../../../src/modules/platform/email/email.service';
 import { mentorOnboardingLetters } from '../../../../../src/modules/platform/email/letters/mentor-onboarding.letters';
 import { menteeOnboardingLetters } from '../../../../../src/modules/platform/email/letters/mentee-onboarding.letters';
 import {
@@ -104,5 +107,71 @@ describe('letters', () => {
     expect(isValidUnsubscribeToken('user-1', token)).toBe(true);
     expect(isValidUnsubscribeToken('user-2', token)).toBe(false);
     expect(isValidUnsubscribeToken('user-1', 'nope')).toBe(false);
+  });
+});
+
+describe('EmailService.sendLetter attachments', () => {
+  const env = process.env;
+  const realFetch = global.fetch;
+  let fetchMock: jest.Mock;
+
+  beforeEach(() => {
+    process.env = {
+      ...env,
+      RESEND_API_KEY: 're_test',
+      EMAIL_FROM: 'Median <hello@medianhq.co>',
+    };
+    fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    global.fetch = fetchMock;
+  });
+
+  afterEach(() => {
+    process.env = env;
+    global.fetch = realFetch;
+  });
+
+  const sentBody = () =>
+    JSON.parse(
+      (fetchMock.mock.calls[0] as [string, { body: string }])[1].body,
+    ) as {
+      attachments?: { filename: string; content: string }[];
+    };
+
+  it('sends the mentor guide PDF with the Founding Mentor welcome', async () => {
+    await new EmailService().sendLetter({
+      email: 'jola@medianhq.co',
+      letter: applicationAcceptedLetter('Jola'),
+      idempotencyKey: 'k',
+    });
+
+    const [attachment] = sentBody().attachments ?? [];
+    expect(attachment.filename).toBe('Median Mentor Onboarding Guide.pdf');
+    expect(
+      Buffer.from(attachment.content, 'base64').subarray(0, 5).toString(),
+    ).toBe('%PDF-');
+  });
+
+  it('still sends the email when an attachment file is missing', async () => {
+    const letter = {
+      ...applicationAcceptedLetter('Jola'),
+      attachments: [{ filename: 'x.pdf', file: 'missing.pdf' }],
+    };
+    await new EmailService().sendLetter({
+      email: 'jola@medianhq.co',
+      letter,
+      idempotencyKey: 'k',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sentBody().attachments).toBeUndefined();
+  });
+
+  it('sends nothing extra with letters that have no attachments', async () => {
+    await new EmailService().sendLetter({
+      email: 'jola@medianhq.co',
+      letter: applicationDeclinedLetter('Jola'),
+      idempotencyKey: 'k',
+    });
+    expect(sentBody().attachments).toBeUndefined();
   });
 });

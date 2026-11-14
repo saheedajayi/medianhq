@@ -56,6 +56,8 @@ export type AdminDecisionEmail = {
   from: string;
   blocks: AdminEmailBlock[];
   signature: { signOff?: string; name: string; title: string };
+  /** File names sent with the email */
+  attachments: string[];
 };
 
 export type AdminApplicationDetail = AdminApplicationRow & {

@@ -1,4 +1,9 @@
-import { FOUNDER_SIGNATURE, paragraph, type Letter } from './letter.types';
+import {
+  FOUNDER_SIGNATURE,
+  MENTOR_GUIDE_ATTACHMENT,
+  paragraph,
+  type Letter,
+} from './letter.types';
 
 /** Sent when a mentor submits their application */
 export const applicationReceivedLetter = (firstName: string): Letter => ({
@@ -77,6 +82,8 @@ export const applicationAcceptedLetter = (firstName: string): Letter => ({
     paragraph('Welcome to Median!'),
   ],
   signature: FOUNDER_SIGNATURE,
+  // How the platform works and what mentors get; it goes as a file, not in the text
+  attachments: [MENTOR_GUIDE_ATTACHMENT],
 });
 
 /**

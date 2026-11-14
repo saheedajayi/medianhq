@@ -20,4 +20,7 @@ export const toEmailPreview = (letter: Letter) => ({
   from: SENDER_NAMES[letter.sender],
   blocks: letter.blocks,
   signature: letter.signature,
+  attachments: (letter.attachments ?? []).map(
+    (attachment) => attachment.filename,
+  ),
 });

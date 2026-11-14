@@ -20,12 +20,24 @@ export interface LetterSignature {
   title: string;
 }
 
+/** A file in platform/email/attachments, sent under a friendlier name */
+export interface LetterAttachment {
+  filename: string;
+  file: string;
+}
+
 export interface Letter {
   subject: string;
   sender: LetterSender;
   blocks: LetterBlock[];
   signature: LetterSignature;
+  attachments?: LetterAttachment[];
 }
+
+export const MENTOR_GUIDE_ATTACHMENT: LetterAttachment = {
+  filename: 'Median Mentor Onboarding Guide.pdf',
+  file: 'median-mentor-onboarding-guide.pdf',
+};
 
 export const SENDER_NAMES: Record<LetterSender, string> = {
   mide: 'Mide from Median',
