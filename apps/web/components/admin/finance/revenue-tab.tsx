@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import type { RevenuePeriod } from "@/services/admin/finance";
 import { useFinanceRevenue } from "@/services/admin/finance/queries/finance.queries";
 import { StatCards } from "../shared/stat-cards";
@@ -10,6 +9,7 @@ import { formatAmount, formatChange } from "./finance-utils";
 import { RevenueBreakdownCard } from "./revenue-breakdown-card";
 import { RevenueOverviewCard } from "./revenue-overview-card";
 import { RevenueSummaryCards } from "./revenue-summary-cards";
+import { AdminSkeleton, ChartCardSkeleton, StatCardsSkeleton, TableCardSkeleton } from "../shared/skeletons";
 
 export function RevenueTab() {
   const [period, setPeriod] = useState<RevenuePeriod>("daily");
@@ -26,11 +26,11 @@ export function RevenueTab() {
 
   if (!revenue) {
     return (
-      <SkeletonGroup label="Loading revenue" className="flex flex-col gap-4">
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-96 w-full rounded-2xl" />
-        <Skeleton className="h-56 w-full rounded-2xl" />
-      </SkeletonGroup>
+      <AdminSkeleton label="Loading revenue" className="gap-4">
+        <StatCardsSkeleton />
+        <ChartCardSkeleton height={320} />
+        <TableCardSkeleton headers={["Source", "Sessions", "Amount", "Share"]} rows={4} />
+      </AdminSkeleton>
     );
   }
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
+import { AdminSkeleton, DetailCardSkeleton, TableCardSkeleton } from "../shared/skeletons";
 import { useAdminUser } from "@/services/admin/users/queries/users.queries";
 import { outlineButtonClass } from "../shared/shared";
 import { AccountActionsCard } from "./account-actions-card";
@@ -69,10 +69,17 @@ export function UserDetailsView({ userId }: UserDetailsViewProps) {
       ) : error ? (
         <DashboardErrorState onRetry={() => refetch()} isRetrying={isFetching} />
       ) : (
-        <SkeletonGroup label="Loading user details" className={columnsClass}>
-          <Skeleton className="h-[520px] w-full rounded-2xl" />
-          <Skeleton className="h-[520px] w-full rounded-2xl" />
-        </SkeletonGroup>
+        <AdminSkeleton label="Loading user details" className={columnsClass}>
+          <div className="flex flex-col gap-4">
+            <DetailCardSkeleton withAvatar lines={4} />
+            <DetailCardSkeleton lines={3} />
+          </div>
+          <div className="flex min-w-0 flex-col gap-5">
+            <DetailCardSkeleton lines={2} />
+            <TableCardSkeleton headers={["Date & Time", "Mentor", "Mentee", "Status"]} rows={4} />
+            <DetailCardSkeleton lines={3} />
+          </div>
+        </AdminSkeleton>
       )}
     </div>
   );

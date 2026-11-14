@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import type { AdminUserRow } from "@/services/admin/users";
 import { cn } from "@/lib/utils";
 import { formatDay, formatMoment } from "../shared/format";
 import { UserAvatar, checkboxClass, linkClass, tableCellClass, tableHeadClass } from "../shared/shared";
 import { UserStatusBadge } from "./user-status-badge";
 import { USER_ROLE } from "./user-utils";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 const COLUMNS = ["User", "Role", "Status", "Country", "Joined", "Trust Score", "Last active"];
 // The checkbox and View columns sit either side of the named ones
@@ -57,14 +57,7 @@ export function UsersTable({
         </thead>
 
         <tbody className={cn("divide-y divide-[#EAECF0]", isRefreshing && "opacity-60")}>
-          {!users &&
-            Array.from({ length: SKELETON_ROWS }).map((_, index) => (
-              <tr key={index}>
-                <td colSpan={COLUMN_COUNT} className="px-4 py-4">
-                  <Skeleton className="h-9 w-full" />
-                </td>
-              </tr>
-            ))}
+          {!users && <TableSkeletonRows headers={COLUMNS} withCheckbox withActions rows={SKELETON_ROWS} />}
 
           {users?.length === 0 && (
             <tr>

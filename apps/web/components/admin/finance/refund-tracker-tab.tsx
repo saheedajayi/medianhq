@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { More } from "iconsax-react";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { RefundsFilters } from "@/services/admin/finance";
 import { useFinanceRefunds } from "@/services/admin/finance/queries/finance.queries";
@@ -16,6 +15,7 @@ import { UserAvatar, checkboxClass } from "../shared/shared";
 import { financeCardClass, formatAmount, formatChange } from "./finance-utils";
 import { RefundDetailsPanel } from "./refund-details-panel";
 import { REFUND_STATUS, refundChipClass } from "./refund-utils";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 const COLUMNS = ["ID", "User", "Type", "Amount", "Reason", "Status", "Request at", "Actions"];
 const headClass = "px-2.5 py-5 text-left text-xs font-semibold text-[#475467]";
@@ -117,13 +117,7 @@ export function RefundTrackerTab() {
                   </tr>
                 </thead>
                 <tbody className={cn(isFetching && data && "opacity-60")}>
-                  {!data && (
-                    <tr>
-                      <td colSpan={COLUMNS.length + 1} className="px-5 py-4">
-                        <Skeleton className="h-64 w-full" />
-                      </td>
-                    </tr>
-                  )}
+                  {!data && <TableSkeletonRows headers={COLUMNS} withActions rows={5} cellClassName="px-5 py-4" />}
                   {data?.items.length === 0 && (
                     <tr>
                       <td colSpan={COLUMNS.length + 1} className={cn(cellClass, "py-16 text-center text-sm")}>

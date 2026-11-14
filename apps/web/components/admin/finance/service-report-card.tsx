@@ -2,11 +2,11 @@
 
 import type { ReactNode } from "react";
 import { ExportSquare } from "iconsax-react";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import { cn } from "@/lib/utils";
 import { Pagination, SearchField } from "../shared/list-controls";
 import { textButtonClass } from "../shared/shared";
 import { exportButtonClass, financeCardClass, financeCellClass, financeHeadClass } from "./finance-utils";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 interface ServiceReportCardProps {
   title: string;
@@ -84,13 +84,7 @@ export function ServiceReportCard({
             </tr>
           </thead>
           <tbody className={cn(isRefreshing && "opacity-60")}>
-            {rowCount === undefined && (
-              <tr>
-                <td colSpan={columns.length + 1} className="px-5 py-4">
-                  <Skeleton className="h-48 w-full" />
-                </td>
-              </tr>
-            )}
+            {rowCount === undefined && <TableSkeletonRows headers={columns} withActions rows={5} cellClassName="px-5 py-4" />}
             {rowCount === 0 && (
               <tr>
                 <td colSpan={columns.length + 1} className={cn(financeCellClass, "py-12 text-center text-sm")}>

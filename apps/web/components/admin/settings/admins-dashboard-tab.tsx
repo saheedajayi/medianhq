@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNowStrict } from "date-fns";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { useAdminOverview } from "@/services/admin/overview/queries/overview.queries";
 import { useAdminAuditLog } from "@/services/admin/settings/queries/settings.queries";
 import {
@@ -15,6 +14,7 @@ import {
 } from "../shared/format";
 import { UserAvatar, textButtonClass } from "../shared/shared";
 import { StatCards } from "../shared/stat-cards";
+import { AdminSkeleton, StatCardsSkeleton, TableCardSkeleton } from "../shared/skeletons";
 
 const cardClass = "rounded-2xl border border-[#EAECF0] bg-white";
 const titleClass = "text-2xl font-semibold text-[#475467]";
@@ -53,13 +53,10 @@ export function AdminsDashboardTab() {
 
   if (!overview || !auditLog) {
     return (
-      <SkeletonGroup
-        label="Loading the admins dashboard"
-        className="flex flex-col gap-6"
-      >
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-80 w-full rounded-2xl" />
-      </SkeletonGroup>
+      <AdminSkeleton label="Loading the admins dashboard">
+        <StatCardsSkeleton />
+        <TableCardSkeleton headers={["Date & Time", "Admin", "Action", "User", "Status"]} />
+      </AdminSkeleton>
     );
   }
 

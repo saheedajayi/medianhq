@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import type { ApiError } from "@/services/api-client";
 import type { AnalyticsStat } from "@/services/admin/analytics";
 import { cn } from "@/lib/utils";
 import { formatCount } from "../shared/format";
+import { AdminSkeleton, ChartCardSkeleton, StatCardsSkeleton } from "../shared/skeletons";
 
 export const analyticsTitleClass = "text-xl font-semibold text-[#475467]";
 export const analyticsSubtitleClass = "mt-1 text-xs text-[#475467]";
@@ -96,9 +96,9 @@ export function AnalyticsTabState<T>({ query, children }: AnalyticsTabStateProps
   if (query.data) return <>{children(query.data)}</>;
   if (query.isError) return <DashboardErrorState onRetry={() => query.refetch()} isRetrying={query.isFetching} />;
   return (
-    <SkeletonGroup label="Loading analytics" className="flex flex-col gap-4">
-      <Skeleton className="h-28 w-full rounded-2xl" />
-      <Skeleton className="h-96 w-full rounded-2xl" />
-    </SkeletonGroup>
+    <AdminSkeleton label="Loading analytics" className="gap-4">
+      <StatCardsSkeleton />
+      <ChartCardSkeleton height={300} />
+    </AdminSkeleton>
   );
 }

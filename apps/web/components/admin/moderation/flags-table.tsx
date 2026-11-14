@@ -1,10 +1,10 @@
 import { More } from "iconsax-react";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import type { ContentFlag } from "@/services/admin/moderation";
 import { cn } from "@/lib/utils";
 import { checkboxClass } from "../shared/shared";
 import type { FlagColumn } from "./flag-columns";
 import { moderationCellClass, moderationHeadClass } from "./moderation-utils";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 const SKELETON_ROWS = 8;
 
@@ -48,14 +48,14 @@ export function FlagsTable({ columns, flags, isRefreshing, selectedId, onSelect 
         </thead>
 
         <tbody className={cn(isRefreshing && "opacity-60")}>
-          {!flags &&
-            Array.from({ length: SKELETON_ROWS }).map((_, index) => (
-              <tr key={index}>
-                <td colSpan={columnCount} className="px-5 py-3">
-                  <Skeleton className="h-10 w-full" />
-                </td>
-              </tr>
-            ))}
+          {!flags && (
+            <TableSkeletonRows
+              headers={[...columns.map((column) => column.header), "Actions"]}
+              withCheckbox
+              rows={SKELETON_ROWS}
+              cellClassName="px-5 py-4"
+            />
+          )}
 
           {flags?.length === 0 && (
             <tr>

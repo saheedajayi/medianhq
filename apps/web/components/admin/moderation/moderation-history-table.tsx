@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { More } from "iconsax-react";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import { useModerationHistory } from "@/services/admin/moderation/queries/moderation.queries";
 import { cn } from "@/lib/utils";
 import { Pagination } from "../shared/list-controls";
 import { ContentTypeChip, FlagDate, FlagStatusChip, ModerationPerson } from "./moderation-cells";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 const COLUMNS = ["Date & Time", "Content Type", "Content Preview", "Action", "Reviewer", "Reason"];
 const headClass = "px-5 py-5 text-left text-base font-semibold text-[#475467]";
@@ -37,13 +37,7 @@ export function ModerationHistoryTable() {
             </tr>
           </thead>
           <tbody className={cn(isFetching && data && "opacity-60")}>
-            {!data && (
-              <tr>
-                <td colSpan={COLUMNS.length + 1} className="px-5 py-4">
-                  <Skeleton className="h-64 w-full" />
-                </td>
-              </tr>
-            )}
+            {!data && <TableSkeletonRows headers={COLUMNS} withActions rows={5} cellClassName="px-5 py-4" />}
             {data?.items.map((entry) => (
               <tr key={entry.id}>
                 <td className={cellClass}>
