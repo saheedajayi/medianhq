@@ -149,7 +149,8 @@ apiClient.interceptors.response.use(
             pathname.startsWith("/mentee") ||
             pathname.startsWith("/bookings") ||
             pathname.startsWith("/messages") ||
-            pathname.startsWith("/settings");
+            pathname.startsWith("/settings") ||
+            pathname.startsWith("/admin");
 
 
           if (isDashboard) {
