@@ -1,21 +1,23 @@
-/** The decision emails, in one place so the admin preview shows exactly what is sent */
-export const approvalEmail = () => ({
-  subject: "You're approved to mentor on Median",
-  paragraphs: [
-    'Your mentor application has been approved, and your profile is now visible to mentees.',
-    'Set your weekly availability and create your first session so mentees can book you.',
-  ],
-  ctaLabel: 'Set your availability',
-  ctaPath: '/mentor/availability',
-});
+import {
+  applicationAcceptedLetter,
+  applicationDeclinedLetter,
+} from '../../platform/email/letters/mentor-application.letters';
+import {
+  SENDER_NAMES,
+  type Letter,
+} from '../../platform/email/letters/letter.types';
 
-export const rejectionEmail = (reason?: string) => ({
-  subject: 'An update on your Median mentor application',
-  paragraphs: [
-    "Thank you for applying to mentor on Median. We aren't able to approve your application right now.",
-    ...(reason?.trim() ? [`Feedback from our team: ${reason.trim()}`] : []),
-    'You are welcome to reply to this email with any questions.',
-  ],
-  ctaLabel: 'Visit Median',
-  ctaPath: '/',
+/** The decision emails, in one place so the admin preview shows exactly what is sent */
+export const approvalEmail = (firstName: string) =>
+  applicationAcceptedLetter(firstName);
+
+export const rejectionEmail = (firstName: string, feedback?: string) =>
+  applicationDeclinedLetter(firstName, feedback);
+
+/** What the admin preview needs: the letter plus who it comes from */
+export const toEmailPreview = (letter: Letter) => ({
+  subject: letter.subject,
+  from: SENDER_NAMES[letter.sender],
+  blocks: letter.blocks,
+  signature: letter.signature,
 });

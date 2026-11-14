@@ -12,6 +12,7 @@ import type { CreateMentorProfileDto } from '../../../../../src/modules/profiles
 describe('MentorsService', () => {
   let service: MentorsService;
   let repository: Record<keyof MentorsRepository, jest.Mock>;
+  let emailService: { sendLetter: jest.Mock };
 
   beforeEach(() => {
     repository = {
@@ -31,9 +32,11 @@ describe('MentorsService', () => {
       findBookableSessions: jest.fn().mockResolvedValue([]),
     };
 
+    emailService = { sendLetter: jest.fn().mockResolvedValue(undefined) };
     service = new MentorsService(
       repository as unknown as MentorsRepository,
       { scan: jest.fn() } as never,
+      emailService as never,
     );
   });
 
@@ -84,6 +87,29 @@ describe('MentorsService', () => {
         message: 'Application submitted successfully',
         profile: mockProfile,
       });
+      expect(emailService.sendLetter).toHaveBeenCalledWith(
+        expect.objectContaining({
+          letter: expect.objectContaining({
+            subject: 'Your application is in! 🎉',
+          }) as unknown,
+        }),
+      );
+    });
+
+    it("doesn't email again when an application already in review is resaved", async () => {
+      repository.findUserForOnboarding.mockResolvedValue({
+        email: 'ada@medianhq.co',
+        firstName: 'Ada',
+        emailVerifiedAt: new Date(),
+        role: UserRole.MENTOR,
+        menteeProfile: null,
+        mentorProfile: { id: 'mentor-1', status: MentorStatus.PENDING_REVIEW },
+      });
+      repository.upsertProfileByUserId.mockResolvedValue({ id: 'mentor-1' });
+
+      await service.apply('user-1', validDto);
+
+      expect(emailService.sendLetter).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException if user email is not verified', async () => {

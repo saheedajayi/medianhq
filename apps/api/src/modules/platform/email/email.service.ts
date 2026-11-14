@@ -11,6 +11,13 @@ import {
   type ContactMessageTemplateInput,
 } from './templates/contact-message.template';
 import { SOCIAL_LINKS } from '../../../common/constants/social-links.constant';
+import { renderLetter } from './letters/letter.layout';
+import {
+  SENDER_NAMES,
+  type Letter,
+  type LetterSender,
+} from './letters/letter.types';
+import { signUnsubscribeToken } from './unsubscribe-token';
 
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 // Seeded demo accounts (packages/database/prisma/demo) use this domain; it has no
@@ -65,6 +72,28 @@ export type BookingUpdateEmailInput = {
   /** Same booking + event must not email twice if a request is retried */
   idempotencyKey: string;
 };
+
+export type SendLetterInput = {
+  email: string;
+  letter: Letter;
+  idempotencyKey: string;
+  unsubscribeUserId?: string;
+};
+
+/**
+ * "Mide from Median <mide@…>". Each sender's address comes from its own
+ * setting; until that is set, the name goes on EMAIL_FROM's address so the
+ * email still sends from a verified domain.
+ */
+export function letterFrom(sender: LetterSender, fallbackFrom: string) {
+  const configured =
+    sender === 'mide'
+      ? process.env.EMAIL_FROM_MIDE
+      : process.env.EMAIL_FROM_FOUNDER;
+  if (configured) return configured;
+  const address = /<([^>]+)>/.exec(fallbackFrom)?.[1] ?? fallbackFrom.trim();
+  return `${SENDER_NAMES[sender]} <${address}>`;
+}
 
 @Injectable()
 export class EmailService {
@@ -186,6 +215,56 @@ export class EmailService {
     await this.sendEmail(
       {
         from,
+        to: [input.email],
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      },
+      input.idempotencyKey,
+    );
+  }
+
+  /**
+   * Sends a personal email from someone at Median (Mide or the founder).
+   * Pass unsubscribeUserId for optional emails like the onboarding series,
+   * so the footer carries a one-click unsubscribe link.
+   */
+  async sendLetter(input: SendLetterInput) {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM;
+
+    if (!apiKey || !from) {
+      this.logger.warn(
+        `Skipping "${input.letter.subject}" email because RESEND_API_KEY or EMAIL_FROM is not configured.`,
+      );
+      return;
+    }
+
+    const siteUrl = this.getSiteUrl();
+    const token = input.unsubscribeUserId
+      ? signUnsubscribeToken(input.unsubscribeUserId)
+      : null;
+    const template = renderLetter(input.letter, {
+      siteUrl,
+      supportEmail: SOCIAL_LINKS.email,
+      social: {
+        twitter: SOCIAL_LINKS.twitter,
+        instagram: SOCIAL_LINKS.instagram,
+        linkedin: SOCIAL_LINKS.linkedin,
+        whatsapp: process.env.WHATSAPP_URL || undefined,
+      },
+      preferencesUrl: `${siteUrl}/settings?tab=notifications`,
+      unsubscribeUrl:
+        input.unsubscribeUserId && token
+          ? `${siteUrl}/unsubscribe?u=${encodeURIComponent(input.unsubscribeUserId)}&t=${token}`
+          : undefined,
+    });
+    const replyTo = process.env.EMAIL_REPLY_TO;
+
+    await this.sendEmail(
+      {
+        from: letterFrom(input.letter.sender, from),
         to: [input.email],
         subject: template.subject,
         html: template.html,

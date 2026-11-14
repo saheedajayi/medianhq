@@ -7,6 +7,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { BackofficeWaitlistModule } from './modules/backoffice/waitlist/backoffice-waitlist.module';
 import { ContentScannerModule } from './modules/platform/moderation/content-scanner.module';
 import { AnalyticsModule } from './modules/platform/analytics/analytics.module';
+import { OnboardingEmailsModule } from './modules/platform/onboarding-emails/onboarding-emails.module';
 import { HealthChecksModule } from './modules/platform/health-checks/health-checks.module';
 import { ContactModule } from './modules/platform/contact/contact.module';
 import { AuthModule } from './modules/identity/auth/auth.module';
@@ -45,6 +46,7 @@ const envFilePath = ['apps/api/.env.local', '.env.local'].filter((path) =>
     AnalyticsModule,
     HealthChecksModule,
     ContactModule,
+    OnboardingEmailsModule,
     AuthModule,
     UsersModule,
     MentorsModule,
