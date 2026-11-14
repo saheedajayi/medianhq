@@ -21,6 +21,8 @@ export class MentorsRepository {
     return this.prisma.user.findUnique({
       where: { id: userId },
       select: {
+        email: true,
+        firstName: true,
         emailVerifiedAt: true,
         role: true,
         menteeProfile: { select: { id: true } },

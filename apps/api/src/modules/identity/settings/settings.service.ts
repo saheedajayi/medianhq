@@ -66,6 +66,8 @@ const NOTIFICATION_TYPES = [
   'actionItems',
   'community',
   'achievements',
+  // The onboarding series and other tips from Mide
+  'tips',
 ];
 const MAX_LIST_ITEMS = 20;
 const MAX_CUSTOM_LINKS = 10;

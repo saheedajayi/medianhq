@@ -16,7 +16,12 @@ import {
   AdminApplicationsRepository,
   type ApplicationRecord,
 } from './admin-applications.repository';
-import { approvalEmail, rejectionEmail } from './application-emails';
+import {
+  approvalEmail,
+  rejectionEmail,
+  toEmailPreview,
+} from './application-emails';
+import type { Letter } from '../../platform/email/letters/letter.types';
 import {
   REVIEW_CHECKLIST_ITEMS,
   type AdminApplicationsFilters,
@@ -135,7 +140,10 @@ export class AdminApplicationsService {
           at: event.createdAt,
         };
       }),
-      emailPreview: { accept: approvalEmail(), reject: rejectionEmail() },
+      emailPreview: {
+        accept: toEmailPreview(approvalEmail(application.user.firstName)),
+        reject: toEmailPreview(rejectionEmail(application.user.firstName)),
+      },
     };
   }
 
@@ -218,7 +226,7 @@ export class AdminApplicationsService {
     );
     await this.sendDecisionEmail(
       application,
-      approvalEmail(),
+      approvalEmail(application.user.firstName),
       `mentor-approved:${application.id}`,
     );
     return { mentorProfileId: applicationId, status: application.status };
@@ -232,7 +240,7 @@ export class AdminApplicationsService {
     );
     await this.sendDecisionEmail(
       application,
-      rejectionEmail(reason),
+      rejectionEmail(application.user.firstName, reason),
       `mentor-rejected:${application.id}`,
     );
     return { mentorProfileId: applicationId, status: application.status };
@@ -270,17 +278,11 @@ export class AdminApplicationsService {
   /** A failed email must not undo the decision, so errors are swallowed */
   private sendDecisionEmail(
     application: ApplicationRecord,
-    email: ReturnType<typeof approvalEmail>,
+    letter: Letter,
     idempotencyKey: string,
   ) {
     return this.emailService
-      .sendBookingUpdate({
-        email: application.user.email,
-        firstName: application.user.firstName,
-        ...email,
-        details: [],
-        idempotencyKey,
-      })
+      .sendLetter({ email: application.user.email, letter, idempotencyKey })
       .catch(() => undefined);
   }
 

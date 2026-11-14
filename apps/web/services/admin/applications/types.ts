@@ -44,7 +44,19 @@ export type AdminApplicationsPage = {
   reviewers: { id: string; name: string }[];
 };
 
-export type AdminDecisionEmail = { subject: string; paragraphs: string[] };
+/** Content blocks, the same ones the API renders into the sent email. Text may use **bold** */
+export type AdminEmailBlock =
+  | { type: "paragraph" | "heading" | "quote"; text: string }
+  | { type: "bullets"; items: string[] }
+  | { type: "numbered"; items: { title?: string; text: string }[] }
+  | { type: "button"; label: string; path: string };
+
+export type AdminDecisionEmail = {
+  subject: string;
+  from: string;
+  blocks: AdminEmailBlock[];
+  signature: { signOff?: string; name: string; title: string };
+};
 
 export type AdminApplicationDetail = AdminApplicationRow & {
   location: string | null;

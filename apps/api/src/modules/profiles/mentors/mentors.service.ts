@@ -17,6 +17,8 @@ import type {
   PaginatedExploreMentorsResponse,
 } from './dto/explore-mentors-query.dto';
 import { MentorsRepository } from './mentors.repository';
+import { EmailService } from '../../platform/email/email.service';
+import { applicationReceivedLetter } from '../../platform/email/letters/mentor-application.letters';
 import { ContentScannerService } from '../../platform/moderation/content-scanner.service';
 import { buildAvailableDays } from '../../scheduling/bookings/availability-slots';
 import { MIN_LEAD_TIME_MS } from '../../scheduling/bookings/booking-policy';
@@ -30,6 +32,7 @@ export class MentorsService {
   constructor(
     private readonly mentorsRepository: MentorsRepository,
     private readonly contentScanner: ContentScannerService,
+    private readonly emailService: EmailService,
   ) {}
 
   private mapCategory(
@@ -391,6 +394,24 @@ export class MentorsService {
         userId,
         dto,
       );
+
+      // Resaving an application that's already in review doesn't email again
+      const isNewSubmission =
+        user.mentorProfile?.status !== MentorStatus.PENDING_REVIEW;
+      if (isNewSubmission) {
+        void this.emailService
+          .sendLetter({
+            email: user.email,
+            letter: applicationReceivedLetter(user.firstName),
+            idempotencyKey: `mentor-application-received:${profile.id}:${profile.submittedAt?.getTime() ?? ''}`,
+          })
+          .catch((error: unknown) =>
+            this.logger.error(
+              `Couldn't send the application received email (userId: ${userId})`,
+              error,
+            ),
+          );
+      }
 
       return {
         success: true,
