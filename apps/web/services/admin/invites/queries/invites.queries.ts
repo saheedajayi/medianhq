@@ -43,13 +43,17 @@ export const useResendAdminInvite = () =>
 export const useRevokeAdminInvite = () =>
   useInviteMutation((inviteId: string) => adminInvitesService.revokeInvite(inviteId));
 
+/** The invite couldn't be fetched (no answer, timeout or server error), as opposed to a bad link */
+export const isInviteLoadFailure = (error: ApiError | null | undefined) =>
+  !!error && (error.status === 0 || error.status >= 500);
+
 export const useAdminInvitePreview = (token: string) => {
   return useQuery<AdminInvitePreview, ApiError>({
     queryKey: adminInvitesQueryKeys.preview(token),
     queryFn: async () => (await adminInvitesService.getInvitePreview(token)).data,
     enabled: !!token,
-    // A bad or expired link stays bad, so there is nothing to retry
-    retry: false,
+    // A bad or expired link (4xx) stays bad; a timeout or server error is worth two more tries
+    retry: (failureCount, error) => isInviteLoadFailure(error) && failureCount < 2,
   });
 };
 
