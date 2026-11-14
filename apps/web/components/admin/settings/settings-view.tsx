@@ -25,13 +25,23 @@ export function SettingsView() {
         title="Admin Roles & Permissions"
         description="Manage admin roles and control access across the platform."
       >
-        <button type="button" onClick={exportAdminRoles} className={outlineButtonClass}>
+        <button
+          type="button"
+          onClick={exportAdminRoles}
+          className={outlineButtonClass}
+        >
           <ExportSquare size="18" variant="Outline" color="#101828" />
           Export all CSV
         </button>
       </AdminPageHeader>
 
-      <SegmentedTabs tabs={TABS} activeTab={tab} onChange={setTab} size="lg" className="self-start" />
+      <SegmentedTabs
+        tabs={TABS}
+        activeTab={tab}
+        onChange={setTab}
+        size="lg"
+        className="self-start"
+      />
 
       {tab === "roles" ? <AdminRolesTab /> : <AdminsDashboardTab />}
     </div>

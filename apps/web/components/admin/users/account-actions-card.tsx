@@ -14,6 +14,7 @@ import {
   neutralPillClass,
   primaryPillClass,
 } from "../shared/shared";
+import { useAdminAccess } from "../shared/admin-access";
 import { SuspendAccountModal } from "./suspend-account-modal";
 
 const showError = (error: ApiError) => toast.error(error.message || "That didn't work. Please try again.");
@@ -29,7 +30,11 @@ export function AccountActionsCard({ user }: AccountActionsCardProps) {
   const setUserFlag = useSetUserFlag(user.id);
 
   const isSuspended = user.status === "SUSPENDED";
+  const { canWrite } = useAdminAccess();
   const isSaving = suspendUser.isPending || reinstateUser.isPending || setUserFlag.isPending;
+
+  // Read-only admin types can see the account but not change it
+  if (!canWrite("users")) return null;
 
   const handleSuspend = (reason: string) =>
     suspendUser.mutate(reason, {

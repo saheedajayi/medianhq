@@ -57,6 +57,8 @@ export type ModerationHistoryEntry = {
   reason: string;
 };
 
+export type BlockedTerm = { id: string; term: string; reason: string; createdAt: string };
+
 export type ModerationHistoryPage = {
   items: ModerationHistoryEntry[];
   total: number;

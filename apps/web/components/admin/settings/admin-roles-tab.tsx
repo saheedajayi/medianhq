@@ -1,38 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 import { AddAdminModal } from "./add-admin-modal";
-import { ADMIN_ROLES } from "./admin-roles";
+import { ADMIN_ROLES, type AdminRole } from "./admin-roles";
+import { ManageAdminsModal } from "./manage-admins-modal";
+import { RoleDetailsModal } from "./role-details-modal";
+import { PendingInvitesCard } from "./pending-invites-card";
 
 const headClass = "px-6 py-3 text-left text-sm font-semibold text-[#101828]";
 const cellClass = "px-6 py-6 align-top text-sm text-[#101828]";
-const boxButtonClass = "rounded border px-2 py-1.5 text-sm transition-colors hover:bg-[#F9FAFB]";
-
-// Roles are fixed descriptions until they are enforced, so there is nothing to open or edit
-const notifyNotConnected = () => toast.info("Role management isn't connected yet.");
+const boxButtonClass =
+  "rounded border px-2 py-1.5 text-sm transition-colors hover:bg-[#F9FAFB]";
 
 export function AdminRolesTab() {
   const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
+  const [isManageOpen, setIsManageOpen] = useState(false);
+  const [viewingRole, setViewingRole] = useState<AdminRole | null>(null);
 
   return (
     <div className="flex flex-col gap-7">
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {ADMIN_ROLES.map((role) => (
-          <li key={role.name} className="rounded-2xl border border-[#EAECF0] bg-[#FCFCFD] px-4 py-5">
+          <li
+            key={role.value}
+            className="rounded-2xl border border-[#EAECF0] bg-[#FCFCFD] px-4 py-5"
+          >
             <p className="text-xs" style={{ color: role.color }}>
               {role.accessLevel}
             </p>
-            <p className="mt-5 text-xl font-semibold text-[#101828]">{role.name}</p>
-            <p className="mt-4 text-[11px] leading-relaxed text-[#667085]">{role.summary}</p>
+            <p className="mt-5 text-xl font-semibold text-[#101828]">
+              {role.name}
+            </p>
+            <p className="mt-4 text-[11px] leading-relaxed text-[#667085]">
+              {role.summary}
+            </p>
           </li>
         ))}
       </ul>
 
       <section className="overflow-hidden rounded-2xl border border-[#EAECF0] bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-6">
-          <h2 className="text-3xl font-semibold tracking-tight text-[#475467]">Roles Details &amp; Permissions</h2>
-          <button type="button" onClick={notifyNotConnected} className={`${boxButtonClass} border-[#D0D5DD] text-[#475467]`}>
+          <h2 className="text-3xl font-semibold tracking-tight text-[#475467]">
+            Roles Details &amp; Permissions
+          </h2>
+          <button
+            type="button"
+            onClick={() => setIsManageOpen(true)}
+            className={`${boxButtonClass} border-[#D0D5DD] text-[#475467]`}
+          >
             Manage Roles
           </button>
         </div>
@@ -41,7 +56,13 @@ export function AdminRolesTab() {
           <table className="w-full min-w-[820px] border-collapse">
             <thead className="bg-[#F2F4F7]">
               <tr>
-                {["Role", "Access Level", "Key Permissions", "Status", "Actions"].map((column) => (
+                {[
+                  "Role",
+                  "Access Level",
+                  "Key Permissions",
+                  "Status",
+                  "Actions",
+                ].map((column) => (
                   <th key={column} scope="col" className={headClass}>
                     {column}
                   </th>
@@ -50,7 +71,7 @@ export function AdminRolesTab() {
             </thead>
             <tbody>
               {ADMIN_ROLES.map((role) => (
-                <tr key={role.name}>
+                <tr key={role.value}>
                   <td className={cellClass}>{role.groupName}</td>
                   <td className={cellClass} style={{ color: role.color }}>
                     {role.accessLevel}
@@ -69,7 +90,11 @@ export function AdminRolesTab() {
                     </span>
                   </td>
                   <td className={cellClass}>
-                    <button type="button" onClick={notifyNotConnected} className={`${boxButtonClass} border-[#101828]`}>
+                    <button
+                      type="button"
+                      onClick={() => setViewingRole(role)}
+                      className={`${boxButtonClass} border-[#101828]`}
+                    >
                       View Details
                     </button>
                   </td>
@@ -90,7 +115,20 @@ export function AdminRolesTab() {
         </div>
       </section>
 
-      {isAddAdminOpen && <AddAdminModal onClose={() => setIsAddAdminOpen(false)} />}
+      <PendingInvitesCard />
+
+      {isAddAdminOpen && (
+        <AddAdminModal onClose={() => setIsAddAdminOpen(false)} />
+      )}
+      {isManageOpen && (
+        <ManageAdminsModal onClose={() => setIsManageOpen(false)} />
+      )}
+      {viewingRole && (
+        <RoleDetailsModal
+          role={viewingRole}
+          onClose={() => setViewingRole(null)}
+        />
+      )}
     </div>
   );
 }

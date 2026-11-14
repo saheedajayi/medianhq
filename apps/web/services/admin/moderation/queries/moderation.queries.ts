@@ -5,6 +5,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import type { ApiError } from "@/services/api-client";
 import {
   adminModerationService,
+  type BlockedTerm,
   type ModerationFlagsFilters,
   type ModerationFlagsPage,
   type ModerationHistoryPage,
@@ -42,3 +43,27 @@ export const useTakeFlagAction = (flagId: string) => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: adminModerationQueryKeys.all }),
   });
 };
+
+export const useBlocklist = (options?: { enabled?: boolean }) => {
+  return useQuery<BlockedTerm[], ApiError>({
+    queryKey: adminModerationQueryKeys.blocklist(),
+    queryFn: async () => (await adminModerationService.getBlocklist()).data,
+    enabled: options?.enabled,
+  });
+};
+
+const useBlocklistMutation = <TVariables,>(mutationFn: (variables: TVariables) => Promise<unknown>) => {
+  const queryClient = useQueryClient();
+  return useMutation<unknown, ApiError, TVariables>({
+    mutationFn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminModerationQueryKeys.blocklist() }),
+  });
+};
+
+export const useAddBlockedTerm = () =>
+  useBlocklistMutation((input: { term: string; reason: string }) =>
+    adminModerationService.addBlockedTerm(input.term, input.reason),
+  );
+
+export const useRemoveBlockedTerm = () =>
+  useBlocklistMutation((termId: string) => adminModerationService.removeBlockedTerm(termId));

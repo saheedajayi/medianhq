@@ -10,4 +10,6 @@ export const bookingsQueryKeys = {
   cancel: () => [...bookingsQueryKeys.all, "cancel"] as const,
   reschedule: () => [...bookingsQueryKeys.all, "reschedule"] as const,
   roomToken: () => [...bookingsQueryKeys.all, "room-token"] as const,
+  recording: (bookingId: string) => [...bookingsQueryKeys.all, "recording", bookingId] as const,
+  recordingConsent: () => [...bookingsQueryKeys.all, "recording-consent"] as const,
 };

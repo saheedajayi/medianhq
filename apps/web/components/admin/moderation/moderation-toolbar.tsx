@@ -36,9 +36,16 @@ interface ModerationToolbarProps {
   onChange: (values: Partial<ModerationFilterValues>) => void;
   isHistoryOpen: boolean;
   onToggleHistory: () => void;
+  onOpenBlocklist: () => void;
 }
 
-export function ModerationToolbar({ values, onChange, isHistoryOpen, onToggleHistory }: ModerationToolbarProps) {
+export function ModerationToolbar({
+  values,
+  onChange,
+  isHistoryOpen,
+  onToggleHistory,
+  onOpenBlocklist,
+}: ModerationToolbarProps) {
   return (
     <div className="flex flex-wrap items-end gap-4 px-5 py-6">
       <SearchField
@@ -78,8 +85,11 @@ export function ModerationToolbar({ values, onChange, isHistoryOpen, onToggleHis
         >
           {isHistoryOpen ? "Queue" : "History"}
         </button>
-        {/* There is no blocklist to manage yet */}
-        <button type="button" disabled className={`${viewButtonClass} bg-[#EAECF0] text-[#667085]`}>
+        <button
+          type="button"
+          onClick={onOpenBlocklist}
+          className={`${viewButtonClass} bg-[#EAECF0] text-[#667085] hover:bg-[#D0D5DD]`}
+        >
           Blocklist
         </button>
       </div>

@@ -10,6 +10,7 @@ import {
   type LiveSessionsPage,
   type NoShowTrackerFilters,
   type NoShowTrackerPage,
+  type RecordingsFilters,
   type RecordingsPage,
   type SessionsCalendar,
 } from "@/services/admin/sessions";
@@ -41,11 +42,11 @@ export const useCompletedSessions = (filters: CompletedSessionsFilters, page: nu
   });
 };
 
-export const useSessionRecordings = (page: number) => {
+export const useSessionRecordings = (filters: RecordingsFilters, page: number) => {
   return useQuery<RecordingsPage, ApiError>({
-    queryKey: adminSessionsQueryKeys.recordings(page),
+    queryKey: adminSessionsQueryKeys.recordings(filters, page),
     queryFn: async () => {
-      const response = await adminSessionsService.getRecordings(page);
+      const response = await adminSessionsService.getRecordings(filters, page);
       return response.data;
     },
     placeholderData: keepPreviousData,
