@@ -40,41 +40,6 @@ export class WaitlistRepository {
     });
   }
 
-  count() {
-    return this.prisma.waitlistEntry.count();
-  }
-
-  findMany({ skip, take }: { skip: number; take: number }) {
-    return this.prisma.waitlistEntry.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take,
-      select: waitlistEntrySelect,
-    });
-  }
-
-  findLatest() {
-    return this.prisma.waitlistEntry.findFirst({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        createdAt: true,
-      },
-    });
-  }
-
-  countByAudience() {
-    return this.prisma.waitlistEntry.groupBy({
-      by: ['audience'],
-      _count: {
-        _all: true,
-      },
-    });
-  }
-
   create(data: Prisma.WaitlistEntryCreateInput) {
     return this.prisma.waitlistEntry.create({
       data,
