@@ -12,6 +12,8 @@ const PUBLIC_PAGES: {
   { path: "", changeFrequency: "weekly", priority: 1 },
   { path: "/waitlist", changeFrequency: "weekly", priority: 0.9 },
   { path: "/pricing", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/contact", changeFrequency: "yearly", priority: 0.5 },
+  { path: "/careers", changeFrequency: "monthly", priority: 0.4 },
   { path: "/signup", changeFrequency: "yearly", priority: 0.6 },
   { path: "/signin", changeFrequency: "yearly", priority: 0.4 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },

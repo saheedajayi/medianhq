@@ -3,7 +3,20 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export function LandingHeader() {
+const NAV_LINKS = [
+  { href: "/", label: "Product" },
+  { href: "/pricing", label: "Pricing" },
+  // There is no blog yet
+  { href: "#", label: "Blogs" },
+  { href: "/contact", label: "Contact us" },
+];
+
+interface LandingHeaderProps {
+  /** Shows the page links between the logo and the buttons */
+  showNav?: boolean;
+}
+
+export function LandingHeader({ showNav = false }: LandingHeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-black/[0.05] bg-white/70 backdrop-blur-md backdrop-saturate-150 transition-all">
       <div className="mx-auto flex h-14 sm:h-20 max-w-7xl items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
@@ -18,6 +31,20 @@ export function LandingHeader() {
             priority
           />
         </Link>
+
+        {showNav && (
+          <nav aria-label="Main" className="hidden items-center gap-5 md:flex">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-sm font-medium !text-[#475467] transition-colors hover:!text-[#101828]"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {/* Action Buttons */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
