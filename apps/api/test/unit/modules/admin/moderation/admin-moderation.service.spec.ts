@@ -1,65 +1,127 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { AdminModerationRepository } from '../../../../../src/modules/admin/moderation/admin-moderation.repository';
 import { AdminModerationService } from '../../../../../src/modules/admin/moderation/admin-moderation.service';
 
 describe('AdminModerationService', () => {
   const admin = { id: 'admin-1', firstName: 'Tomi', lastName: 'Adebayo' };
+  const flaggedAt = new Date('2026-11-14T08:00:00.000Z');
+  const person = {
+    id: 'u1',
+    firstName: 'Kwame',
+    lastName: 'Mensah',
+    role: 'MENTOR',
+    createdAt: flaggedAt,
+    suspendedAt: null,
+    mentorProfile: { avatarUrl: null, location: 'Lagos, Nigeria' },
+    menteeProfile: null,
+  };
+  const flag = (overrides: Record<string, unknown> = {}) => ({
+    id: 'flag-1',
+    contentType: 'FORUM_POST',
+    contentId: 'post-1',
+    contentField: 'Post',
+    content: 'Check out my store',
+    authorId: 'u1',
+    author: person,
+    recipient: null,
+    reason: 'Spam/Self Promotion',
+    matchedTerms: ['check out my'],
+    status: 'PENDING',
+    flaggedAt,
+    reviewedAt: null,
+    actions: [],
+    ...overrides,
+  });
+
   const setup = () => {
-    const repository = new AdminModerationRepository();
-    return { repository, service: new AdminModerationService(repository) };
+    const repository = {
+      findFlagById: jest.fn().mockResolvedValue(flag()),
+      removeContent: jest.fn().mockResolvedValue(undefined),
+      findAuthorEmail: jest
+        .fn()
+        .mockResolvedValue({ email: 'kwame@example.com', firstName: 'Kwame' }),
+      recordAction: jest
+        .fn()
+        .mockImplementation(
+          (_id: string, status: string, action: Record<string, unknown>) =>
+            Promise.resolve(
+              flag({ status, actions: [{ ...action, createdAt: flaggedAt }] }),
+            ),
+        ),
+      upsertBlockedTerm: jest
+        .fn()
+        .mockImplementation((term: string, reason: string) =>
+          Promise.resolve({ id: 't1', term, reason, createdAt: flaggedAt }),
+        ),
+    };
+    const scanner = { clearCache: jest.fn() };
+    const email = { sendBookingUpdate: jest.fn().mockResolvedValue(undefined) };
+    const service = new AdminModerationService(
+      repository as never,
+      scanner as never,
+      email as never,
+    );
+    return { repository, scanner, email, service };
   };
 
-  it('counts flags by type and pages the queue', () => {
-    const { service } = setup();
-    const flags = service.getFlags({});
+  it('removes the content only when the action is Remove', async () => {
+    const { repository, service } = setup();
 
-    expect(flags.counts).toEqual({
-      all: 50,
-      forumPost: 30,
-      message: 10,
-      profileText: 10,
-    });
-    expect(flags.items).toHaveLength(10);
-  });
-
-  it('narrows the queue by type and search', () => {
-    const { service } = setup();
-
-    expect(service.getFlags({ type: 'MESSAGE' }).total).toBe(10);
-    expect(service.getFlags({ search: 'spiritual healer' }).total).toBe(5);
-    // An unknown type is ignored rather than matching nothing
-    expect(service.getFlags({ type: 'VIDEO' }).total).toBe(50);
-  });
-
-  it('records a reviewer action on the flag and in the history', () => {
-    const { service } = setup();
-    const [flag] = service.getFlags({ type: 'FORUM_POST' }).items;
-    const historyBefore = service.getHistory({}).total;
-
-    const updated = service.takeAction(flag.id, { action: 'ESCALATE' }, admin);
-
-    expect(updated.status).toBe('ESCALATED');
-    expect(updated.auditTrail.at(-1)).toMatchObject({
+    const removed = await service.takeAction(
+      'flag-1',
+      { action: 'REMOVE' },
+      admin,
+    );
+    expect(repository.removeContent).toHaveBeenCalledTimes(1);
+    expect(removed.status).toBe('REMOVED');
+    expect(removed.auditTrail.at(-1)).toMatchObject({
       label: 'Reviewed by Tomi Adebayo',
-      detail: 'Escalated',
+      detail: 'Content removed',
     });
-    const history = service.getHistory({});
-    expect(history.total).toBe(historyBefore + 1);
-    expect(history.items[0]).toMatchObject({
-      outcome: 'ESCALATED',
-      reviewer: { name: 'Tomi Adebayo' },
-    });
+
+    await service.takeAction('flag-1', { action: 'APPROVE' }, admin);
+    expect(repository.removeContent).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects an unknown action or flag', () => {
-    const { service } = setup();
-    const [flag] = service.getFlags({}).items;
+  it('emails the author when they are warned', async () => {
+    const { email, service } = setup();
 
-    expect(() => service.takeAction(flag.id, { action: 'DELETE' })).toThrow(
-      BadRequestException,
+    const warned = await service.takeAction(
+      'flag-1',
+      { action: 'WARN_USER' },
+      admin,
     );
-    expect(() => service.takeAction('missing', { action: 'APPROVE' })).toThrow(
-      NotFoundException,
+
+    expect(warned.status).toBe('FLAGGED');
+    expect(email.sendBookingUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'kwame@example.com' }),
     );
+  });
+
+  it('rejects an unknown action or flag', async () => {
+    const { repository, service } = setup();
+
+    await expect(
+      service.takeAction('flag-1', { action: 'DELETE' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    repository.findFlagById.mockResolvedValue(null);
+    await expect(
+      service.takeAction('missing', { action: 'APPROVE' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('stores blocklist terms in lower case and refreshes the scanner', async () => {
+    const { repository, scanner, service } = setup();
+
+    await service.addBlockedTerm(
+      { term: '  Quick Cash ', reason: 'Suspicious and potential scam' },
+      admin,
+    );
+
+    expect(repository.upsertBlockedTerm).toHaveBeenCalledWith(
+      'quick cash',
+      'Suspicious and potential scam',
+      'admin-1',
+    );
+    expect(scanner.clearCache).toHaveBeenCalled();
   });
 });

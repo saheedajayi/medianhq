@@ -12,6 +12,7 @@ import { PaymentsRepository } from './payments.repository';
 import type { AuthUser } from '../../identity/auth/dto/auth.dto';
 import { getRespondBy } from '../../scheduling/bookings/booking-policy';
 import { BookingNotificationsService } from '../../scheduling/booking-notifications/booking-notifications.service';
+import { PayoutsService } from '../payouts/payouts.service';
 
 const PAYSTACK_API = 'https://api.paystack.co';
 
@@ -28,6 +29,7 @@ export class PaymentsService {
   constructor(
     private readonly paymentsRepository: PaymentsRepository,
     private readonly bookingNotifications: BookingNotificationsService,
+    private readonly payoutsService: PayoutsService,
   ) {}
 
   async initialize(user: AuthUser, bookingId: string) {
@@ -320,10 +322,10 @@ export class PaymentsService {
   }
 
   /**
-   * Refund webhooks aren't signature-checked, so the refund is re-read from
-   * Paystack instead of trusting the payload.
+   * Re-reads a refund's status from Paystack rather than trusting a webhook
+   * payload. Also used by admins to check a refund that is still pending.
    */
-  private async syncRefund(refundId: string) {
+  async syncRefund(refundId: string) {
     const payment =
       await this.paymentsRepository.findPaymentByRefundReference(refundId);
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
@@ -366,6 +368,19 @@ export class PaymentsService {
           await this.syncRefund(String(refundId));
         } catch (err) {
           this.logger.error(`Error syncing refund ${String(refundId)}`, err);
+        }
+      }
+    }
+
+    // Mentor payouts: the transfer is re-checked with Paystack before the payout changes
+    if (typeof event === 'string' && event.startsWith('transfer.')) {
+      const reference = (payload as { data?: { reference?: unknown } }).data
+        ?.reference;
+      if (typeof reference === 'string') {
+        try {
+          await this.payoutsService.syncByReference(reference);
+        } catch (err) {
+          this.logger.error(`Error syncing transfer ${reference}`, err);
         }
       }
     }

@@ -4,9 +4,13 @@ import { existsSync } from 'node:fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AdminModule } from './modules/admin/admin.module';
+import { ContentScannerModule } from './modules/platform/moderation/content-scanner.module';
+import { AnalyticsModule } from './modules/platform/analytics/analytics.module';
+import { HealthChecksModule } from './modules/platform/health-checks/health-checks.module';
 import { AdminAnalyticsModule } from './modules/admin/analytics/admin-analytics.module';
 import { AdminApplicationsModule } from './modules/admin/applications/admin-applications.module';
 import { AdminFinanceModule } from './modules/admin/finance/admin-finance.module';
+import { AdminInvitesModule } from './modules/admin/invites/admin-invites.module';
 import { AdminModerationModule } from './modules/admin/moderation/admin-moderation.module';
 import { AdminOverviewModule } from './modules/admin/overview/admin-overview.module';
 import { AdminSessionsModule } from './modules/admin/sessions/admin-sessions.module';
@@ -14,6 +18,7 @@ import { AdminSettingsModule } from './modules/admin/settings/admin-settings.mod
 import { AdminUsersModule } from './modules/admin/users/admin-users.module';
 import { AuthModule } from './modules/identity/auth/auth.module';
 import { BookingsModule } from './modules/scheduling/bookings/bookings.module';
+import { RecordingsModule } from './modules/scheduling/recordings/recordings.module';
 import { DatabaseModule } from './database/database.module';
 import { MentorsModule } from './modules/profiles/mentors/mentors.module';
 import { MenteesModule } from './modules/profiles/mentees/mentees.module';
@@ -43,11 +48,15 @@ const envFilePath = ['apps/api/.env.local', '.env.local'].filter((path) =>
       envFilePath,
     }),
     DatabaseModule,
+    ContentScannerModule,
+    AnalyticsModule,
+    HealthChecksModule,
     AuthModule,
     UsersModule,
     MentorsModule,
     MenteesModule,
     BookingsModule,
+    RecordingsModule,
     PaymentsModule,
     SessionsModule,
     ReviewsModule,
@@ -60,6 +69,7 @@ const envFilePath = ['apps/api/.env.local', '.env.local'].filter((path) =>
     AdminFinanceModule,
     AdminAnalyticsModule,
     AdminSettingsModule,
+    AdminInvitesModule,
     WaitlistModule,
     TaxonomyModule,
     UploadsModule,

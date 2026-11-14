@@ -1,4 +1,5 @@
-import type { MentorStatus, UserRole } from '@prisma/client';
+import type { AdminRole, MentorStatus, UserRole } from '@prisma/client';
+import type { AdminAccess } from '../admin-access';
 import type { AccountStage } from '../account-stage';
 
 export type RegisterDto = {
@@ -20,6 +21,9 @@ export type AuthUser = {
   firstName: string;
   lastName: string;
   role: UserRole | null;
+  /** For admins: their type and the admin sections it opens */
+  adminRole?: AdminRole | null;
+  adminAccess?: AdminAccess;
   isEmailVerified: boolean;
   hasMenteeProfile: boolean;
   hasMentorProfile: boolean;

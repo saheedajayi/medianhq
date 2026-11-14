@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MentorStatus } from '@prisma/client';
 import { fullName } from '../common/admin-actor';
 import { businessDaysBetween } from '../common/business-days';
-import {
-  placeholderAlerts,
-  placeholderChurnedUsers,
-  placeholderSystemHealth,
-} from './admin-overview.placeholders';
+import { HealthChecksService } from '../../platform/health-checks/health-checks.service';
 import { AdminOverviewRepository } from './admin-overview.repository';
 import type {
   OverviewAlert,
@@ -21,6 +17,14 @@ const LAGOS_OFFSET_MS = HOUR_MS;
 const NEARING_TARGET_BUSINESS_DAYS = 4;
 const ALERT_WINDOW_DAYS = 7;
 const MAX_ALERTS = 10;
+// Someone not seen on any device for this long has churned
+const CHURN_AFTER_DAYS = 30;
+
+const FLAGGED_CONTENT: Record<string, string> = {
+  FORUM_POST: 'Community content flagged',
+  MESSAGE: 'Message flagged',
+  PROFILE_TEXT: 'Profile text flagged',
+};
 
 /** The Lagos calendar day a moment falls on, as YYYY-MM-DD */
 const lagosDayKey = (date: Date) =>
@@ -38,7 +42,10 @@ const percent = (part: number, total: number) =>
 
 @Injectable()
 export class AdminOverviewService {
-  constructor(private readonly overviewRepository: AdminOverviewRepository) {}
+  constructor(
+    private readonly overviewRepository: AdminOverviewRepository,
+    private readonly healthChecks: HealthChecksService,
+  ) {}
 
   async getOverview(range?: string, now = new Date()) {
     const rangeDays: OverviewRangeDays = range === '30d' ? 30 : 7;
@@ -52,11 +59,12 @@ export class AdminOverviewService {
       )
       .sort((a, b) => a.getTime() - b.getTime());
 
-    const [stats, activity, nps, alerts] = await Promise.all([
+    const [stats, activity, nps, alerts, systemHealth] = await Promise.all([
       this.getStats(pendingApplications.length, nearingTarget.length, now),
       this.getActivity(rangeDays, now),
       this.getNps(now),
       this.getAlerts(nearingTarget, now),
+      this.healthChecks.getSummary(now),
     ]);
 
     return {
@@ -65,7 +73,7 @@ export class AdminOverviewService {
       activity,
       nps,
       alerts,
-      systemHealth: placeholderSystemHealth(now),
+      systemHealth,
     };
   }
 
@@ -130,9 +138,15 @@ export class AdminOverviewService {
       startOfLagosDay(now).getTime() - (rangeDays - 1) * DAY_MS,
     );
 
-    const [signUps, completed] = await Promise.all([
+    const churnMs = CHURN_AFTER_DAYS * DAY_MS;
+    const [signUps, completed, lapsed] = await Promise.all([
       this.overviewRepository.findSignUpDates(from),
       this.overviewRepository.findCompletedBookingStarts(from, now),
+      // Last seen 30 days before a day in range, so they churned on it
+      this.overviewRepository.findLastSeenBetween(
+        new Date(from.getTime() - churnMs),
+        new Date(now.getTime() - churnMs),
+      ),
     ]);
 
     const days = Array.from({ length: rangeDays }, (_, index) => {
@@ -141,7 +155,7 @@ export class AdminOverviewService {
         date,
         sessionsCompleted: 0,
         newSignUps: 0,
-        churnedUsers: placeholderChurnedUsers(date),
+        churnedUsers: 0,
       };
     });
     const byDate = new Map(days.map((day) => [day.date, day]));
@@ -153,6 +167,13 @@ export class AdminOverviewService {
     for (const booking of completed) {
       const day = byDate.get(lagosDayKey(booking.startsAt));
       if (day) day.sessionsCompleted += 1;
+    }
+    for (const user of lapsed) {
+      const lastSeen = user._max.lastActiveAt;
+      const day =
+        lastSeen &&
+        byDate.get(lagosDayKey(new Date(lastSeen.getTime() + churnMs)));
+      if (day) day.churnedUsers += 1;
     }
 
     return {
@@ -213,9 +234,11 @@ export class AdminOverviewService {
     now: Date,
   ): Promise<OverviewAlert[]> {
     const since = new Date(now.getTime() - ALERT_WINDOW_DAYS * DAY_MS);
-    const [noShows, failedRefunds] = await Promise.all([
+    const [noShows, failedRefunds, flags, failedPayouts] = await Promise.all([
       this.overviewRepository.findMentorNoShows(since, MAX_ALERTS),
       this.overviewRepository.findFailedRefunds(since, MAX_ALERTS),
+      this.overviewRepository.findPendingFlags(since, MAX_ALERTS),
+      this.overviewRepository.findFailedPayouts(since, MAX_ALERTS),
     ]);
 
     const alerts: OverviewAlert[] = [
@@ -235,7 +258,35 @@ export class AdminOverviewService {
         detail: `${payment.currency} ${(payment.refundAmount ?? payment.amount).toLocaleString('en-NG')} · ${payment.provider}`,
         occurredAt: payment.updatedAt,
       })),
-      ...placeholderAlerts(now),
+      ...flags.map((flag) => ({
+        id: `flag:${flag.id}`,
+        kind: 'CONTENT_FLAGGED' as const,
+        severity: 'NEEDS_REVIEW' as const,
+        title: FLAGGED_CONTENT[flag.contentType] ?? 'Content flagged',
+        detail: [
+          fullName(flag.author),
+          flag.matchedTerms.length
+            ? `matched "${flag.matchedTerms.join('", "')}"`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        occurredAt: flag.flaggedAt,
+      })),
+      ...failedPayouts.map((payout) => ({
+        id: `payout:${payout.id}`,
+        kind: 'PAYOUT_FAILED' as const,
+        severity: 'URGENT' as const,
+        title: 'Mentor payout failed',
+        detail: [
+          `${payout.currency} ${payout.amount.toLocaleString('en-NG')}`,
+          fullName(payout.mentor),
+          payout.failureReason,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        occurredAt: payout.updatedAt,
+      })),
     ];
 
     const oldestSubmission = applicationsNearingTarget[0];

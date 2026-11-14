@@ -2,7 +2,8 @@ import { ForbiddenException } from '@nestjs/common';
 import { MessagesService } from '../../../../../src/modules/engagement/messages/messages.service';
 
 // Receipts are pushed in the background after the response
-const flushBackgroundWork = () => new Promise((resolve) => setImmediate(resolve));
+const flushBackgroundWork = () =>
+  new Promise((resolve) => setImmediate(resolve));
 
 describe('MessagesService', () => {
   const user = { id: 'me', firstName: 'Ada', lastName: 'Obi' } as never;
@@ -13,13 +14,20 @@ describe('MessagesService', () => {
   beforeEach(() => {
     pushed = [];
     prisma = {
-      conversation: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
+      conversation: {
+        findFirst: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+      },
       conversationUser: { findUnique: jest.fn(), findFirst: jest.fn() },
       booking: { findFirst: jest.fn() },
       message: { create: jest.fn(), updateMany: jest.fn() },
       user: { findUnique: jest.fn() },
     };
-    service = new MessagesService(prisma as never);
+    service = new MessagesService(
+      prisma as never,
+      { scan: jest.fn() } as never,
+    );
     // Capture realtime pushes instead of calling LiveKit
     (service as unknown as { roomService: unknown }).roomService = {
       sendData: jest.fn((room: string, data: Buffer) => {
@@ -53,17 +61,26 @@ describe('MessagesService', () => {
         deliveredAt: null,
         createdAt: new Date(),
       });
-      const message = await service.sendMessage(user, { recipientId: 'mentor', content: ' Hi ' });
+      const message = await service.sendMessage(user, {
+        recipientId: 'mentor',
+        content: ' Hi ',
+      });
       expect(message.conversationId).toBe('c1');
       expect(prisma.message.create).toHaveBeenCalledWith({
         data: { conversationId: 'c1', senderId: 'me', content: 'Hi' },
       });
-      expect(pushed).toEqual([expect.objectContaining({ room: 'user_mentor', type: 'NEW_MESSAGE' })]);
+      expect(pushed).toEqual([
+        expect.objectContaining({ room: 'user_mentor', type: 'NEW_MESSAGE' }),
+      ]);
     });
 
     it('keeps using an existing chat without needing a booking', async () => {
       prisma.conversation.findFirst.mockResolvedValue({ id: 'c1' });
-      prisma.message.create.mockResolvedValue({ id: 'm1', conversationId: 'c1', createdAt: new Date() });
+      prisma.message.create.mockResolvedValue({
+        id: 'm1',
+        conversationId: 'c1',
+        createdAt: new Date(),
+      });
       await service.sendMessage(user, { recipientId: 'mentor', content: 'Hi' });
       expect(prisma.booking.findFirst).not.toHaveBeenCalled();
     });
@@ -71,7 +88,9 @@ describe('MessagesService', () => {
 
   describe('receipts', () => {
     beforeEach(() => {
-      prisma.conversationUser.findUnique.mockResolvedValue({ id: 'membership' });
+      prisma.conversationUser.findUnique.mockResolvedValue({
+        id: 'membership',
+      });
       prisma.conversationUser.findFirst.mockResolvedValue({ userId: 'sender' });
     });
 
@@ -80,7 +99,11 @@ describe('MessagesService', () => {
       await service.markConversationRead(user, 'c1');
       await flushBackgroundWork();
       expect(pushed).toEqual([
-        expect.objectContaining({ room: 'user_sender', type: 'MESSAGES_READ', conversationId: 'c1' }),
+        expect.objectContaining({
+          room: 'user_sender',
+          type: 'MESSAGES_READ',
+          conversationId: 'c1',
+        }),
       ]);
     });
 
@@ -96,13 +119,18 @@ describe('MessagesService', () => {
       await service.markDelivered(user, 'c1');
       await flushBackgroundWork();
       expect(pushed).toEqual([
-        expect.objectContaining({ room: 'user_sender', type: 'MESSAGES_DELIVERED' }),
+        expect.objectContaining({
+          room: 'user_sender',
+          type: 'MESSAGES_DELIVERED',
+        }),
       ]);
     });
 
     it('refuses receipts from outside the conversation', async () => {
       prisma.conversationUser.findUnique.mockResolvedValue(null);
-      await expect(service.markConversationRead(user, 'c1')).rejects.toThrow('access denied');
+      await expect(service.markConversationRead(user, 'c1')).rejects.toThrow(
+        'access denied',
+      );
       expect(prisma.message.updateMany).not.toHaveBeenCalled();
     });
   });

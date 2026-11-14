@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { BookingStatus } from '@prisma/client';
-import { fullName, oneOf } from '../common/admin-actor';
+import { fullName, oneOf, type AdminActor } from '../common/admin-actor';
 import { countryOf } from '../common/location';
-import { placeholderRecordings } from './admin-sessions.placeholders';
+import { SecurityAuditService } from '../../identity/auth/security-audit.service';
+import { RecordingsService } from '../../scheduling/recordings/recordings.service';
+import { growthPct } from '../common/time-buckets';
 import {
   AdminSessionsRepository,
+  type RecordingRecord,
   type SessionRecord,
 } from './admin-sessions.repository';
 import type {
@@ -13,6 +16,8 @@ import type {
   CompletedSessionsQueryDto,
   LiveSessionsQueryDto,
   NoShowTrackerQueryDto,
+  RecordingConsent,
+  RecordingsFilters,
   RecordingsQueryDto,
   SessionsCalendarQueryDto,
 } from './dto/admin-sessions.dto';
@@ -29,6 +34,10 @@ const LAGOS_OFFSET_MS = HOUR_MS;
 const LIVE_PAGE_SIZE = 9;
 const COMPLETED_PAGE_SIZE = 8;
 const TRACKER_PAGE_SIZE = 6;
+const RECORDINGS_PAGE_SIZE = 6;
+// Recordings this close to their deletion date count as pending deletion
+const PENDING_DELETION_DAYS = 7;
+const BYTES_PER_MB = 1024 * 1024;
 const EXPORT_LIMIT = 5000;
 // How far back sessions are read to work out a mentor's run of no-shows
 const HISTORY_DAYS = 180;
@@ -45,7 +54,11 @@ const percent = (part: number, total: number) =>
 
 @Injectable()
 export class AdminSessionsService {
-  constructor(private readonly sessionsRepository: AdminSessionsRepository) {}
+  constructor(
+    private readonly sessionsRepository: AdminSessionsRepository,
+    private readonly recordingsService: RecordingsService,
+    private readonly securityAudit: SecurityAuditService,
+  ) {}
 
   async getLive(query: LiveSessionsQueryDto, now = new Date()) {
     const started = await this.sessionsRepository.findStartedSessions(now);
@@ -113,14 +126,83 @@ export class AdminSessionsService {
     return sessions.map((session) => this.toItem(session));
   }
 
-  /** Placeholder until sessions are recorded: see admin-sessions.placeholders.ts */
-  getRecordings(query: RecordingsQueryDto) {
-    const recordings = placeholderRecordings();
+  /** Finished recordings still kept, newest first */
+  async getRecordings(query: RecordingsQueryDto, now = new Date()) {
+    const page = readPage(query.page);
+    const where = this.sessionsRepository.buildRecordingsWhereClause(
+      this.readRecordingsFilters(query),
+      now,
+    );
+
+    const [recordings, total, stats, options] = await Promise.all([
+      this.sessionsRepository.findRecordings(
+        where,
+        (page - 1) * RECORDINGS_PAGE_SIZE,
+        RECORDINGS_PAGE_SIZE,
+      ),
+      this.sessionsRepository.countRecordings(where),
+      this.sessionsRepository.countRecordingStats(
+        now,
+        new Date(now.getTime() + PENDING_DELETION_DAYS * DAY_MS),
+      ),
+      this.sessionsRepository.findRecordingFilterOptions(),
+    ]);
+
+    const uniqueBy = <T extends { id: string }>(people: T[]) => [
+      ...new Map(people.map((person) => [person.id, person])).values(),
+    ];
+    const toOption = (person: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    }) => ({ id: person.id, name: fullName(person) });
+
     return {
-      ...recordings,
-      page: readPage(query.page),
-      pageSize: recordings.items.length,
+      stats: {
+        total: stats.total,
+        totalChangePct: growthPct(stats.thisWeek, stats.lastWeek) ?? 0,
+        dualConsent: stats.dualConsent,
+        pendingDeletion: stats.pendingDeletion,
+      },
+      items: recordings.map((recording) => this.toRecording(recording)),
+      total,
+      page,
+      pageSize: RECORDINGS_PAGE_SIZE,
+      mentors: uniqueBy(options.map((b) => b.mentor)).map(toOption),
+      mentees: uniqueBy(options.map((b) => b.mentee)).map(toOption),
+      types: [
+        ...new Set(
+          options.map(
+            (b) => b.title ?? b.mentorSession?.title ?? DEFAULT_SESSION_TYPE,
+          ),
+        ),
+      ].sort(),
     };
+  }
+
+  /** A short-lived link to watch a recording; every view is audited */
+  async getRecordingPlayback(recordingId: string, actor?: AdminActor) {
+    const recording =
+      await this.sessionsRepository.findRecordingParticipants(recordingId);
+    if (!recording) throw new NotFoundException('Recording not found.');
+
+    const playback = await this.recordingsService.playbackUrl(recordingId);
+    const audit = (userId: string) =>
+      this.securityAudit.record({
+        userId,
+        action: 'RECORDING_VIEWED',
+        status: 'SUCCESS',
+        metadata: {
+          adminId: actor?.id ?? null,
+          adminName: actor ? fullName(actor) : null,
+          detail: `Session ${recording.booking.id}`,
+        },
+      });
+    await Promise.all([
+      audit(recording.booking.mentorId),
+      audit(recording.booking.menteeId),
+    ]);
+    return playback;
   }
 
   async getNoShowTracker(query: NoShowTrackerQueryDto, now = new Date()) {
@@ -250,6 +332,49 @@ export class AdminSessionsService {
       mentorId: query.mentorId?.trim() || undefined,
       menteeId: query.menteeId?.trim() || undefined,
       type: query.type?.trim() || undefined,
+    };
+  }
+
+  private readRecordingsFilters(query: RecordingsQueryDto): RecordingsFilters {
+    return {
+      search: query.search?.trim() || undefined,
+      range: oneOf(query.range, ['7d', '30d', '90d'] as const),
+      mentorId: query.mentorId?.trim() || undefined,
+      menteeId: query.menteeId?.trim() || undefined,
+      type: query.type?.trim() || undefined,
+      consent: oneOf(query.consent, ['BOTH', 'MENTOR', 'MENTEE'] as const),
+    };
+  }
+
+  private toRecording(recording: RecordingRecord) {
+    const { booking } = recording;
+    const consent: RecordingConsent =
+      booking.mentorRecordingConsent && booking.menteeRecordingConsent
+        ? 'BOTH'
+        : booking.mentorRecordingConsent
+          ? 'MENTOR'
+          : 'MENTEE';
+    const session = this.toItem(booking);
+    return {
+      id: recording.id,
+      bookingId: booking.id,
+      sessionId: `S-${booking.id.slice(-6).toUpperCase()}`,
+      type: session.type,
+      startsAt: session.startsAt,
+      durationMinutes: recording.durationSeconds
+        ? Math.max(Math.round(recording.durationSeconds / 60), 1)
+        : session.durationMinutes,
+      mentor: session.mentor,
+      mentee: session.mentee,
+      consent,
+      recording: {
+        format: 'MP4',
+        sizeMb: recording.sizeBytes
+          ? Math.round(Number(recording.sizeBytes) / BYTES_PER_MB)
+          : 0,
+        recordedAt: recording.endedAt ?? recording.startedAt,
+        deleteAfter: recording.deleteAfter,
+      },
     };
   }
 

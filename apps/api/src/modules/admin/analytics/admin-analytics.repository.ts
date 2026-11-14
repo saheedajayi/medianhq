@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BookingStatus, MentorStatus, UserRole } from '@prisma/client';
+import {
+  AnalyticsEventType,
+  BookingStatus,
+  MentorStatus,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
 
 const PERSON_SELECT = { firstName: true, lastName: true } as const;
@@ -164,5 +170,62 @@ export class AdminAnalyticsRepository {
       orderBy: { createdAt: 'desc' },
       take,
     });
+  }
+
+  /** When each signed-in person first searched for a mentor */
+  findFirstSearches() {
+    return this.prisma.analyticsEvent.groupBy({
+      by: ['userId'],
+      where: { type: AnalyticsEventType.SEARCH, userId: { not: null } },
+      _min: { createdAt: true },
+    });
+  }
+
+  findSearches(since: Date) {
+    return this.prisma.analyticsEvent.findMany({
+      where: { type: AnalyticsEventType.SEARCH, createdAt: { gte: since } },
+      select: {
+        createdAt: true,
+        query: true,
+        filters: true,
+        userId: true,
+        visitorId: true,
+      },
+    });
+  }
+
+  countEvents(type: AnalyticsEventType, since: Date, until: Date) {
+    return this.prisma.analyticsEvent.count({
+      where: { type, createdAt: { gte: since, lt: until } },
+    });
+  }
+
+  countCompletedSessions(since: Date, until: Date) {
+    return this.prisma.booking.count({
+      where: {
+        status: BookingStatus.COMPLETED,
+        startsAt: { gte: since, lt: until },
+      },
+    });
+  }
+
+  /** Distinct visitors in each range; a signed-in person counts once across devices */
+  async countVisitors(ranges: { from: Date; to: Date }[]) {
+    if (!ranges.length) return [];
+    const earliest = new Date(
+      Math.min(...ranges.map((range) => range.from.getTime())),
+    );
+    const counts = Prisma.join(
+      ranges.map(
+        (range) =>
+          Prisma.sql`(COUNT(DISTINCT COALESCE("userId", "visitorId")) FILTER (WHERE "createdAt" >= ${range.from} AND "createdAt" < ${range.to}))::int`,
+      ),
+    );
+    const [row] = await this.prisma.$queryRaw<{ counts: number[] }[]>`
+      SELECT ARRAY[${counts}] AS counts
+      FROM "AnalyticsEvent"
+      WHERE "type" = 'PAGE_VIEW' AND "createdAt" >= ${earliest}
+    `;
+    return row?.counts ?? ranges.map(() => 0);
   }
 }

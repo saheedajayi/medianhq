@@ -53,7 +53,9 @@ describe('UploadsService', () => {
   describe('getSignedUrl', () => {
     it('should throw BadRequestException if publicIdOrUrl is empty', () => {
       expect(() => service.getSignedUrl('')).toThrow(BadRequestException);
-      expect(() => service.getSignedUrl('')).toThrow('publicId or URL is required');
+      expect(() => service.getSignedUrl('')).toThrow(
+        'publicId or URL is required',
+      );
     });
 
     it('should generate a signed Cloudinary URL for raw publicId', () => {

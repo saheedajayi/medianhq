@@ -15,6 +15,7 @@ for (const envPath of [
 }
 
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { VersioningType } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -37,8 +38,14 @@ function getAllowedOrigins() {
 }
 
 async function bootstrap() {
-  // rawBody keeps the exact request bytes, which the Paystack webhook signature is computed over
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  // rawBody keeps the exact request bytes, which the Paystack and LiveKit webhook signatures are computed over
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
+  // LiveKit posts its webhooks as application/webhook+json
+  app.useBodyParser('json', {
+    type: ['application/json', 'application/webhook+json'],
+  });
   const httpAdapterHost = app.get(HttpAdapterHost);
 
   app.setGlobalPrefix('api', {

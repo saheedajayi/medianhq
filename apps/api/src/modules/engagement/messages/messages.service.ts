@@ -14,6 +14,7 @@ import {
 } from 'livekit-server-sdk';
 import { PrismaService } from '../../../database/prisma.service';
 import type { AuthUser } from '../../identity/auth/dto/auth.dto';
+import { ContentScannerService } from '../../platform/moderation/content-scanner.service';
 
 type ParticipantUser = {
   id: string;
@@ -47,7 +48,10 @@ export class MessagesService implements OnModuleInit {
   private readonly logger = new Logger(MessagesService.name);
   private roomService: RoomServiceClient | null = null;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contentScanner: ContentScannerService,
+  ) {}
 
   onModuleInit() {
     const rawUrl =
@@ -253,6 +257,15 @@ export class MessagesService implements OnModuleInit {
         data: { updatedAt: new Date() },
       }),
     ]);
+
+    this.contentScanner.scan({
+      contentType: 'MESSAGE',
+      contentId: message.id,
+      contentField: 'Message',
+      content,
+      authorId: user.id,
+      recipientId: dto.recipientId,
+    });
 
     // The recipient's app answers with a delivered receipt when this arrives.
     // Not awaited: the sender sees "sent" once the message is saved

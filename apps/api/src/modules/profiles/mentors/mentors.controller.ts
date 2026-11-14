@@ -9,14 +9,17 @@ import {
   Query,
   Res,
   UseGuards,
+  Req,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import type {
   CreateMentorProfileDto,
   UpdateMentorProfileDto,
 } from './dto/create-mentor-profile.dto';
 import type { ExploreMentorsQueryDto } from './dto/explore-mentors-query.dto';
 import { MentorsService } from './mentors.service';
+import { AnalyticsTrackerService } from '../../platform/analytics/analytics-tracker.service';
+import { searchEventFor } from '../../platform/analytics/search-event';
 import { AuthService } from '../../identity/auth/auth.service';
 import { AuthGuard } from '../../identity/auth/guards/auth.guard';
 import { CurrentUser } from '../../identity/auth/decorators/current-user.decorator';
@@ -29,11 +32,18 @@ export class MentorsController {
   constructor(
     private readonly mentorsService: MentorsService,
     private readonly authService: AuthService,
+    private readonly analytics: AnalyticsTrackerService,
   ) {}
 
   @Get()
-  explore(@Query() query: ExploreMentorsQueryDto) {
-    return this.mentorsService.explore(query);
+  async explore(
+    @Req() request: Request,
+    @Query() query: ExploreMentorsQueryDto,
+  ) {
+    const result = await this.mentorsService.explore(query);
+    const search = searchEventFor(query, result.pagination.total);
+    if (search) this.analytics.track(request, search);
+    return result;
   }
 
   @Get('featured')
@@ -66,8 +76,10 @@ export class MentorsController {
   }
 
   @Get(':id')
-  getMentorProfile(@Param('id') id: string) {
-    return this.mentorsService.getMentorProfile(id);
+  async getMentorProfile(@Req() request: Request, @Param('id') id: string) {
+    const profile = await this.mentorsService.getMentorProfile(id);
+    this.analytics.track(request, { type: 'PROFILE_VIEW', mentorId: id });
+    return profile;
   }
 
   @UseGuards(AuthGuard)

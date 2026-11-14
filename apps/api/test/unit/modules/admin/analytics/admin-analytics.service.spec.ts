@@ -113,4 +113,85 @@ describe('AdminAnalyticsService', () => {
     // 85 minutes and 26 hours: the median of the two answered threads
     expect(metrics.stats.medianResponseMinutes.value).toBe(823);
   });
+
+  it('measures search from logged events', async () => {
+    const search = (
+      iso: string,
+      query: string | null,
+      filters: string[],
+      who: string,
+    ) => ({
+      createdAt: at(iso),
+      query,
+      filters,
+      userId: null,
+      visitorId: who,
+    });
+    const repository = {
+      countReviewsByRating: jest.fn().mockResolvedValue([]),
+      findReviewRatings: jest.fn().mockResolvedValue([]),
+      findBookingRequests: jest
+        .fn()
+        .mockResolvedValue([{ createdAt: at('2026-10-06T10:00:00.000Z') }]),
+      findSearches: jest.fn().mockResolvedValue([
+        search('2026-10-06T09:00:00.000Z', 'career guidance', ['Price'], 'v1'),
+        search('2026-10-06T09:05:00.000Z', 'career guidance', [], 'v2'),
+        search('2026-10-07T08:00:00.000Z', null, ['Location', 'Price'], 'v1'),
+        search('2026-10-06T08:00:00.000Z', 'design', [], 'v3'),
+        // Last week, only to compare with
+        search('2026-09-28T09:00:00.000Z', 'design', ['Price'], 'v4'),
+      ]),
+      countEvents: jest
+        .fn()
+        .mockImplementation((type: string) =>
+          Promise.resolve(type === 'PROFILE_VIEW' ? 2 : 1),
+        ),
+      countCompletedSessions: jest.fn().mockResolvedValue(1),
+    };
+    const service = new AdminAnalyticsService(repository as never);
+
+    const performance = await service.getPerformance(now);
+
+    expect(performance.stats.totalSearches).toEqual({
+      value: 4,
+      changePct: 300,
+    });
+    expect(performance.stats.filterUsers).toEqual({ value: 1, changePct: 0 });
+    expect(performance.stats.bookingRatePct.value).toBe(25);
+    expect(performance.topQueries[0]).toEqual({
+      query: 'Career Guidance',
+      searches: 2,
+      pctOfTotal: 67,
+    });
+    expect(performance.filterUsage.slice(0, 2)).toEqual([
+      { filter: 'Price', usage: 2, pctOfTotal: 66.7 },
+      { filter: 'Location', usage: 1, pctOfTotal: 33.3 },
+    ]);
+    expect(performance.funnel.map((row) => [row.step, row.count])).toEqual([
+      ['Searches', 4],
+      ['Profile views', 2],
+      ['Booking clicks', 1],
+      ['Completed booking', 1],
+    ]);
+  });
+
+  it('counts visitors per window and per chart bucket', async () => {
+    const repository = {
+      countVisitors: jest
+        .fn()
+        .mockImplementation((ranges: unknown[]) =>
+          Promise.resolve(ranges.map((_, index) => index + 1)),
+        ),
+    };
+    const service = new AdminAnalyticsService(repository as never);
+
+    const visitors = await service.getVisitors({ period: 'weekly' }, now);
+
+    // Four stats, each with the window before it, then seven chart weeks
+    const [[ranges]] = repository.countVisitors.mock.calls as [unknown[]][];
+    expect(ranges).toHaveLength(15);
+    expect(visitors.stats.daily).toEqual({ value: 1, changePct: -50 });
+    expect(visitors.series).toHaveLength(7);
+    expect(visitors.series[0]).toEqual({ label: 'Wk1', visitors: 9 });
+  });
 });

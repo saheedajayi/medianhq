@@ -55,16 +55,33 @@ export class MentorsRepository {
   }
 
   /** Weekly windows and taken time for several mentors at once, for next-availability */
-  async findAvailabilityContext(mentorUserIds: string[], from: Date, to: Date, now: Date) {
+  async findAvailabilityContext(
+    mentorUserIds: string[],
+    from: Date,
+    to: Date,
+    now: Date,
+  ) {
     if (mentorUserIds.length === 0) return { windows: [], bookings: [] };
     const [windows, bookings] = await Promise.all([
-      this.prisma.weeklyAvailability.findMany({ where: { mentorId: { in: mentorUserIds } } }),
+      this.prisma.weeklyAvailability.findMany({
+        where: { mentorId: { in: mentorUserIds } },
+      }),
       this.prisma.booking.findMany({
         where: {
           mentorId: { in: mentorUserIds },
-          startsAt: { gte: new Date(from.getTime() - 24 * 60 * 60 * 1000), lt: to },
+          startsAt: {
+            gte: new Date(from.getTime() - 24 * 60 * 60 * 1000),
+            lt: to,
+          },
           OR: [
-            { status: { in: [BookingStatus.PENDING_CONFIRMATION, BookingStatus.CONFIRMED] } },
+            {
+              status: {
+                in: [
+                  BookingStatus.PENDING_CONFIRMATION,
+                  BookingStatus.CONFIRMED,
+                ],
+              },
+            },
             {
               status: BookingStatus.PENDING_PAYMENT,
               createdAt: { gt: new Date(now.getTime() - PAYMENT_HOLD_MS) },
@@ -153,7 +170,10 @@ export class MentorsRepository {
     }
 
     if (params.location && params.location.trim()) {
-      where.location = { contains: params.location.trim(), mode: 'insensitive' };
+      where.location = {
+        contains: params.location.trim(),
+        mode: 'insensitive',
+      };
     }
 
     if (params.search && params.search.trim()) {
@@ -283,16 +303,36 @@ export class MentorsRepository {
       where: { userId },
     });
 
-    const industry = (dto.industry && dto.industry.trim()) || existing?.industry || 'Technology';
-    const experience = (dto.experience && dto.experience.trim()) || existing?.experience || '1-3 years';
-    const company = dto.company !== undefined ? (dto.company || null) : (existing?.company ?? null);
-    const jobTitle = dto.currentRole !== undefined ? (dto.currentRole || null) : (existing?.jobTitle ?? null);
-    const location = dto.location !== undefined ? (dto.location || null) : (existing?.location ?? null);
+    const industry =
+      (dto.industry && dto.industry.trim()) ||
+      existing?.industry ||
+      'Technology';
+    const experience =
+      (dto.experience && dto.experience.trim()) ||
+      existing?.experience ||
+      '1-3 years';
+    const company =
+      dto.company !== undefined
+        ? dto.company || null
+        : (existing?.company ?? null);
+    const jobTitle =
+      dto.currentRole !== undefined
+        ? dto.currentRole || null
+        : (existing?.jobTitle ?? null);
+    const location =
+      dto.location !== undefined
+        ? dto.location || null
+        : (existing?.location ?? null);
     // The onboarding answer is private application context, not the public bio
     const motivationInput = dto.motivation ?? dto.bio;
     const motivation =
-      motivationInput !== undefined ? (motivationInput || null) : (existing?.motivation ?? null);
-    const cvUrl = typeof dto.cvUrl === 'string' && dto.cvUrl.trim() ? dto.cvUrl : (existing?.cvUrl ?? null);
+      motivationInput !== undefined
+        ? motivationInput || null
+        : (existing?.motivation ?? null);
+    const cvUrl =
+      typeof dto.cvUrl === 'string' && dto.cvUrl.trim()
+        ? dto.cvUrl
+        : (existing?.cvUrl ?? null);
 
     return this.prisma.mentorProfile.upsert({
       where: { userId },

@@ -122,23 +122,21 @@ describe('Password Reset Operations (e2e)', () => {
         }
         return Promise.resolve(null);
       }),
-      update: jest
-        .fn()
-        .mockImplementation((id: string, data: any) => {
-          if (id !== mockUser.id) return Promise.resolve(null);
-          if (
-            typeof data.sessionVersion === 'object' &&
-            data.sessionVersion &&
-            'increment' in data.sessionVersion &&
-            typeof data.sessionVersion.increment === 'number'
-          ) {
-            mockUser.sessionVersion += data.sessionVersion.increment;
-          }
-          if (typeof data.passwordHash === 'string') {
-            mockUser.passwordHash = data.passwordHash;
-          }
-          return Promise.resolve({ ...mockUser });
-        }),
+      update: jest.fn().mockImplementation((id: string, data: any) => {
+        if (id !== mockUser.id) return Promise.resolve(null);
+        if (
+          typeof data.sessionVersion === 'object' &&
+          data.sessionVersion &&
+          'increment' in data.sessionVersion &&
+          typeof data.sessionVersion.increment === 'number'
+        ) {
+          mockUser.sessionVersion += data.sessionVersion.increment;
+        }
+        if (typeof data.passwordHash === 'string') {
+          mockUser.passwordHash = data.passwordHash;
+        }
+        return Promise.resolve({ ...mockUser });
+      }),
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

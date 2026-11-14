@@ -17,6 +17,16 @@ export const LATE_CANCELLATION_MS = 24 * 60 * 60 * 1000;
 export const LATE_CANCELLATION_REFUND_RATE = 0.5;
 
 /** Median's share of paid sessions, taken from the mentor's side */
+/** The LiveKit room a booking's video session happens in */
+export const sessionRoomName = (bookingId: string) =>
+  `median-session-${bookingId}`;
+
+/** The booking a LiveKit room belongs to, or null for any other room */
+export const bookingIdFromRoomName = (roomName: string) =>
+  roomName.startsWith('median-session-')
+    ? roomName.slice('median-session-'.length)
+    : null;
+
 export const PLATFORM_FEE_RATE = 0.04;
 export const PLATFORM_FEE_FLAT = 100;
 

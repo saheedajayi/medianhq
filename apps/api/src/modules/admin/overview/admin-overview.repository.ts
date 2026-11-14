@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { BookingStatus, MentorStatus, PaymentStatus } from '@prisma/client';
+import {
+  BookingStatus,
+  ContentFlagStatus,
+  MentorStatus,
+  PaymentStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
 
 type DateRange = { gte: Date; lt: Date };
@@ -109,6 +114,46 @@ export class AdminOverviewRepository {
         currency: true,
         provider: true,
         updatedAt: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+      take,
+    });
+  }
+
+  /** People whose last activity on any device fell in the range */
+  findLastSeenBetween(from: Date, to: Date) {
+    return this.prisma.deviceSession.groupBy({
+      by: ['userId'],
+      _max: { lastActiveAt: true },
+      having: { lastActiveAt: { _max: { gte: from, lt: to } } },
+    });
+  }
+
+  findPendingFlags(since: Date, take: number) {
+    return this.prisma.contentFlag.findMany({
+      where: { status: ContentFlagStatus.PENDING, flaggedAt: { gte: since } },
+      select: {
+        id: true,
+        contentType: true,
+        matchedTerms: true,
+        flaggedAt: true,
+        author: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { flaggedAt: 'desc' },
+      take,
+    });
+  }
+
+  findFailedPayouts(since: Date, take: number) {
+    return this.prisma.payoutRequest.findMany({
+      where: { status: 'FAILED', updatedAt: { gte: since } },
+      select: {
+        id: true,
+        amount: true,
+        currency: true,
+        failureReason: true,
+        updatedAt: true,
+        mentor: { select: { firstName: true, lastName: true } },
       },
       orderBy: { updatedAt: 'desc' },
       take,

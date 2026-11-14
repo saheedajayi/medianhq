@@ -53,10 +53,40 @@ describe('AdminOverviewService.getOverview', () => {
         },
       ]),
       findFailedRefunds: jest.fn().mockResolvedValue([]),
+      // Last seen 6 September, so they churned 30 days later on 6 October
+      findLastSeenBetween: jest.fn().mockResolvedValue([
+        {
+          userId: 'gone',
+          _max: { lastActiveAt: at('2026-09-06T10:00:00.000Z') },
+        },
+      ]),
+      findPendingFlags: jest.fn().mockResolvedValue([
+        {
+          id: 'flag-1',
+          contentType: 'FORUM_POST',
+          matchedTerms: ['whatsapp'],
+          flaggedAt: at('2026-10-07T09:28:00.000Z'),
+          author: { firstName: 'Tunde', lastName: 'Bakare' },
+        },
+      ]),
+      findFailedPayouts: jest.fn().mockResolvedValue([
+        {
+          id: 'payout-1',
+          amount: 45000,
+          currency: 'NGN',
+          failureReason: 'Turn off OTP for transfers',
+          updatedAt: at('2026-10-07T09:20:00.000Z'),
+          mentor: { firstName: 'Ada', lastName: 'Obi' },
+        },
+      ]),
+    };
+    const health = {
+      getSummary: jest.fn().mockResolvedValue({ status: 'OPERATIONAL' }),
     };
     return {
       repository,
-      service: new AdminOverviewService(repository as never),
+      health,
+      service: new AdminOverviewService(repository as never, health as never),
     };
   };
 
@@ -95,6 +125,10 @@ describe('AdminOverviewService.getOverview', () => {
       0, 0, 0, 0, 0, 1, 1,
     ]);
     expect(activity.days[0].newSignUps).toBe(1);
+    // Thirty days after they were last seen
+    expect(activity.days.map((day) => day.churnedUsers)).toEqual([
+      0, 0, 0, 0, 0, 1, 0,
+    ]);
     expect(activity.totals).toMatchObject({
       sessionsCompleted: 2,
       newSignUps: 1,
@@ -140,6 +174,13 @@ describe('AdminOverviewService.getOverview', () => {
     expect(alerts[2].detail).toBe('Chinedu Eze');
     expect(alerts[3].title).toBe(
       'A mentor application is nearing its review target',
+    );
+    expect(alerts[0]).toMatchObject({
+      title: 'Community content flagged',
+      detail: 'Tunde Bakare · matched "whatsapp"',
+    });
+    expect(alerts[1].detail).toBe(
+      'NGN 45,000 · Ada Obi · Turn off OTP for transfers',
     );
   });
 });

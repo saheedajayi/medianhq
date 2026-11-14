@@ -1,14 +1,15 @@
-import {
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import type { CreateMenteeProfileDto } from './dto/create-mentee-profile.dto';
 import { MenteesRepository } from './mentees.repository';
+import { ContentScannerService } from '../../platform/moderation/content-scanner.service';
 
 @Injectable()
 export class MenteesService {
-  constructor(private readonly menteesRepository: MenteesRepository) {}
+  constructor(
+    private readonly menteesRepository: MenteesRepository,
+    private readonly contentScanner: ContentScannerService,
+  ) {}
 
   async createProfile(userId: string, dto: CreateMenteeProfileDto) {
     const user = await this.menteesRepository.findUserForOnboarding(userId);
@@ -17,6 +18,16 @@ export class MenteesService {
       throw new ForbiddenException(
         'A mentee profile cannot be created for a mentor user.',
       );
+    }
+
+    if (dto.bio) {
+      this.contentScanner.scan({
+        contentType: 'PROFILE_TEXT',
+        contentId: userId,
+        contentField: 'Bio',
+        content: dto.bio,
+        authorId: userId,
+      });
     }
 
     const payload = {

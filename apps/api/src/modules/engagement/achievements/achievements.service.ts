@@ -63,7 +63,10 @@ export class AchievementsService {
     ]);
 
     const earnedIds = new Set(earned.map((e) => e.achievementId));
-    const totalPoints = earned.reduce((sum, e) => sum + e.achievement.points, 0);
+    const totalPoints = earned.reduce(
+      (sum, e) => sum + e.achievement.points,
+      0,
+    );
 
     return {
       totalPoints,
@@ -72,7 +75,8 @@ export class AchievementsService {
       achievements: all.map((a) => ({
         ...a,
         isUnlocked: earnedIds.has(a.id),
-        unlockedAt: earned.find((e) => e.achievementId === a.id)?.earnedAt || null,
+        unlockedAt:
+          earned.find((e) => e.achievementId === a.id)?.earnedAt || null,
       })),
     };
   }

@@ -24,20 +24,27 @@ export class ReviewsService {
     });
 
     if (!booking) {
-      throw new NotFoundException(`Booking with ID '${dto.bookingId}' not found.`);
+      throw new NotFoundException(
+        `Booking with ID '${dto.bookingId}' not found.`,
+      );
     }
 
     if (booking.menteeId !== user.id) {
-      throw new ForbiddenException('Only the mentee on this booking can write a review.');
+      throw new ForbiddenException(
+        'Only the mentee on this booking can write a review.',
+      );
     }
 
     // Only sessions that actually took place can be reviewed; the booking
     // sweep, not the review, decides whether a session was completed
     const hasTakenPlace =
       booking.status === BookingStatus.COMPLETED ||
-      (booking.status === BookingStatus.CONFIRMED && booking.startsAt <= new Date());
+      (booking.status === BookingStatus.CONFIRMED &&
+        booking.startsAt <= new Date());
     if (!hasTakenPlace) {
-      throw new BadRequestException('You can review a session once it has taken place.');
+      throw new BadRequestException(
+        'You can review a session once it has taken place.',
+      );
     }
 
     const rating = Math.round(Number(dto.rating));
@@ -98,7 +105,9 @@ export class ReviewsService {
     const count = reviews.length;
     const avgRating =
       count > 0
-        ? Number((reviews.reduce((acc, r) => acc + r.rating, 0) / count).toFixed(1))
+        ? Number(
+            (reviews.reduce((acc, r) => acc + r.rating, 0) / count).toFixed(1),
+          )
         : 5.0;
 
     return {

@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BookingStatus } from '@prisma/client';
+import { AnalyticsEventType, BookingStatus } from '@prisma/client';
 import { fullName, oneOf } from '../common/admin-actor';
-import { buildTimeBuckets, growthPct } from '../common/time-buckets';
 import {
-  placeholderFirstSearches,
-  placeholderSearchAnalytics,
-  placeholderVisitors,
-} from './admin-analytics.placeholders';
+  buildTimeBuckets,
+  growthPct,
+  type BucketPeriod,
+} from '../common/time-buckets';
 import { AdminAnalyticsRepository } from './admin-analytics.repository';
 import {
   countBetween,
@@ -17,6 +16,7 @@ import {
 } from './analytics-math';
 import {
   VISITOR_PERIODS,
+  type VisitorPeriod,
   type VisitorsQueryDto,
 } from './dto/admin-analytics.dto';
 
@@ -43,6 +43,27 @@ const RESPONSE_BUCKETS = [
   { label: '12+ hours', under: Infinity },
 ];
 
+const QUERIES_SHOWN = 5;
+const FILTER_NAMES = ['Category', 'Price', 'Rating', 'Location'];
+
+const VISITOR_BUCKETS: Record<VisitorPeriod, BucketPeriod> = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+  yearly: 'annually',
+};
+// The rolling window each visitor stat counts over
+const VISITOR_WINDOW_DAYS: Record<VisitorPeriod, number> = {
+  daily: 1,
+  weekly: 7,
+  monthly: 30,
+  yearly: 365,
+};
+
+/** "career guidance" becomes "Career Guidance" */
+const titleCase = (text: string) =>
+  text.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
+
 const daysAgo = (now: Date, days: number) =>
   new Date(now.getTime() - days * DAY_MS);
 
@@ -56,19 +77,30 @@ export class AdminAnalyticsService {
   /** How mentees move from signing up to their first session */
   async getFunnel(now = new Date()) {
     const since = daysAgo(now, 14);
-    const [signUps, goalSetups, firstBookings, firstSessions, weekly, monthly] =
-      await Promise.all([
-        this.analyticsRepository.findMenteeSignUps(since),
-        this.analyticsRepository.findGoalSetups(since),
-        this.analyticsRepository.findFirstBookings(),
-        this.analyticsRepository.findFirstSessions(),
-        this.analyticsRepository.findActiveUserIds(daysAgo(now, 7)),
-        this.analyticsRepository.findActiveUserIds(daysAgo(now, 30)),
-      ]);
+    const [
+      signUps,
+      goalSetups,
+      firstSearches,
+      firstBookings,
+      firstSessions,
+      weekly,
+      monthly,
+    ] = await Promise.all([
+      this.analyticsRepository.findMenteeSignUps(since),
+      this.analyticsRepository.findGoalSetups(since),
+      this.analyticsRepository.findFirstSearches(),
+      this.analyticsRepository.findFirstBookings(),
+      this.analyticsRepository.findFirstSessions(),
+      this.analyticsRepository.findActiveUserIds(daysAgo(now, 7)),
+      this.analyticsRepository.findActiveUserIds(daysAgo(now, 30)),
+    ]);
 
     const steps = {
       signUps: signUps.map((user) => user.createdAt),
       goalSetups: goalSetups.map((profile) => profile.createdAt),
+      firstSearches: firstSearches
+        .map((group) => group._min.createdAt)
+        .filter((date): date is Date => !!date),
       firstBookings: firstBookings
         .map((group) => group._min.createdAt)
         .filter((date): date is Date => !!date),
@@ -76,15 +108,10 @@ export class AdminAnalyticsService {
         .map((group) => group._min.startsAt)
         .filter((date): date is Date => !!date),
     };
-    const goalSetupStat = weekStat(steps.goalSetups, now);
     const stats = {
       signUps: weekStat(steps.signUps, now),
-      goalSetups: goalSetupStat,
-      // Searches aren't logged yet, so this step is an estimate
-      firstSearches: {
-        value: placeholderFirstSearches(goalSetupStat.value),
-        changePct: goalSetupStat.changePct,
-      },
+      goalSetups: weekStat(steps.goalSetups, now),
+      firstSearches: weekStat(steps.firstSearches, now),
       firstBookings: weekStat(steps.firstBookings, now),
       firstSessions: weekStat(steps.firstSessions, now),
     };
@@ -94,17 +121,14 @@ export class AdminAnalyticsService {
 
     return {
       stats,
-      series: lastSevenDays(now).map((day) => {
-        const goals = countBetween(steps.goalSetups, day.from, day.to);
-        return {
-          label: day.label,
-          signUps: countBetween(steps.signUps, day.from, day.to),
-          goalSetups: goals,
-          firstSearches: placeholderFirstSearches(goals),
-          firstBookings: countBetween(steps.firstBookings, day.from, day.to),
-          firstSessions: countBetween(steps.firstSessions, day.from, day.to),
-        };
-      }),
+      series: lastSevenDays(now).map((day) => ({
+        label: day.label,
+        signUps: countBetween(steps.signUps, day.from, day.to),
+        goalSetups: countBetween(steps.goalSetups, day.from, day.to),
+        firstSearches: countBetween(steps.firstSearches, day.from, day.to),
+        firstBookings: countBetween(steps.firstBookings, day.from, day.to),
+        firstSessions: countBetween(steps.firstSessions, day.from, day.to),
+      })),
       conversionRates: [
         {
           label: 'Sign up - Setup Goal',
@@ -227,15 +251,69 @@ export class AdminAnalyticsService {
     };
   }
 
-  /** Search behaviour (placeholder) and mentee satisfaction (real) */
+  /** How mentees search for mentors, and how satisfied they are after */
   async getPerformance(now = new Date()) {
-    const [byRating, recent, bookings] = await Promise.all([
+    const weekAgo = daysAgo(now, 7);
+    const until = new Date(now.getTime() + 1);
+    const [
+      byRating,
+      recent,
+      bookings,
+      searchEvents,
+      profileViews,
+      bookClicks,
+      completedSessions,
+    ] = await Promise.all([
       this.analyticsRepository.countReviewsByRating(),
       this.analyticsRepository.findReviewRatings(daysAgo(now, 14)),
-      this.analyticsRepository.findBookingRequests(daysAgo(now, 8)),
+      this.analyticsRepository.findBookingRequests(daysAgo(now, 14)),
+      this.analyticsRepository.findSearches(daysAgo(now, 14)),
+      this.analyticsRepository.countEvents(
+        AnalyticsEventType.PROFILE_VIEW,
+        weekAgo,
+        until,
+      ),
+      this.analyticsRepository.countEvents(
+        AnalyticsEventType.BOOK_CLICK,
+        weekAgo,
+        until,
+      ),
+      this.analyticsRepository.countCompletedSessions(weekAgo, until),
     ]);
-    const search = placeholderSearchAnalytics();
     const days = lastSevenDays(now);
+    const searchDates = searchEvents.map((event) => event.createdAt);
+    const bookingDates = bookings.map((booking) => booking.createdAt);
+    const thisWeek = searchEvents.filter((event) => event.createdAt >= weekAgo);
+    const lastWeek = searchEvents.filter((event) => event.createdAt < weekAgo);
+
+    // People who narrowed a search with at least one filter
+    const filterUsers = (events: typeof searchEvents) =>
+      new Set(
+        events
+          .filter((event) => event.filters.length > 0)
+          .map((event) => event.userId ?? event.visitorId),
+      ).size;
+    const bookingRate = (from: Date, to: Date) =>
+      percent(
+        countBetween(bookingDates, from, to),
+        countBetween(searchDates, from, to),
+      );
+    const thisWeekRate = bookingRate(weekAgo, until);
+
+    const queries = thisWeek.flatMap((event) =>
+      event.query ? [event.query] : [],
+    );
+    const filterCounts = FILTER_NAMES.map((filter) => ({
+      filter,
+      usage: thisWeek.filter((event) => event.filters.includes(filter)).length,
+    }));
+    const filterTotal = filterCounts.reduce((sum, row) => sum + row.usage, 0);
+    const funnelSteps = [
+      { step: 'Searches', count: thisWeek.length },
+      { step: 'Profile views', count: profileViews },
+      { step: 'Booking clicks', count: bookClicks },
+      { step: 'Completed booking', count: completedSessions },
+    ];
 
     const reviews = byRating.reduce((sum, group) => sum + group._count._all, 0);
     const stars = byRating.reduce(
@@ -247,26 +325,44 @@ export class AdminAnalyticsService {
         ? ratings.reduce((sum, review) => sum + review.rating, 0) /
           ratings.length
         : 0;
-    const weekAgo = daysAgo(now, 7);
 
     return {
       stats: {
-        totalSearches: search.totalSearches,
-        filterUsers: search.filterUsers,
-        bookingRatePct: search.bookingRatePct,
+        totalSearches: weekStat(searchDates, now),
+        filterUsers: {
+          value: filterUsers(thisWeek),
+          changePct: growthPct(filterUsers(thisWeek), filterUsers(lastWeek)),
+        },
+        bookingRatePct: {
+          value: thisWeekRate,
+          changePct: growthPct(
+            thisWeekRate,
+            bookingRate(daysAgo(now, 14), weekAgo),
+          ),
+        },
       },
-      topQueries: search.topQueries,
-      filterUsage: search.filterUsage,
-      funnel: search.funnel,
-      daily: days.map((day, index) => ({
+      topQueries: topCounts(queries, QUERIES_SHOWN).map(
+        ([query, searches]) => ({
+          query: titleCase(query),
+          searches,
+          pctOfTotal: Math.round(percent(searches, queries.length)),
+        }),
+      ),
+      filterUsage: filterCounts
+        .sort((a, b) => b.usage - a.usage)
+        .map((row) => ({
+          ...row,
+          pctOfTotal: percent(row.usage, filterTotal),
+        })),
+      funnel: funnelSteps.map((row) => ({
+        ...row,
+        pct: percent(row.count, thisWeek.length),
+      })),
+      daily: days.map((day) => ({
         label: day.label,
-        searches: search.dailySearches[index],
-        bookingRatePct: search.dailyBookingRatePct[index],
-        bookings: countBetween(
-          bookings.map((booking) => booking.createdAt),
-          day.from,
-          day.to,
-        ),
+        searches: countBetween(searchDates, day.from, day.to),
+        bookingRatePct: bookingRate(day.from, day.to),
+        bookings: countBetween(bookingDates, day.from, day.to),
       })),
       satisfaction: {
         average: reviews ? Math.round((stars / reviews) * 10) / 10 : null,
@@ -481,8 +577,44 @@ export class AdminAnalyticsService {
     };
   }
 
-  /** Placeholder until site visits are tracked: see admin-analytics.placeholders.ts */
-  getVisitors(query: VisitorsQueryDto) {
-    return placeholderVisitors(oneOf(query.period, VISITOR_PERIODS) ?? 'daily');
+  /** Distinct visitors to the site, from the web app's page views */
+  async getVisitors(query: VisitorsQueryDto, now = new Date()) {
+    const period = oneOf(query.period, VISITOR_PERIODS) ?? 'daily';
+    const buckets = buildTimeBuckets(VISITOR_BUCKETS[period], now).slice(1);
+    const until = new Date(now.getTime() + 1);
+    // Each stat's window, then the window before it to compare with
+    const windows = VISITOR_PERIODS.flatMap((stat) => {
+      const span = VISITOR_WINDOW_DAYS[stat] * DAY_MS;
+      return [
+        { from: new Date(until.getTime() - span), to: until },
+        {
+          from: new Date(until.getTime() - 2 * span),
+          to: new Date(until.getTime() - span),
+        },
+      ];
+    });
+
+    const counts = await this.analyticsRepository.countVisitors([
+      ...windows,
+      ...buckets,
+    ]);
+    const stat = (index: number) => ({
+      value: counts[index * 2] ?? 0,
+      changePct: growthPct(counts[index * 2] ?? 0, counts[index * 2 + 1] ?? 0),
+    });
+
+    return {
+      period,
+      stats: {
+        daily: stat(0),
+        weekly: stat(1),
+        monthly: stat(2),
+        yearly: stat(3),
+      },
+      series: buckets.map((bucket, index) => ({
+        label: bucket.label,
+        visitors: counts[windows.length + index] ?? 0,
+      })),
+    };
   }
 }

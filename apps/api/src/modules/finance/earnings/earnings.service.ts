@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import type { AuthUser } from '../../identity/auth/dto/auth.dto';
 
@@ -29,11 +33,16 @@ export class EarningsService {
     const totalPaidOut = payouts
       .filter((p) => p.status === 'PROCESSED')
       .reduce((sum, p) => sum + p.amount, 0);
+    // Requested and not yet paid, including transfers still in flight.
+    // Failed and rejected payouts go back into the available balance
     const pendingPayout = payouts
-      .filter((p) => p.status === 'PENDING')
+      .filter((p) => p.status === 'PENDING' || p.status === 'PROCESSING')
       .reduce((sum, p) => sum + p.amount, 0);
 
-    const availableBalance = Math.max(0, totalEarned - totalPaidOut - pendingPayout);
+    const availableBalance = Math.max(
+      0,
+      totalEarned - totalPaidOut - pendingPayout,
+    );
 
     return {
       totalEarned,
@@ -56,12 +65,16 @@ export class EarningsService {
     }
 
     if (!dto.accountNumber || !dto.bankCode) {
-      throw new BadRequestException('Account number and bank code are required.');
+      throw new BadRequestException(
+        'Account number and bank code are required.',
+      );
     }
 
     const summary = await this.getMentorSummary(user);
     if (dto.amount > summary.availableBalance) {
-      throw new BadRequestException('Requested amount exceeds available balance.');
+      throw new BadRequestException(
+        'Requested amount exceeds available balance.',
+      );
     }
 
     return this.prisma.payoutRequest.create({

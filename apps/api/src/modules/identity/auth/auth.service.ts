@@ -14,7 +14,8 @@ import {
   scryptSync,
   timingSafeEqual,
 } from 'crypto';
-import { UserRole, type User } from '@prisma/client';
+import { AdminRole, UserRole, type User } from '@prisma/client';
+import { adminAccessFor } from './admin-access';
 import { AuthRepository } from './auth.repository';
 import { EmailService } from '../../platform/email/email.service';
 import { getAccountStage } from './account-stage';
@@ -717,6 +718,16 @@ export class AuthService {
     return normalizedEmail;
   }
 
+  /**
+   * Checks a password someone is choosing against the same rules as sign-up
+   * and returns it hashed, for flows outside this service such as admin invites
+   */
+  async hashNewPassword(password: string) {
+    const validPassword = this.validatePassword(password);
+    await this.assertPasswordIsNotCompromised(validPassword);
+    return this.hashPassword(validPassword);
+  }
+
   private validatePassword(password: string) {
     const normalizedPassword = this.validateRequiredText(password, 'Password');
 
@@ -1053,6 +1064,10 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      ...(user.role === UserRole.ADMIN && {
+        adminRole: user.adminRole ?? AdminRole.SUPER_ADMIN,
+        adminAccess: adminAccessFor(user.adminRole),
+      }),
       isEmailVerified: Boolean(user.emailVerifiedAt),
       hasMenteeProfile,
       hasMentorProfile: Boolean(user.mentorProfile),

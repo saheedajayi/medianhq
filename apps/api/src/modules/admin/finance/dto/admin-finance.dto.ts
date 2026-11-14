@@ -7,8 +7,31 @@ export const REVENUE_PERIODS = [
 ] as const;
 export type RevenuePeriod = (typeof REVENUE_PERIODS)[number];
 
-export type PayoutStatus = 'PAID' | 'PENDING' | 'FAILED';
-export type RefundStatus = 'COMPLETED' | 'PENDING' | 'FAILED';
+export const PAYOUT_STATUSES = [
+  'PAID',
+  'PROCESSING',
+  'PENDING',
+  'FAILED',
+  'REJECTED',
+] as const;
+export type PayoutStatus = (typeof PAYOUT_STATUSES)[number];
+
+export const REFUND_STATUSES = [
+  'COMPLETED',
+  'PENDING',
+  'FAILED',
+  'REJECTED',
+] as const;
+export type RefundStatus = (typeof REFUND_STATUSES)[number];
+
+/** An optional note, for rejecting a payout or a refund */
+export interface FinanceReasonDto {
+  reason?: string;
+}
+
+export interface RefundNoteDto {
+  note?: string;
+}
 
 /** Query strings as they arrive */
 export interface RevenueQueryDto {

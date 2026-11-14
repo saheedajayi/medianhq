@@ -1,11 +1,24 @@
-import { Injectable } from '@nestjs/common';
-import { fullName, oneOf } from '../common/admin-actor';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  SecurityAuditService,
+  type SecurityEventAction,
+} from '../../identity/auth/security-audit.service';
+import { PaymentsService } from '../../finance/payments/payments.service';
+import { PayoutsService } from '../../finance/payouts/payouts.service';
+import { EmailService } from '../../platform/email/email.service';
+import { fullName, oneOf, type AdminActor } from '../common/admin-actor';
 import { buildTimeBuckets, growthPct } from '../common/time-buckets';
 import {
   AdminFinanceRepository,
   type RefundRecord,
 } from './admin-finance.repository';
 import {
+  PAYOUT_STATUSES,
+  REFUND_STATUSES,
   REVENUE_PERIODS,
   type PayoutsQueryDto,
   type PayoutStatus,
@@ -26,13 +39,23 @@ const EXPANDED_REPORT_PAGE_SIZE = 17;
 const EXPORT_LIMIT = 5000;
 const BREAKDOWN_ROWS = 5;
 
-const PAYOUT_STATUSES: PayoutStatus[] = ['PAID', 'PENDING', 'FAILED'];
+// How each stored payout status reads on the Payout tab; PROCESSED is paid
+const PAYOUT_STATUS: Record<string, PayoutStatus> = {
+  PROCESSED: 'PAID',
+  PAID: 'PAID',
+  PROCESSING: 'PROCESSING',
+  PENDING: 'PENDING',
+  FAILED: 'FAILED',
+  REJECTED: 'REJECTED',
+};
 // Paystack reports a finished refund as PROCESSED
 const REFUND_STATUS: Record<string, RefundStatus> = {
   PROCESSED: 'COMPLETED',
   PENDING: 'PENDING',
   FAILED: 'FAILED',
+  REJECTED: 'REJECTED',
 };
+const NOTE_MAX_LENGTH = 1000;
 // Why a booking was refunded, when the person cancelling gave no reason
 const REFUND_REASON: Record<string, string> = {
   DECLINED: 'Mentor declined',
@@ -51,11 +74,17 @@ const sum = (values: number[]) =>
 
 /** Stored statuses are free text, so anything unrecognised counts as pending */
 const readPayoutStatus = (status: string): PayoutStatus =>
-  oneOf(status.toUpperCase(), PAYOUT_STATUSES) ?? 'PENDING';
+  PAYOUT_STATUS[status.toUpperCase()] ?? 'PENDING';
 
 @Injectable()
 export class AdminFinanceService {
-  constructor(private readonly financeRepository: AdminFinanceRepository) {}
+  constructor(
+    private readonly financeRepository: AdminFinanceRepository,
+    private readonly paymentsService: PaymentsService,
+    private readonly payoutsService: PayoutsService,
+    private readonly emailService: EmailService,
+    private readonly securityAudit: SecurityAuditService,
+  ) {}
 
   async getRevenue(query: RevenueQueryDto, now = new Date()) {
     const period = oneOf(query.period, REVENUE_PERIODS) ?? 'daily';
@@ -154,13 +183,15 @@ export class AdminFinanceService {
       ),
     ]);
 
-    const stat = (wanted: PayoutStatus) => {
+    const stat = (...wanted: PayoutStatus[]) => {
+      const matches = (status: string) =>
+        wanted.includes(readPayoutStatus(status));
       const amountIn = (isThisWeek: boolean) =>
         sum(
           recent
             .filter(
               (payout) =>
-                readPayoutStatus(payout.status) === wanted &&
+                matches(payout.status) &&
                 payout.createdAt >= weekAgo === isThisWeek,
             )
             .map((payout) => payout.amount),
@@ -168,7 +199,7 @@ export class AdminFinanceService {
       return {
         amount: sum(
           totals
-            .filter((group) => readPayoutStatus(group.status) === wanted)
+            .filter((group) => matches(group.status))
             .map((group) => group._sum.amount ?? 0),
         ),
         changePct: growthPct(amountIn(true), amountIn(false)),
@@ -182,7 +213,8 @@ export class AdminFinanceService {
       pageSize: PAYOUTS_PAGE_SIZE,
       stats: {
         totalPaidOut: stat('PAID'),
-        pendingBalance: stat('PENDING'),
+        // Waiting for review or already sent to Paystack and not yet confirmed
+        pendingBalance: stat('PENDING', 'PROCESSING'),
         failedDisbursements: stat('FAILED'),
       },
     };
@@ -310,11 +342,14 @@ export class AdminFinanceService {
 
   /** Statuses are free text, so the status filter is applied after reading */
   private async findPayouts(search?: string, status?: PayoutStatus) {
-    const payouts = await this.financeRepository.findPayouts(
-      search?.trim() || undefined,
-      0,
-      EXPORT_LIMIT,
-    );
+    const [payouts, bankNames] = await Promise.all([
+      this.financeRepository.findPayouts(
+        search?.trim() || undefined,
+        0,
+        EXPORT_LIMIT,
+      ),
+      this.payoutsService.bankNames(),
+    ]);
     return payouts
       .map((payout) => ({
         id: payout.id,
@@ -324,9 +359,14 @@ export class AdminFinanceService {
           avatarUrl: payout.mentor.mentorProfile?.avatarUrl ?? null,
         },
         bankCode: payout.bankCode,
+        bankName: bankNames.get(payout.bankCode) ?? null,
+        accountNumber: payout.accountNumber,
         amount: payout.amount,
         currency: payout.currency,
         status: readPayoutStatus(payout.status),
+        failureReason: payout.failureReason,
+        transferReference: payout.transferReference,
+        paidAt: payout.paidAt,
         requestedAt: payout.createdAt,
       }))
       .filter((payout) => !status || payout.status === status);
@@ -356,7 +396,7 @@ export class AdminFinanceService {
   private readRefundsFilters(query: RefundsQueryDto): RefundsFilters {
     return {
       search: query.search?.trim() || undefined,
-      status: oneOf(query.status, ['COMPLETED', 'PENDING', 'FAILED'] as const),
+      status: oneOf(query.status, REFUND_STATUSES),
       range: oneOf(query.range, ['7d', '30d', '90d'] as const),
     };
   }
@@ -392,8 +432,228 @@ export class AdminFinanceService {
         REFUND_REASON[booking.status] ??
         'Refund issued',
       status: REFUND_STATUS[refund.refundStatus ?? ''] ?? 'PENDING',
+      bookingId: booking.id,
       requestedAt: refund.updatedAt,
       completedAt: refund.refundedAt,
+      note: refund.refundNote,
+      noteAt: refund.refundNoteAt,
+      noteBy: refund.refundNoteBy,
+      infoRequestedAt: refund.refundInfoRequestedAt,
     };
   };
+
+  // --- Refund actions -------------------------------------------------------
+
+  /**
+   * Refunds are sent automatically when a booking is cancelled. Approving
+   * retries one that failed, or re-checks one Paystack hasn't finished.
+   */
+  async approveRefund(paymentId: string, actor?: AdminActor) {
+    const refund = await this.findRefund(paymentId);
+    const status = REFUND_STATUS[refund.refundStatus ?? ''];
+
+    if (status === 'FAILED') {
+      await this.paymentsService.refund(
+        refund.booking.id,
+        refund.refundAmount ?? refund.amount,
+      );
+    } else if (status === 'PENDING' && refund.refundReference) {
+      await this.paymentsService.syncRefund(refund.refundReference);
+    } else {
+      throw new BadRequestException(
+        status === 'COMPLETED'
+          ? 'This refund has already been completed.'
+          : 'Only a failed or pending refund can be approved.',
+      );
+    }
+
+    await this.recordFinanceAction('REFUND_RETRIED', refund, actor);
+    return this.toRefund(await this.findRefund(paymentId));
+  }
+
+  /** Closes a failed refund without paying it, and tells the mentee why */
+  async rejectRefund(
+    paymentId: string,
+    reason: string | undefined,
+    actor?: AdminActor,
+  ) {
+    const refund = await this.findRefund(paymentId);
+    if (REFUND_STATUS[refund.refundStatus ?? ''] !== 'FAILED') {
+      throw new BadRequestException('Only a failed refund can be rejected.');
+    }
+    const note = this.readText(reason, 'Reason');
+
+    const updated = await this.financeRepository.updateRefund(paymentId, {
+      refundStatus: 'REJECTED',
+      ...(note && {
+        refundNote: note,
+        refundNoteAt: new Date(),
+        refundNoteBy: actor ? fullName(actor) : null,
+      }),
+    });
+    await this.emailMentee(
+      refund,
+      'An update on your Median refund',
+      [
+        `We weren't able to refund ${this.formatAmount(refund)} for your cancelled session.`,
+        ...(note ? [`Note from our team: ${note}`] : []),
+        'Reply to this email if you have any questions.',
+      ],
+      `refund-rejected:${refund.id}`,
+    );
+    await this.recordFinanceAction('REFUND_REJECTED', refund, actor);
+    return this.toRefund(updated);
+  }
+
+  /** Emails the mentee asking them to reply with what the team needs */
+  async requestRefundInfo(paymentId: string, actor?: AdminActor) {
+    const refund = await this.findRefund(paymentId);
+    await this.emailMentee(
+      refund,
+      'We need a little more information about your refund',
+      [
+        `We're looking into your refund of ${this.formatAmount(refund)} and need a few more details to finish it.`,
+        'Please reply to this email with your bank or card details used for the payment and anything else you think will help.',
+      ],
+      `refund-info:${refund.id}:${Date.now()}`,
+    );
+    const updated = await this.financeRepository.updateRefund(paymentId, {
+      refundInfoRequestedAt: new Date(),
+    });
+    await this.recordFinanceAction('REFUND_INFO_REQUESTED', refund, actor);
+    return this.toRefund(updated);
+  }
+
+  async saveRefundNote(
+    paymentId: string,
+    note: string | undefined,
+    actor?: AdminActor,
+  ) {
+    await this.findRefund(paymentId);
+    const text = this.readText(note, 'Note');
+    const updated = await this.financeRepository.updateRefund(paymentId, {
+      refundNote: text,
+      refundNoteAt: new Date(),
+      refundNoteBy: actor ? fullName(actor) : null,
+    });
+    return this.toRefund(updated);
+  }
+
+  // --- Payout actions -------------------------------------------------------
+
+  /** Sends the money through Paystack Transfers */
+  async approvePayout(payoutId: string, actor?: AdminActor) {
+    const payout = await this.payoutsService.approve(payoutId, actor);
+    await this.recordPayoutAction('PAYOUT_APPROVED', payout, actor);
+    return {
+      payoutId,
+      status: readPayoutStatus(payout.status),
+      failureReason: payout.failureReason,
+    };
+  }
+
+  async rejectPayout(
+    payoutId: string,
+    reason: string | undefined,
+    actor?: AdminActor,
+  ) {
+    const payout = await this.payoutsService.reject(
+      payoutId,
+      this.readText(reason, 'Reason') ?? undefined,
+      actor,
+    );
+    await this.recordPayoutAction('PAYOUT_REJECTED', payout, actor);
+    return {
+      payoutId,
+      status: readPayoutStatus(payout.status),
+      failureReason: payout.failureReason,
+    };
+  }
+
+  /** Re-checks a transfer still in flight with Paystack */
+  async syncPayout(payoutId: string) {
+    const payout = await this.payoutsService.sync(payoutId);
+    return {
+      payoutId,
+      status: readPayoutStatus(payout.status),
+      failureReason: payout.failureReason,
+    };
+  }
+
+  private async findRefund(paymentId: string) {
+    const refund = await this.financeRepository.findRefundById(paymentId);
+    if (!refund) throw new NotFoundException('Refund not found.');
+    return refund;
+  }
+
+  private readText(value: string | undefined, field: string) {
+    const text = value?.trim() || null;
+    if (text && text.length > NOTE_MAX_LENGTH) {
+      throw new BadRequestException(
+        `${field} must be ${NOTE_MAX_LENGTH} characters or fewer.`,
+      );
+    }
+    return text;
+  }
+
+  private formatAmount(refund: RefundRecord) {
+    return `₦${(refund.refundAmount ?? refund.amount).toLocaleString('en-NG')}`;
+  }
+
+  /** A failed email must not undo the action, which is still recorded */
+  private emailMentee(
+    refund: RefundRecord,
+    subject: string,
+    paragraphs: string[],
+    idempotencyKey: string,
+  ) {
+    const { mentee } = refund.booking;
+    return this.emailService
+      .sendBookingUpdate({
+        email: mentee.email,
+        firstName: mentee.firstName,
+        subject,
+        paragraphs,
+        details: [],
+        ctaLabel: 'View bookings',
+        ctaPath: '/mentee/booking-session',
+        idempotencyKey,
+      })
+      .catch(() => undefined);
+  }
+
+  private recordFinanceAction(
+    action: SecurityEventAction,
+    refund: RefundRecord,
+    actor?: AdminActor,
+  ) {
+    return this.securityAudit.record({
+      userId: refund.booking.mentee.id,
+      email: refund.booking.mentee.email,
+      action,
+      status: 'SUCCESS',
+      metadata: {
+        adminId: actor?.id ?? null,
+        adminName: actor ? fullName(actor) : null,
+        detail: `${this.formatAmount(refund)} · ${refund.id}`,
+      },
+    });
+  }
+
+  private recordPayoutAction(
+    action: SecurityEventAction,
+    payout: { id: string; mentorId: string; amount: number },
+    actor?: AdminActor,
+  ) {
+    return this.securityAudit.record({
+      userId: payout.mentorId,
+      action,
+      status: 'SUCCESS',
+      metadata: {
+        adminId: actor?.id ?? null,
+        adminName: actor ? fullName(actor) : null,
+        detail: `₦${payout.amount.toLocaleString('en-NG')} · ${payout.id}`,
+      },
+    });
+  }
 }
