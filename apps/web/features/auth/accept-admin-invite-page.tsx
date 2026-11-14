@@ -3,13 +3,14 @@
 import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/base/button";
 import { FormField, formInputClassName } from "@/components/ui/custom/form-field";
 import { PasswordInput } from "@/components/ui/custom/password-input";
 import {
+  isInviteLoadFailure,
   useAcceptAdminInvite,
   useAdminInvitePreview,
 } from "@/services/admin/invites/queries/invites.queries";
@@ -45,7 +46,7 @@ export function AcceptAdminInvitePage({ token }: AcceptAdminInvitePageProps) {
   const router = useRouter();
   const trimmedToken = token?.trim() ?? "";
   const [errors, setErrors] = useState<FieldErrors>({});
-  const { data: invite, isLoading, error } = useAdminInvitePreview(trimmedToken);
+  const { data: invite, isLoading, isFetching, error, refetch } = useAdminInvitePreview(trimmedToken);
   const acceptInvite = useAcceptAdminInvite(trimmedToken);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -90,6 +91,32 @@ export function AcceptAdminInvitePage({ token }: AcceptAdminInvitePageProps) {
     );
   }
 
+  // Slow or unreachable server: the link may be fine, so offer to try again rather than calling it expired
+  if (!invite && isInviteLoadFailure(error)) {
+    return (
+      <div className="text-center">
+        <header className="mb-6">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-[#FFF4ED] text-[#FF5514]">
+            <AlertCircle className="size-6" />
+          </div>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#4b100d]">We couldn&apos;t load your invite</h1>
+          <p className="mt-2 text-sm text-[#667085]">
+            Median took too long to respond. Your invite link is probably fine, so please try again.
+          </p>
+        </header>
+        <Button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="h-12 w-full rounded-full text-base font-medium text-white"
+        >
+          <RefreshCw className={isFetching ? "size-4 animate-spin" : "size-4"} />
+          {isFetching ? "Trying again..." : "Try again"}
+        </Button>
+      </div>
+    );
+  }
+
   if (!invite) {
     return (
       <div className="text-center">
@@ -99,8 +126,7 @@ export function AcceptAdminInvitePage({ token }: AcceptAdminInvitePageProps) {
           </div>
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#4b100d]">Invite Invalid or Expired</h1>
           <p className="mt-2 text-sm text-[#667085]">
-            {error?.message || "This invite link is invalid or has expired."} Ask the admin who invited you to send a
-            new one.
+            This invite link is invalid or has expired. Ask the admin who invited you to send a new one.
           </p>
         </header>
         <Link
@@ -119,19 +145,28 @@ export function AcceptAdminInvitePage({ token }: AcceptAdminInvitePageProps) {
       <header className="mb-10 text-center">
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#4b100d]">Join Median as an admin</h1>
         <p className="mt-2 text-base text-[#344054]">
-          You&apos;ve been invited as a <span className="font-semibold">{invite.roleLabel}</span>. Set your name and
-          password to finish.
+          You&apos;ve been invited as {/^[AEIOU]/.test(invite.roleLabel) ? "an" : "a"}{" "}
+          <span className="font-semibold">{invite.roleLabel}</span>. Set your name and password to finish.
         </p>
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="grid gap-4">
+        {/* Fixed by the invite, so it can't be changed here; autocomplete lets password managers save against it */}
         <FormField id="email" label="Email">
-          <input
-            id="email"
-            value={invite.email}
-            readOnly
-            className={`${formInputClassName} bg-[#F2F4F7] text-[#667085]`}
-          />
+          <div className="relative">
+            <input
+              id="email"
+              type="email"
+              name="username"
+              autoComplete="username"
+              value={invite.email}
+              readOnly
+              aria-readonly="true"
+              tabIndex={-1}
+              className={`${formInputClassName} w-full cursor-not-allowed !border-[#EAECF0] !bg-[#F2F4F7] pr-10 !text-[#667085] focus-visible:!ring-0`}
+            />
+            <Lock aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-[#98A2B3]" />
+          </div>
         </FormField>
 
         <div className="grid gap-4 sm:grid-cols-2">

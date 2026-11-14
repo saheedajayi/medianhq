@@ -5,7 +5,6 @@ import type { FinancePayout } from "@/services/admin/finance";
 import { ExportSquare, More } from "iconsax-react";
 import { toast } from "sonner";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { adminFinanceService, type PayoutsFilters, type PayoutStatus } from "@/services/admin/finance";
 import { useFinancePayouts } from "@/services/admin/finance/queries/finance.queries";
@@ -26,6 +25,7 @@ import {
   formatChange,
 } from "./finance-utils";
 import { PayoutReviewModal } from "./payout-review-modal";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 const PAYOUT_STATUS: Record<PayoutStatus, { label: string; className: string }> = {
   PAID: { label: "Paid", className: "bg-[#E7F4EE] text-[#067647]" },
@@ -148,13 +148,7 @@ export function PayoutTab() {
               </tr>
             </thead>
             <tbody className={cn(isFetching && data && "opacity-60")}>
-              {!data && (
-                <tr>
-                  <td colSpan={COLUMNS.length + 1} className="px-5 py-4">
-                    <Skeleton className="h-64 w-full" />
-                  </td>
-                </tr>
-              )}
+              {!data && <TableSkeletonRows headers={COLUMNS} withActions rows={5} cellClassName="px-5 py-4" />}
               {data?.items.length === 0 && (
                 <tr>
                   <td colSpan={COLUMNS.length + 1} className={cn(financeCellClass, "py-16 text-center text-sm")}>

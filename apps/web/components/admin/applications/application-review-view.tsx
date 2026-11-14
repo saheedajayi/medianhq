@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { useAdminApplication } from "@/services/admin/applications/queries/applications.queries";
 import { outlineButtonClass } from "../shared/shared";
 import { ApplicantCard } from "./applicant-card";
@@ -14,6 +13,7 @@ import { DecisionCard } from "./decision-card";
 import { DecisionEmailCard } from "./decision-email-card";
 import { ReviewChecklistCard } from "./review-checklist-card";
 import { ReviewerNotesCard } from "./reviewer-notes-card";
+import { AdminSkeleton, DetailCardSkeleton } from "../shared/skeletons";
 
 const columnsClass = "grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]";
 
@@ -68,10 +68,17 @@ export function ApplicationReviewView({ applicationId }: ApplicationReviewViewPr
       ) : error ? (
         <DashboardErrorState onRetry={() => refetch()} isRetrying={isFetching} />
       ) : (
-        <SkeletonGroup label="Loading application" className={columnsClass}>
-          <Skeleton className="h-[560px] w-full rounded-2xl" />
-          <Skeleton className="h-[560px] w-full rounded-2xl" />
-        </SkeletonGroup>
+        <AdminSkeleton label="Loading application" className={columnsClass}>
+          <div className="flex min-w-0 flex-col gap-5">
+            <DetailCardSkeleton withAvatar lines={4} />
+            <DetailCardSkeleton lines={3} />
+            <DetailCardSkeleton lines={3} />
+          </div>
+          <div className="flex min-w-0 flex-col gap-5">
+            <DetailCardSkeleton lines={5} />
+            <DetailCardSkeleton lines={2} />
+          </div>
+        </AdminSkeleton>
       )}
     </div>
   );
