@@ -55,9 +55,15 @@ model User {
   lastName       String
   role           UserRole?
   emailVerifiedAt DateTime?
+  // Set by an admin; a suspended account can't sign in or be booked
+  suspendedAt      DateTime?
+  suspensionReason String?
+  // Set by an admin to mark the account as under review
+  flaggedAt        DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   mentorProfile  MentorProfile?
+  applicationsReviewing MentorProfile[] @relation("ApplicationReviewer")
   mentorSessions MentorSession[]
   mentorAvailability WeeklyAvailability[]
   menteeProfile  MenteeProfile?
@@ -110,8 +116,21 @@ model MentorProfile {
   pricePerSession   Int          @default(0)
   currency          String       @default("NGN")
   status            MentorStatus @default(DRAFT)
+  // When the application last went in for review
+  submittedAt       DateTime?
+  // The admin reviewing the application, with their checklist and private note
+  reviewerId        String?
+  reviewer          User?        @relation("ApplicationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  /// { [item]: boolean } for the four human review checks
+  reviewChecklist   Json         @default("{}")
+  reviewNote        String?
+  reviewNoteAt      DateTime?
+  reviewNoteBy      String?
+  decidedAt         DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+
+  @@index([status, submittedAt])
 }
 
 model MentorSession {

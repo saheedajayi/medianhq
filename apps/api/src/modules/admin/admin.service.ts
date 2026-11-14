@@ -1,18 +1,15 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MentorStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
-import { EmailService } from '../platform/email/email.service';
 import { UploadsService } from '../platform/uploads/uploads.service';
+import { AdminApplicationsService } from './applications/admin-applications.service';
+import type { AdminActor } from './common/admin-actor';
 
 @Injectable()
 export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    private readonly applicationsService: AdminApplicationsService,
     private readonly uploadsService: UploadsService,
   ) {}
 
@@ -53,72 +50,12 @@ export class AdminService {
     }));
   }
 
-  async approveMentor(mentorProfileId: string) {
-    const profile = await this.setMentorStatus(
-      mentorProfileId,
-      MentorStatus.APPROVED,
-    );
-    await this.emailService
-      .sendBookingUpdate({
-        email: profile.user.email,
-        firstName: profile.user.firstName,
-        subject: "You're approved to mentor on Median",
-        paragraphs: [
-          'Your mentor application has been approved, and your profile is now visible to mentees.',
-          'Set your weekly availability and create your first session so mentees can book you.',
-        ],
-        details: [],
-        ctaLabel: 'Set your availability',
-        ctaPath: '/mentor/availability',
-        idempotencyKey: `mentor-approved:${profile.id}`,
-      })
-      .catch(() => undefined);
-    return { mentorProfileId, status: profile.status };
+  approveMentor(mentorProfileId: string, actor?: AdminActor) {
+    return this.applicationsService.approve(mentorProfileId, actor);
   }
 
-  async rejectMentor(mentorProfileId: string, reason?: string) {
-    const profile = await this.setMentorStatus(
-      mentorProfileId,
-      MentorStatus.REJECTED,
-    );
-    await this.emailService
-      .sendBookingUpdate({
-        email: profile.user.email,
-        firstName: profile.user.firstName,
-        subject: 'An update on your Median mentor application',
-        paragraphs: [
-          "Thank you for applying to mentor on Median. We aren't able to approve your application right now.",
-          ...(reason?.trim()
-            ? [`Feedback from our team: ${reason.trim()}`]
-            : []),
-          'You are welcome to reply to this email with any questions.',
-        ],
-        details: [],
-        ctaLabel: 'Visit Median',
-        ctaPath: '/',
-        idempotencyKey: `mentor-rejected:${profile.id}`,
-      })
-      .catch(() => undefined);
-    return { mentorProfileId, status: profile.status };
-  }
-
-  private async setMentorStatus(mentorProfileId: string, status: MentorStatus) {
-    const existing = await this.prisma.mentorProfile.findUnique({
-      where: { id: mentorProfileId },
-    });
-    if (!existing) {
-      throw new NotFoundException('Mentor application not found.');
-    }
-    if (existing.status === MentorStatus.DRAFT) {
-      throw new BadRequestException(
-        'This mentor has not submitted an application yet.',
-      );
-    }
-    return this.prisma.mentorProfile.update({
-      where: { id: mentorProfileId },
-      data: { status },
-      include: { user: { select: { email: true, firstName: true } } },
-    });
+  rejectMentor(mentorProfileId: string, reason?: string, actor?: AdminActor) {
+    return this.applicationsService.reject(mentorProfileId, reason, actor);
   }
 
   /** CVs are private Cloudinary assets; PDFs live under image/, Word files under raw/ */

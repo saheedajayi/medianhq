@@ -2,7 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import type { Prisma } from '@prisma/client';
 
+/** Recorded against the affected user when an admin acts on their account */
+export const ADMIN_ACCOUNT_ACTIONS = [
+  'ACCOUNT_SUSPENDED',
+  'ACCOUNT_REINSTATED',
+  'ACCOUNT_FLAGGED',
+  'ACCOUNT_UNFLAGGED',
+  'APPLICATION_REVIEWER_ASSIGNED',
+  'APPLICATION_CHECKLIST_UPDATED',
+  'APPLICATION_NOTE_SAVED',
+  'APPLICATION_APPROVED',
+  'APPLICATION_REJECTED',
+] as const;
+
 export type SecurityEventAction =
+  | (typeof ADMIN_ACCOUNT_ACTIONS)[number]
   | 'PASSWORD_RESET'
   | 'PASSWORD_CHANGE'
   | 'RECOVERY_REQUEST'
@@ -55,7 +69,8 @@ export class SecurityAuditService {
    */
   async getLogsForUser(userId: string, limit = 20) {
     return this.prisma.securityAuditLog.findMany({
-      where: { userId },
+      // Admin actions on the account are for the admin log, not the user's own list
+      where: { userId, action: { notIn: [...ADMIN_ACCOUNT_ACTIONS] } },
       orderBy: { createdAt: 'desc' },
       take: Math.min(limit, 50),
       select: {

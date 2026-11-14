@@ -8,7 +8,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { MentorStatus } from '@prisma/client';
+import { CurrentUser } from '../identity/auth/decorators/current-user.decorator';
 import { AdminGuard } from '../identity/auth/guards/admin.guard';
+import type { AdminActor } from './common/admin-actor';
 import { AdminService } from './admin.service';
 
 @Controller('admin')
@@ -25,16 +27,20 @@ export class AdminController {
   }
 
   @Patch('mentors/:mentorProfileId/approve')
-  approveMentor(@Param('mentorProfileId') mentorProfileId: string) {
-    return this.adminService.approveMentor(mentorProfileId);
+  approveMentor(
+    @Param('mentorProfileId') mentorProfileId: string,
+    @CurrentUser() admin?: AdminActor,
+  ) {
+    return this.adminService.approveMentor(mentorProfileId, admin);
   }
 
   @Patch('mentors/:mentorProfileId/reject')
   rejectMentor(
     @Param('mentorProfileId') mentorProfileId: string,
     @Body('reason') reason?: string,
+    @CurrentUser() admin?: AdminActor,
   ) {
-    return this.adminService.rejectMentor(mentorProfileId, reason);
+    return this.adminService.rejectMentor(mentorProfileId, reason, admin);
   }
 
   @Get('metrics')
