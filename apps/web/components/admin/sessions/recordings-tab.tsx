@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { ArrowRight, ArrowSwapHorizontal, People, Play, Trash, Verify } from "iconsax-react";
+import { toast } from "sonner";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import type { RecordingConsent } from "@/services/admin/sessions";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { adminSessionsService, type RecordingConsent, type RecordingsFilters } from "@/services/admin/sessions";
 import { useSessionRecordings } from "@/services/admin/sessions/queries/sessions.queries";
 import { cn } from "@/lib/utils";
 import { formatClock, formatLongDate } from "../shared/format";
 import { CaptionSelect } from "../shared/caption-select";
-import { ALL, SearchField } from "../shared/list-controls";
+import { ALL, SearchField, pickedFilter } from "../shared/list-controls";
 import { SessionPersonCell, SessionTypeChip } from "./session-cells";
 import { SessionStatTile } from "./session-stat-tile";
 import { sessionsCellClass, squareChipClass, viewButtonClass } from "./session-utils";
@@ -34,30 +35,112 @@ const CONSENT: Record<RecordingConsent, { label: string; className: string }> = 
   MENTOR: { label: "Mentor", className: "bg-[#FFF4ED] text-[#E04F16]" },
 };
 
+const RANGE_OPTIONS = [
+  { value: "7d", label: "Last 7 Days" },
+  { value: "30d", label: "Last 30 Days" },
+  { value: "90d", label: "Last 90 Days" },
+];
+
+const CONSENT_OPTIONS = (Object.keys(CONSENT) as RecordingConsent[]).map((consent) => ({
+  value: consent,
+  label: CONSENT[consent].label,
+}));
+
+const EMPTY_FILTERS = { search: "", range: ALL, mentorId: ALL, menteeId: ALL, type: ALL, consent: ALL };
+
+const toOptions = (people: { id: string; name: string }[]) =>
+  people.map((person) => ({ value: person.id, label: person.name }));
+
 const percentOf = (part: number, total: number) => `${total ? ((part / total) * 100).toFixed(1) : "0.0"}% of total`;
 
 export function RecordingsTab() {
-  const [search, setSearch] = useState("");
+  const [values, setValues] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
-  const { data, isError, isFetching, refetch } = useSessionRecordings(page);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const search = useDebouncedValue(values.search.trim());
+
+  const filters: RecordingsFilters = {
+    search: search || undefined,
+    range: pickedFilter(values.range),
+    mentorId: pickedFilter(values.mentorId),
+    menteeId: pickedFilter(values.menteeId),
+    type: pickedFilter(values.type),
+    consent: pickedFilter(values.consent),
+  };
+  const { data, isError, isFetching, refetch } = useSessionRecordings(filters, page);
+
+  // Any filter change starts again from the first page
+  const handleFilterChange = (change: Partial<typeof EMPTY_FILTERS>) => {
+    setValues((current) => ({ ...current, ...change }));
+    setPage(1);
+  };
+
+  // The tab opens straight away so the browser doesn't block it, then gets the signed link
+  const handleView = async (recordingId: string) => {
+    const tab = window.open("", "_blank");
+    setOpeningId(recordingId);
+    try {
+      const response = await adminSessionsService.getRecordingPlayback(recordingId);
+      if (tab) {
+        tab.opener = null;
+        tab.location.href = response.data.url;
+      } else {
+        window.location.assign(response.data.url);
+      }
+    } catch {
+      tab?.close();
+      toast.error("We couldn't open this recording. Please try again.");
+    } finally {
+      setOpeningId(null);
+    }
+  };
 
   if (isError && !data) return <DashboardErrorState onRetry={() => refetch()} isRetrying={isFetching} />;
 
   const toolbar = (
     <div className="flex flex-wrap items-end gap-3">
       <SearchField
-        value={search}
-        onChange={setSearch}
+        value={values.search}
+        onChange={(value) => handleFilterChange({ search: value })}
         placeholder="Search by mentor, mentee, or topic..."
         label="Search recordings"
         className="min-w-56 flex-1 border-0 bg-[#F7F8FB]"
       />
-      {/* The filters have nothing to narrow until sessions are recorded */}
-      <CaptionSelect caption="Date Range" placeholder="Last 7 Days" value={ALL} options={[]} onChange={() => {}} />
-      <CaptionSelect caption="Mentor" placeholder="All Mentors" value={ALL} options={[]} onChange={() => {}} />
-      <CaptionSelect caption="Mentee" placeholder="All Mentees" value={ALL} options={[]} onChange={() => {}} />
-      <CaptionSelect caption="Session Type" placeholder="All Types" value={ALL} options={[]} onChange={() => {}} />
-      <CaptionSelect caption="Consent Status" placeholder="All" value={ALL} options={[]} onChange={() => {}} />
+      <CaptionSelect
+        caption="Date Range"
+        placeholder="All Time"
+        value={values.range}
+        options={RANGE_OPTIONS}
+        onChange={(range) => handleFilterChange({ range })}
+      />
+      <CaptionSelect
+        caption="Mentor"
+        placeholder="All Mentors"
+        value={values.mentorId}
+        options={toOptions(data?.mentors ?? [])}
+        onChange={(mentorId) => handleFilterChange({ mentorId })}
+      />
+      <CaptionSelect
+        caption="Mentee"
+        placeholder="All Mentees"
+        value={values.menteeId}
+        options={toOptions(data?.mentees ?? [])}
+        onChange={(menteeId) => handleFilterChange({ menteeId })}
+      />
+      <CaptionSelect
+        caption="Session Type"
+        placeholder="All Types"
+        value={values.type}
+        options={(data?.types ?? []).map((type) => ({ value: type, label: type }))}
+        onChange={(type) => handleFilterChange({ type })}
+      />
+      <CaptionSelect
+        caption="Consent Status"
+        placeholder="All"
+        value={values.consent}
+        options={CONSENT_OPTIONS}
+        onChange={(consent) => handleFilterChange({ consent })}
+      />
     </div>
   );
 
@@ -71,7 +154,15 @@ export function RecordingsTab() {
             icon={<People size="18" variant="Outline" color="#067647" />}
             note={
               <>
-                <span className="font-medium text-[#067647]">↑ {data.stats.totalChangePct}%</span> vs. last 7 days
+                <span
+                  className={cn(
+                    "font-medium",
+                    data.stats.totalChangePct < 0 ? "text-[#D92D20]" : "text-[#067647]",
+                  )}
+                >
+                  {data.stats.totalChangePct < 0 ? "↓" : "↑"} {Math.abs(data.stats.totalChangePct)}%
+                </span>{" "}
+                vs. last 7 days
               </>
             }
           />
@@ -109,7 +200,7 @@ export function RecordingsTab() {
         toolbar={toolbar}
         columns={COLUMNS}
         rowCount={data?.items.length}
-        emptyMessage="No sessions have been recorded."
+        emptyMessage="No recordings match these filters."
         isRefreshing={isFetching && !!data}
         page={page}
         lastPage={data ? Math.max(Math.ceil(data.total / data.pageSize), 1) : 1}
@@ -153,9 +244,14 @@ export function RecordingsTab() {
               </div>
             </td>
             <td className={sessionsCellClass}>
-              <Link href={`/admin/bookings/${recording.id}`} className={viewButtonClass}>
-                View
-              </Link>
+              <button
+                type="button"
+                onClick={() => void handleView(recording.id)}
+                disabled={openingId === recording.id}
+                className={cn(viewButtonClass, "disabled:opacity-60")}
+              >
+                {openingId === recording.id ? "Opening..." : "View"}
+              </button>
             </td>
           </tr>
         ))}

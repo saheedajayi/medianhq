@@ -17,24 +17,27 @@ import {
   ShieldTick,
   Wallet,
 } from "iconsax-react";
+import type { AdminSection } from "@/services/auth/types";
 import { useCurrentUser, useLogout } from "@/services/auth/queries/auth.queries";
+import { ADMIN_ROLE_NAMES, useAdminAccess } from "./admin-access";
 
 interface NavItem {
   label: string;
   href: string;
+  section: AdminSection;
   icon: typeof Element3;
 }
 
 const navItems: NavItem[] = [
-  { label: "Overview", href: "/admin", icon: Element3 },
-  { label: "Users", href: "/admin/users", icon: Profile2User },
-  { label: "Applications", href: "/admin/applications", icon: DocumentText },
-  { label: "Sessions", href: "/admin/sessions", icon: FolderOpen },
-  { label: "Bookings", href: "/admin/bookings", icon: Calendar },
-  { label: "Moderation", href: "/admin/moderation", icon: ShieldTick },
-  { label: "Finance", href: "/admin/finance", icon: Wallet },
-  { label: "Analytics", href: "/admin/analytics", icon: Activity },
-  { label: "Settings", href: "/admin/settings", icon: Setting2 },
+  { label: "Overview", href: "/admin", section: "overview", icon: Element3 },
+  { label: "Users", href: "/admin/users", section: "users", icon: Profile2User },
+  { label: "Applications", href: "/admin/applications", section: "applications", icon: DocumentText },
+  { label: "Sessions", href: "/admin/sessions", section: "sessions", icon: FolderOpen },
+  { label: "Bookings", href: "/admin/bookings", section: "sessions", icon: Calendar },
+  { label: "Moderation", href: "/admin/moderation", section: "moderation", icon: ShieldTick },
+  { label: "Finance", href: "/admin/finance", section: "finance", icon: Wallet },
+  { label: "Analytics", href: "/admin/analytics", section: "analytics", icon: Activity },
+  { label: "Settings", href: "/admin/settings", section: "settings", icon: Setting2 },
 ];
 
 interface AdminSidebarProps {
@@ -48,6 +51,7 @@ export function AdminSidebar({ isMobileOpen = false, onMobileClose }: AdminSideb
   const { data: user } = useCurrentUser();
   const logoutMutation = useLogout();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { adminRole, canRead } = useAdminAccess();
 
   const initials = `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`.toUpperCase();
 
@@ -92,7 +96,8 @@ export function AdminSidebar({ isMobileOpen = false, onMobileClose }: AdminSideb
         </div>
 
         <nav aria-label="Admin" className="flex flex-col gap-1">
-          {navItems.map((item) => {
+          {/* Only the sections this admin's type opens */}
+          {navItems.filter((item) => canRead(item.section)).map((item) => {
             const Icon = item.icon;
             // Overview is the admin root, so it only matches exactly
             const isActive = item.href === "/admin" ? pathname === item.href : pathname?.startsWith(item.href);
@@ -132,7 +137,7 @@ export function AdminSidebar({ isMobileOpen = false, onMobileClose }: AdminSideb
               {user ? `${user.firstName} ${user.lastName}` : ""}
             </p>
             <span className="mt-0.5 inline-block rounded-full bg-[#FFEEE8] px-2 py-0.5 text-[11px] font-medium text-[#E84D12]">
-              Super Admin
+              {adminRole ? ADMIN_ROLE_NAMES[adminRole] : "Admin"}
             </span>
           </div>
         </div>

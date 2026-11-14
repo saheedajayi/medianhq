@@ -43,8 +43,18 @@ export type CompletedSessionsPage = Paged<AdminSession> & {
   types: string[];
 };
 
+export type RecordingsFilters = {
+  search?: string;
+  range?: "7d" | "30d" | "90d";
+  mentorId?: string;
+  menteeId?: string;
+  type?: string;
+  consent?: RecordingConsent;
+};
+
 export type AdminRecording = {
   id: string;
+  bookingId: string;
   sessionId: string;
   type: string;
   startsAt: string;
@@ -52,12 +62,18 @@ export type AdminRecording = {
   mentor: AdminSessionPerson;
   mentee: AdminSessionPerson;
   consent: RecordingConsent;
-  recording: { format: string; sizeMb: number; recordedAt: string };
+  recording: { format: string; sizeMb: number; recordedAt: string; deleteAfter: string };
 };
 
 export type RecordingsPage = Paged<AdminRecording> & {
   stats: { total: number; totalChangePct: number; dualConsent: number; pendingDeletion: number };
+  mentors: { id: string; name: string }[];
+  mentees: { id: string; name: string }[];
+  types: string[];
 };
+
+/** A link to watch a recording that stops working after a few minutes */
+export type RecordingPlayback = { url: string; expiresAt: string };
 
 export type NoShowTrackerFilters = {
   search?: string;

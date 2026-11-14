@@ -5,6 +5,7 @@ import type {
   FinanceRevenue,
   MentorCharge,
   MentorChargesPage,
+  PayoutActionResult,
   PayoutsFilters,
   PayoutsPage,
   RefundsFilters,
@@ -39,6 +40,31 @@ export const adminFinanceService = {
   exportMentorCharges(filters: ServiceReportFilters) {
     return apiClient.get<MentorCharge[]>(`${FINANCE_PATH}/service/mentors/export`, { params: filters });
   },
+  approvePayout(payoutId: string) {
+    return apiClient.post<PayoutActionResult>(`${FINANCE_PATH}/payouts/${encodeURIComponent(payoutId)}/approve`);
+  },
+  rejectPayout(payoutId: string, reason?: string) {
+    return apiClient.post<PayoutActionResult>(`${FINANCE_PATH}/payouts/${encodeURIComponent(payoutId)}/reject`, {
+      reason,
+    });
+  },
+  syncPayout(payoutId: string) {
+    return apiClient.post<PayoutActionResult>(`${FINANCE_PATH}/payouts/${encodeURIComponent(payoutId)}/sync`);
+  },
+  approveRefund(paymentId: string) {
+    return apiClient.post<FinanceRefund>(`${FINANCE_PATH}/refunds/${encodeURIComponent(paymentId)}/approve`);
+  },
+  rejectRefund(paymentId: string, reason?: string) {
+    return apiClient.post<FinanceRefund>(`${FINANCE_PATH}/refunds/${encodeURIComponent(paymentId)}/reject`, {
+      reason,
+    });
+  },
+  requestRefundInfo(paymentId: string) {
+    return apiClient.post<FinanceRefund>(`${FINANCE_PATH}/refunds/${encodeURIComponent(paymentId)}/request-info`);
+  },
+  saveRefundNote(paymentId: string, note: string) {
+    return apiClient.patch<FinanceRefund>(`${FINANCE_PATH}/refunds/${encodeURIComponent(paymentId)}/note`, { note });
+  },
   getRefunds(filters: RefundsFilters, page: number) {
     return apiClient.get<RefundsPage>(`${FINANCE_PATH}/refunds`, { params: { ...filters, page } });
   },
@@ -49,6 +75,7 @@ export const adminFinanceService = {
 
 export type {
   CountStat,
+  PayoutActionResult,
   FinancePayout,
   FinanceRefund,
   FinanceRevenue,

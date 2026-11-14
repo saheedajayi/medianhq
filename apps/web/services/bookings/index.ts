@@ -6,6 +6,7 @@ import type {
   CreateBookingPayload,
   MenteeFeedbackPayload,
   RoomTokenResponse,
+  SessionRecordingStatus,
 } from "./types";
 
 const BOOKINGS_PATH = "/bookings";
@@ -58,6 +59,16 @@ export const bookingsService = {
       `${BOOKINGS_PATH}/${bookingId}/room-token`
     );
   },
+  getRecording(bookingId: string) {
+    return apiClient.get<SessionRecordingStatus>(`${BOOKINGS_PATH}/${bookingId}/recording`);
+  },
+  /** Recording only starts once both the mentor and the mentee have agreed */
+  setRecordingConsent(bookingId: string, consent: boolean) {
+    return apiClient.patch<SessionRecordingStatus>(
+      `${BOOKINGS_PATH}/${bookingId}/recording-consent`,
+      { consent }
+    );
+  },
 };
 
 export type {
@@ -72,4 +83,5 @@ export type {
   CreateBookingPayload,
   RescheduleBookingPayload,
   RoomTokenResponse,
+  SessionRecordingStatus,
 } from "./types";

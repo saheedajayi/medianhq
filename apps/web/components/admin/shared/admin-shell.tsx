@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { HambergerMenu } from "iconsax-react";
 import { useCurrentUser } from "@/services/auth/queries/auth.queries";
+import { sectionForPath, useAdminAccess } from "./admin-access";
 import { AdminSidebar } from "./admin-sidebar";
 
 interface AdminShellProps {
@@ -18,6 +19,9 @@ export function AdminShell({ children, isAdminHint = false }: AdminShellProps) {
   const pathname = usePathname();
   const { data: user } = useCurrentUser();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const { canRead } = useAdminAccess();
+  // Known once the user has loaded; before that the page shows as normal
+  const isSectionClosed = !!user && !canRead(sectionForPath(pathname ?? "/admin"));
 
   // undefined is still loading, null is signed out
   const isAdmin = user === undefined ? isAdminHint : user?.role === "ADMIN";
@@ -59,7 +63,15 @@ export function AdminShell({ children, isAdminHint = false }: AdminShellProps) {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white lg:my-2 lg:mr-2 lg:rounded-[20px] lg:border lg:border-[#EAECF0]">
           <main className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-7 md:p-8">
             {/* Nothing is shown to a non-admin while they are redirected */}
-            <div className="mx-auto w-full max-w-7xl">{isAdmin ? children : null}</div>
+            <div className="mx-auto w-full max-w-7xl">
+              {!isAdmin ? null : isSectionClosed ? (
+                <p className="rounded-2xl border border-[#EAECF0] px-6 py-16 text-center text-sm text-[#667085]">
+                  Your admin type doesn&apos;t have access to this section.
+                </p>
+              ) : (
+                children
+              )}
+            </div>
           </main>
         </div>
       </div>

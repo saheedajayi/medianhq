@@ -1,6 +1,7 @@
 export type RevenuePeriod = "daily" | "weekly" | "monthly" | "quarterly" | "annually";
-export type PayoutStatus = "PAID" | "PENDING" | "FAILED";
-export type RefundStatus = "COMPLETED" | "PENDING" | "FAILED";
+/** PROCESSING: sent to Paystack and not yet confirmed */
+export type PayoutStatus = "PAID" | "PROCESSING" | "PENDING" | "FAILED" | "REJECTED";
+export type RefundStatus = "COMPLETED" | "PENDING" | "FAILED" | "REJECTED";
 
 /** An amount with its change on the 7 days before; null when there is nothing to compare with */
 export type MoneyStat = { amount: number; changePct: number | null };
@@ -39,11 +40,19 @@ export type FinancePayout = {
   id: string;
   mentor: { id: string; name: string; avatarUrl: string | null };
   bankCode: string;
+  /** Null when Paystack's bank list couldn't be loaded */
+  bankName: string | null;
+  accountNumber: string;
   amount: number;
   currency: string;
   status: PayoutStatus;
+  failureReason: string | null;
+  transferReference: string | null;
+  paidAt: string | null;
   requestedAt: string;
 };
+
+export type PayoutActionResult = { payoutId: string; status: PayoutStatus; failureReason: string | null };
 
 export type PayoutsFilters = { status?: PayoutStatus; search?: string };
 
@@ -81,8 +90,13 @@ export type FinanceRefund = {
   amount: number;
   reason: string;
   status: RefundStatus;
+  bookingId: string;
   requestedAt: string;
   completedAt: string | null;
+  note: string | null;
+  noteAt: string | null;
+  noteBy: string | null;
+  infoRequestedAt: string | null;
 };
 
 export type RefundsFilters = { search?: string; status?: RefundStatus; range?: "7d" | "30d" | "90d" };

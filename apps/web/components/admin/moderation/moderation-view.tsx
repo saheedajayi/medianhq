@@ -14,6 +14,7 @@ import { ALL, Pagination, pickedFilter } from "../shared/list-controls";
 import { outlineButtonClass } from "../shared/shared";
 import { flagColumnsFor } from "./flag-columns";
 import { FlagDetailsPanel } from "./flag-details-panel";
+import { BlocklistModal } from "./blocklist-modal";
 import { FlagsTable } from "./flags-table";
 import { ModerationHistoryTable } from "./moderation-history-table";
 import {
@@ -32,6 +33,7 @@ export function ModerationView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isBlocklistOpen, setIsBlocklistOpen] = useState(false);
   const search = useDebouncedValue(values.search.trim());
 
   // A tab narrows to one content type; on the All tab the dropdown can do the same
@@ -108,6 +110,7 @@ export function ModerationView() {
           onChange={handleFilterChange}
           isHistoryOpen={isHistoryOpen}
           onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
+          onOpenBlocklist={() => setIsBlocklistOpen(true)}
         />
 
         {isHistoryOpen ? (
@@ -153,6 +156,8 @@ export function ModerationView() {
           </div>
         )}
       </section>
+
+      {isBlocklistOpen && <BlocklistModal onClose={() => setIsBlocklistOpen(false)} />}
     </div>
   );
 }

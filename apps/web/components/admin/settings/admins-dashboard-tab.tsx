@@ -7,7 +7,12 @@ import { DashboardErrorState } from "@/components/dashboard/dashboard-error-stat
 import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { useAdminOverview } from "@/services/admin/overview/queries/overview.queries";
 import { useAdminAuditLog } from "@/services/admin/settings/queries/settings.queries";
-import { formatClock, formatCount, formatLongDate, formatMoney } from "../shared/format";
+import {
+  formatClock,
+  formatCount,
+  formatLongDate,
+  formatMoney,
+} from "../shared/format";
 import { UserAvatar, textButtonClass } from "../shared/shared";
 import { StatCards } from "../shared/stat-cards";
 
@@ -35,12 +40,23 @@ export function AdminsDashboardTab() {
   const { data: overview } = overviewQuery;
   const { data: auditLog } = auditLogQuery;
 
-  const failed = [overviewQuery, auditLogQuery].find((query) => query.isError && !query.data);
-  if (failed) return <DashboardErrorState onRetry={() => failed.refetch()} isRetrying={failed.isFetching} />;
+  const failed = [overviewQuery, auditLogQuery].find(
+    (query) => query.isError && !query.data,
+  );
+  if (failed)
+    return (
+      <DashboardErrorState
+        onRetry={() => failed.refetch()}
+        isRetrying={failed.isFetching}
+      />
+    );
 
   if (!overview || !auditLog) {
     return (
-      <SkeletonGroup label="Loading the admins dashboard" className="flex flex-col gap-6">
+      <SkeletonGroup
+        label="Loading the admins dashboard"
+        className="flex flex-col gap-6"
+      >
         <Skeleton className="h-28 w-full rounded-2xl" />
         <Skeleton className="h-80 w-full rounded-2xl" />
       </SkeletonGroup>
@@ -48,20 +64,30 @@ export function AdminsDashboardTab() {
   }
 
   const { stats, nps, alerts } = overview;
-  const shownEntries = isAuditLogExpanded ? auditLog : auditLog.slice(0, AUDIT_PREVIEW_ROWS);
+  const shownEntries = isAuditLogExpanded
+    ? auditLog
+    : auditLog.slice(0, AUDIT_PREVIEW_ROWS);
 
   return (
     <div className="flex flex-col gap-8">
       <StatCards
         className="xl:grid-cols-5"
         stats={[
-          { label: "MUA", value: formatCount(stats.monthlyActiveUsers), note: "Active in the last 30 days" },
+          {
+            label: "MUA",
+            value: formatCount(stats.monthlyActiveUsers),
+            note: "Active in the last 30 days",
+          },
           {
             label: "Sessions",
             value: formatCount(stats.sessionsToday.total),
             note: `${formatCount(stats.sessionsToday.completed)} completed today`,
           },
-          { label: "Revenue", value: formatMoney(stats.revenueToday.amount), note: "Gross revenue today" },
+          {
+            label: "Revenue",
+            value: formatMoney(stats.revenueToday.amount),
+            note: "Gross revenue today",
+          },
           {
             label: "NPS",
             value: nps.score === null ? "—" : String(nps.score),
@@ -102,7 +128,10 @@ export function AdminsDashboardTab() {
             <tbody>
               {shownEntries.length === 0 && (
                 <tr>
-                  <td colSpan={4} className={`${cellClass} py-12 text-center text-sm`}>
+                  <td
+                    colSpan={4}
+                    className={`${cellClass} py-12 text-center text-sm`}
+                  >
                     No admin actions recorded yet.
                   </td>
                 </tr>
@@ -114,7 +143,11 @@ export function AdminsDashboardTab() {
                   </td>
                   <td className={cellClass}>
                     <span title={entry.adminName}>
-                      <UserAvatar name={entry.adminName} avatarUrl={null} className="bg-[#FF8D62] text-white" />
+                      <UserAvatar
+                        name={entry.adminName}
+                        avatarUrl={null}
+                        className="bg-[#FF8D62] text-white"
+                      />
                     </span>
                     <span className="sr-only">{entry.adminName}</span>
                   </td>
@@ -131,22 +164,34 @@ export function AdminsDashboardTab() {
         <section className={`${cardClass} p-4`}>
           <div className="flex items-center justify-between gap-3">
             <h2 className={titleClass}>Real Time Alerts</h2>
-            <Link href="/admin" className={`${textButtonClass} text-[#FF5514]!`}>
+            <Link
+              href="/admin"
+              className={`${textButtonClass} text-[#FF5514]!`}
+            >
               view all
             </Link>
           </div>
           {alerts.length === 0 ? (
-            <p className="mt-6 text-sm text-[#667085]">Nothing needs attention right now.</p>
+            <p className="mt-6 text-sm text-[#667085]">
+              Nothing needs attention right now.
+            </p>
           ) : (
             <ul className="mt-8 flex flex-col gap-7">
               {alerts.slice(0, ALERT_PREVIEW_ROWS).map((alert) => (
-                <li key={alert.id} className="flex items-center justify-between gap-4">
+                <li
+                  key={alert.id}
+                  className="flex items-center justify-between gap-4"
+                >
                   <div className="min-w-0">
                     <p className="text-lg text-[#344054]">{alert.title}</p>
-                    <p className="truncate text-sm text-[#475467]">{alert.detail}</p>
+                    <p className="truncate text-sm text-[#475467]">
+                      {alert.detail}
+                    </p>
                   </div>
                   <span className="shrink-0 text-xs text-[#344054]">
-                    {formatDistanceToNowStrict(new Date(alert.occurredAt), { addSuffix: true })}
+                    {formatDistanceToNowStrict(new Date(alert.occurredAt), {
+                      addSuffix: true,
+                    })}
                   </span>
                 </li>
               ))}

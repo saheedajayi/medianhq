@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { FinancePayout } from "@/services/admin/finance";
 import { ExportSquare, More } from "iconsax-react";
 import { toast } from "sonner";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { formatClock, formatLongDate } from "../shared/format";
 import { Pagination, SearchField } from "../shared/list-controls";
 import { StatCards } from "../shared/stat-cards";
+import { useAdminAccess } from "../shared/admin-access";
 import { UserAvatar } from "../shared/shared";
 import {
   exportButtonClass,
@@ -22,13 +24,15 @@ import {
   financeHeadClass,
   formatAmount,
   formatChange,
-  notifyNotConnected,
 } from "./finance-utils";
+import { PayoutReviewModal } from "./payout-review-modal";
 
 const PAYOUT_STATUS: Record<PayoutStatus, { label: string; className: string }> = {
   PAID: { label: "Paid", className: "bg-[#E7F4EE] text-[#067647]" },
   PENDING: { label: "Pending", className: "bg-[#FFEAD5] text-[#E04F16]" },
   FAILED: { label: "Failed", className: "bg-[#FEE4E2] text-[#F04438]" },
+  PROCESSING: { label: "Processing", className: "bg-[#EAF6FE] text-[#1B8FD6]" },
+  REJECTED: { label: "Rejected", className: "bg-[#F2F4F7] text-[#344054]" },
 };
 
 // "Total" lists every payout; the other two narrow to one status
@@ -45,6 +49,9 @@ export function PayoutTab() {
   const [status, setStatus] = useState<PayoutStatus>();
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
+  // The payout open in the review dialog
+  const [reviewing, setReviewing] = useState<FinancePayout | null>(null);
+  const { canWrite } = useAdminAccess();
   const search = useDebouncedValue(searchInput.trim());
 
   const filters: PayoutsFilters = { status, search: search || undefined };
@@ -162,7 +169,7 @@ export function PayoutTab() {
                       <UserAvatar name={payout.mentor.name} avatarUrl={payout.mentor.avatarUrl} className="size-11" />
                       <div>
                         <p className="text-sm font-semibold text-[#101828]">{payout.mentor.name}</p>
-                        <p className="text-xs text-[#667085]">Bank {payout.bankCode}</p>
+                        <p className="text-xs text-[#667085]">{payout.bankName ?? `Bank ${payout.bankCode}`}</p>
                       </div>
                     </div>
                   </td>
@@ -179,7 +186,7 @@ export function PayoutTab() {
                   <td className={financeCellClass} colSpan={2}>
                     <button
                       type="button"
-                      onClick={() => notifyNotConnected("Payout review")}
+                      onClick={() => setReviewing(payout)}
                       className="flex size-8 items-center justify-center rounded-full hover:bg-[#F2F4F7]"
                     >
                       <More size="20" variant="Outline" color="#475467" className="rotate-90" />
@@ -198,6 +205,10 @@ export function PayoutTab() {
           </div>
         )}
       </section>
+
+      {reviewing && (
+        <PayoutReviewModal payout={reviewing} canAct={canWrite("finance")} onClose={() => setReviewing(null)} />
+      )}
     </div>
   );
 }

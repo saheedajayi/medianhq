@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiError } from "@/services/api-client";
 import {
@@ -72,3 +72,42 @@ export const useFinanceRefunds = (filters: RefundsFilters, page: number) => {
     placeholderData: keepPreviousData,
   });
 };
+
+/** Any payout or refund action changes its tab's list and figures, so finance reloads */
+const useFinanceMutation = <TVariables, TData>(mutationFn: (variables: TVariables) => Promise<TData>) => {
+  const queryClient = useQueryClient();
+  return useMutation<TData, ApiError, TVariables>({
+    mutationFn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminFinanceQueryKeys.all }),
+  });
+};
+
+export const useApprovePayout = () =>
+  useFinanceMutation(async (payoutId: string) => (await adminFinanceService.approvePayout(payoutId)).data);
+
+export const useRejectPayout = () =>
+  useFinanceMutation(
+    async (input: { payoutId: string; reason?: string }) =>
+      (await adminFinanceService.rejectPayout(input.payoutId, input.reason)).data,
+  );
+
+export const useSyncPayout = () =>
+  useFinanceMutation(async (payoutId: string) => (await adminFinanceService.syncPayout(payoutId)).data);
+
+export const useApproveRefund = () =>
+  useFinanceMutation(async (paymentId: string) => (await adminFinanceService.approveRefund(paymentId)).data);
+
+export const useRejectRefund = () =>
+  useFinanceMutation(
+    async (input: { paymentId: string; reason?: string }) =>
+      (await adminFinanceService.rejectRefund(input.paymentId, input.reason)).data,
+  );
+
+export const useRequestRefundInfo = () =>
+  useFinanceMutation(async (paymentId: string) => (await adminFinanceService.requestRefundInfo(paymentId)).data);
+
+export const useSaveRefundNote = () =>
+  useFinanceMutation(
+    async (input: { paymentId: string; note: string }) =>
+      (await adminFinanceService.saveRefundNote(input.paymentId, input.note)).data,
+  );

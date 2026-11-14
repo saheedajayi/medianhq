@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { formatCount } from "../shared/format";
 
 export const financeCardClass = "rounded-2xl border border-[#EAECF0] bg-white";
@@ -17,6 +16,3 @@ export const formatChange = (changePct: number | null) =>
 export const percentOf = (part: number, total: number) => (total ? Math.round((part / total) * 100) : 0);
 
 export const formatAmount = formatCount;
-
-/** Money actions are shown as designed but not connected, so nothing is paid or refunded by accident */
-export const notifyNotConnected = (action: string) => toast.info(`${action} isn't connected yet.`);
