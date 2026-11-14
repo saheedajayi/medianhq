@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import { cn } from "@/lib/utils";
 import { Pagination } from "../shared/list-controls";
 import { sessionsCellClass, sessionsHeadClass } from "./session-utils";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 interface SessionsCardProps {
   title?: string;
@@ -65,14 +65,9 @@ export function SessionsCard({
             </tr>
           </thead>
           <tbody className={cn(isRefreshing && "opacity-60")}>
-            {rowCount === undefined &&
-              Array.from({ length: SKELETON_ROWS }).map((_, index) => (
-                <tr key={index}>
-                  <td colSpan={columns.length} className="px-5 py-3">
-                    <Skeleton className="h-12 w-full" />
-                  </td>
-                </tr>
-              ))}
+            {rowCount === undefined && (
+              <TableSkeletonRows headers={columns} rows={SKELETON_ROWS} cellClassName="px-3 py-4 first:pl-8" />
+            )}
             {rowCount === 0 && (
               <tr>
                 <td colSpan={columns.length} className={cn(sessionsCellClass, "py-16 text-center text-[#667085]")}>

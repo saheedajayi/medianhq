@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Skeleton } from "@/components/ui/base/skeleton";
 import type { AdminApplicationRow } from "@/services/admin/applications";
 import { cn } from "@/lib/utils";
 import { formatDay } from "../shared/format";
 import { checkboxClass, linkClass, tableCellClass, tableHeadClass } from "../shared/shared";
 import { ApplicationAgeBadge } from "./application-age-badge";
 import { formatRole, getReviewProgress } from "./application-utils";
+import { TableSkeletonRows } from "../shared/skeletons";
 
 const COLUMNS = ["Applicant", "Expertise", "Submitted", "Reviewer / notes", "Age"];
 // The checkbox and Review columns sit either side of the named ones
@@ -57,14 +57,9 @@ export function ApplicationsTable({
         </thead>
 
         <tbody className={cn("divide-y divide-[#EAECF0]", isRefreshing && "opacity-60")}>
-          {!applications &&
-            Array.from({ length: SKELETON_ROWS }).map((_, index) => (
-              <tr key={index}>
-                <td colSpan={COLUMN_COUNT} className="px-4 py-4">
-                  <Skeleton className="h-12 w-full" />
-                </td>
-              </tr>
-            ))}
+          {!applications && (
+            <TableSkeletonRows headers={COLUMNS} withCheckbox withActions rows={SKELETON_ROWS} />
+          )}
 
           {applications?.length === 0 && (
             <tr>
