@@ -12,9 +12,15 @@ describe('AdminGuard', () => {
       getClass: () => undefined,
     }) as never;
 
-  const guardFor = (adminRole: string | null, section?: string) => {
+  const guardFor = (
+    adminRole: string | null,
+    section?: string,
+    email = 'ops@medianhq.co',
+  ) => {
     const auth = {
-      getCurrentUser: jest.fn().mockResolvedValue({ role: 'ADMIN', adminRole }),
+      getCurrentUser: jest
+        .fn()
+        .mockResolvedValue({ role: 'ADMIN', adminRole, email }),
     };
     const reflector = {
       getAllAndOverride: jest.fn().mockReturnValue(section),
@@ -52,6 +58,25 @@ describe('AdminGuard', () => {
   it('gives an admin from before roles full access', async () => {
     await expect(
       guardFor(null, 'finance').canActivate(contextFor('POST')),
+    ).resolves.toBe(true);
+  });
+
+  it('turns away an admin without a Median email address', async () => {
+    for (const email of [
+      'ops@gmail.com',
+      'ops@sub.medianhq.co',
+      'ops@medianhq.co.evil.com',
+    ]) {
+      await expect(
+        guardFor('SUPER_ADMIN', 'finance', email).canActivate(
+          contextFor('GET'),
+        ),
+      ).rejects.toThrow('Admins must use an @medianhq.co email address.');
+    }
+    await expect(
+      guardFor('SUPER_ADMIN', 'finance', 'Ops@MedianHQ.co').canActivate(
+        contextFor('GET'),
+      ),
     ).resolves.toBe(true);
   });
 });

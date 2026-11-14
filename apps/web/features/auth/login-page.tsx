@@ -45,7 +45,6 @@ export function LoginPage() {
   const redirectParam = searchParams.get("redirect");
   const errorParam = searchParams.get("error");
   const [isNavigatingToReset, startTransition] = useTransition();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const loginMutation = useLogin();
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>(
@@ -60,6 +59,7 @@ export function LoginPage() {
     }
   }, [errorParam]);
 
+  // Signed-in visitors are sent on in the background, so nobody waits on this check
   useEffect(() => {
     let isCancelled = false;
 
@@ -79,24 +79,14 @@ export function LoginPage() {
         const destination = getAuthDestination(response.data);
         router.replace(destination);
       })
-      .catch(() => {
-        if (!isCancelled) {
-          setIsCheckingAuth(false);
-        }
-      });
+      // Signed out: the form is already showing
+      .catch(() => undefined);
 
     return () => {
       isCancelled = true;
     };
   }, [redirectParam, router]);
 
-  if (isCheckingAuth) {
-    return (
-      <p className="py-10 text-center text-sm text-[#667085]">
-        Checking account...
-      </p>
-    );
-  }
 
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
