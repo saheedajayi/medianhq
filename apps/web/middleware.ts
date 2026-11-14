@@ -53,6 +53,7 @@ const PROTECTED_PREFIXES = [
   "/bookings",
   "/messages",
   "/settings",
+  "/admin",
 ] as const;
 
 const ONBOARDING_REDIRECTS: Record<string, string> = {
@@ -96,7 +97,8 @@ export function middleware(request: NextRequest) {
       !AUTH_ROUTES.has(redirectParam.split(/[?#]/)[0] ?? "")
         ? redirectParam
         : null;
-    const destination = stageRedirect || safeRedirect || "/dashboard";
+    const home = sessionPayload?.role === "ADMIN" ? "/admin" : "/dashboard";
+    const destination = stageRedirect || safeRedirect || home;
     return NextResponse.redirect(new URL(destination, request.url));
   }
 
@@ -143,6 +145,16 @@ export function middleware(request: NextRequest) {
     }
 
     // Role-specific route boundaries
+    const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+    if (isAdminRoute && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    // Admins have no mentee or mentor dashboard
+    if (pathname === "/dashboard" && role === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+
     if (pathname.startsWith("/mentor/") && role !== "MENTOR") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
@@ -163,6 +175,7 @@ export const config = {
     "/bookings/:path*",
     "/messages/:path*",
     "/settings/:path*",
+    "/admin/:path*",
     "/role-selection",
     "/mentee-onboarding",
     "/mentor-onboarding",

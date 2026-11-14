@@ -26,7 +26,7 @@ export function getAuthDestination(
       return "/mentor-onboarding";
     case "MENTOR_PENDING":
     case "READY":
-      return "/dashboard";
+      return user.role === "ADMIN" ? "/admin" : "/dashboard";
   }
 }
 

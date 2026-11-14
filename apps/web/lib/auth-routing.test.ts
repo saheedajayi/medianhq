@@ -35,6 +35,10 @@ describe("authentication routing", () => {
     });
   }
 
+  it("routes admins to the admin overview", () => {
+    assert.equal(getAuthDestination({ ...createUser("READY"), role: "ADMIN" }), "/admin");
+  });
+
   it("routes unverified accounts to email verification with encoded email", () => {
     assert.equal(
       getAuthDestination(createUser("EMAIL_VERIFICATION")),
