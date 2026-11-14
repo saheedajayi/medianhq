@@ -16,7 +16,13 @@ export class TaxonomyController {
   }
 
   @Post('industries/:name/roles')
-  createRole(@Param('name') industryName: string, @Body('name') roleName: string) {
-    return this.taxonomyService.createRoleByIndustryName(industryName, roleName);
+  createRole(
+    @Param('name') industryName: string,
+    @Body('name') roleName: string,
+  ) {
+    return this.taxonomyService.createRoleByIndustryName(
+      industryName,
+      roleName,
+    );
   }
 }

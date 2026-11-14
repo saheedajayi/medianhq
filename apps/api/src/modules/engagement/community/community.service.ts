@@ -1,10 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import type { AuthUser } from '../../identity/auth/dto/auth.dto';
+import { ContentScannerService } from '../../platform/moderation/content-scanner.service';
 
 @Injectable()
 export class CommunityService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contentScanner: ContentScannerService,
+  ) {}
 
   async listPosts(category?: string) {
     const where = category && category !== 'All' ? { category } : {};
@@ -39,19 +47,25 @@ export class CommunityService {
         id: p.author.id,
         name: `${p.author.firstName} ${p.author.lastName}`.trim(),
         avatar: `https://i.pravatar.cc/150?u=${p.author.id}`,
-        role: p.author.mentorProfile?.jobTitle || p.author.menteeProfile?.currentRole || 'Member',
+        role:
+          p.author.mentorProfile?.jobTitle ||
+          p.author.menteeProfile?.currentRole ||
+          'Member',
       },
       commentCount: p._count.comments,
       likeCount: p._count.likes,
     }));
   }
 
-  async createPost(user: AuthUser, dto: { title: string; content: string; category?: string; tags?: string[] }) {
+  async createPost(
+    user: AuthUser,
+    dto: { title: string; content: string; category?: string; tags?: string[] },
+  ) {
     if (!dto.title || !dto.content) {
       throw new BadRequestException('title and content are required.');
     }
 
-    return this.prisma.communityPost.create({
+    const post = await this.prisma.communityPost.create({
       data: {
         authorId: user.id,
         title: dto.title,
@@ -65,6 +79,14 @@ export class CommunityService {
         },
       },
     });
+    this.contentScanner.scan({
+      contentType: 'FORUM_POST',
+      contentId: post.id,
+      contentField: 'Post',
+      content: `${post.title}\n${post.content}`,
+      authorId: user.id,
+    });
+    return post;
   }
 
   async getPostDetails(id: string) {
@@ -73,7 +95,9 @@ export class CommunityService {
       include: {
         author: { select: { id: true, firstName: true, lastName: true } },
         comments: {
-          include: { author: { select: { id: true, firstName: true, lastName: true } } },
+          include: {
+            author: { select: { id: true, firstName: true, lastName: true } },
+          },
           orderBy: { createdAt: 'asc' },
         },
         _count: { select: { likes: true } },
@@ -92,7 +116,7 @@ export class CommunityService {
       throw new BadRequestException('Comment content cannot be empty.');
     }
 
-    return this.prisma.communityComment.create({
+    const comment = await this.prisma.communityComment.create({
       data: {
         postId,
         authorId: user.id,
@@ -102,6 +126,14 @@ export class CommunityService {
         author: { select: { id: true, firstName: true, lastName: true } },
       },
     });
+    this.contentScanner.scan({
+      contentType: 'FORUM_POST',
+      contentId: comment.id,
+      contentField: 'Comment',
+      content: comment.content,
+      authorId: user.id,
+    });
+    return comment;
   }
 
   async toggleLike(user: AuthUser, postId: string) {

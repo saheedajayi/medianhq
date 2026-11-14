@@ -12,7 +12,11 @@ const MIN_PLAUSIBLE_RATE = 100;
 const MAX_PLAUSIBLE_RATE = 100_000;
 
 /** Prices convert to round numbers: the nearest N100, or the nearest $1 */
-export function convertAmount(amount: number, usdToNgn: number, to: 'NGN' | 'USD') {
+export function convertAmount(
+  amount: number,
+  usdToNgn: number,
+  to: 'NGN' | 'USD',
+) {
   return to === 'NGN'
     ? Math.round((amount * usdToNgn) / 100) * 100
     : Math.max(1, Math.round(amount / usdToNgn));

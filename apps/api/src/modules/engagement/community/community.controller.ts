@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CommunityService } from './community.service';
 import { AuthGuard } from '../../identity/auth/guards/auth.guard';
 import { CurrentUser } from '../../identity/auth/decorators/current-user.decorator';
@@ -22,7 +30,8 @@ export class CommunityController {
   @Post('posts')
   createPost(
     @CurrentUser() user: AuthUser,
-    @Body() dto: { title: string; content: string; category?: string; tags?: string[] },
+    @Body()
+    dto: { title: string; content: string; category?: string; tags?: string[] },
   ) {
     return this.communityService.createPost(user, dto);
   }

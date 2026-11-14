@@ -38,12 +38,12 @@ export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audien
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-[#101828]">
+                <Link href="/careers" className="transition-colors hover:text-[#101828]">
                   Careers
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-[#101828]">
+                <Link href="/contact" className="transition-colors hover:text-[#101828]">
                   Contact
                 </Link>
               </li>
@@ -53,8 +53,8 @@ export function LandingFooter({ onAudienceChange }: { onAudienceChange?: (audien
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-[#101828]">
-                  Help center
+                <Link href="/pricing" className="transition-colors hover:text-[#101828]">
+                  Pricing
                 </Link>
               </li>
             </ul>

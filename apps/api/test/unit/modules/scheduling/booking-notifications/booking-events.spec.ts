@@ -15,7 +15,10 @@ describe('GET /bookings/events', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [BookingsController],
-      providers: [BookingEventsService, { provide: BookingsService, useValue: {} }],
+      providers: [
+        BookingEventsService,
+        { provide: BookingsService, useValue: {} },
+      ],
     })
       .overrideGuard(AuthGuard)
       .useValue({
@@ -74,7 +77,9 @@ describe('GET /bookings/events', () => {
 
   it('publishes once per person when both sides are the same user', () => {
     const received: string[] = [];
-    const subscription = events.streamFor('mentor-1').subscribe((event) => received.push(String(event.type)));
+    const subscription = events
+      .streamFor('mentor-1')
+      .subscribe((event) => received.push(String(event.type)));
 
     events.publish('mentor-1', 'mentor-1');
     subscription.unsubscribe();

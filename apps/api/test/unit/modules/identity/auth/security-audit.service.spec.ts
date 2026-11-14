@@ -1,4 +1,7 @@
-import { SecurityAuditService } from '../../../../../src/modules/identity/auth/security-audit.service';
+import {
+  SecurityAuditService,
+  ADMIN_ACCOUNT_ACTIONS,
+} from '../../../../../src/modules/identity/auth/security-audit.service';
 import { PrismaService } from '../../../../../src/database/prisma.service';
 
 type MockPrismaService = {
@@ -95,7 +98,10 @@ describe('SecurityAuditService', () => {
       const result = await service.getLogsForUser('user-1', 10);
       expect(result).toEqual(mockLogs);
       expect(prisma.securityAuditLog.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
+        where: {
+          userId: 'user-1',
+          action: { notIn: [...ADMIN_ACCOUNT_ACTIONS] },
+        },
         orderBy: { createdAt: 'desc' },
         take: 10,
         select: {

@@ -24,6 +24,15 @@ export interface BookingMutationResponse {
   booking: any;
 }
 
+/** Where recording stands for a session, from this participant's side */
+export interface SessionRecordingStatus {
+  /** null until this participant has answered */
+  myConsent: boolean | null;
+  otherConsent: boolean | null;
+  isRecording: boolean;
+  retentionDays: number;
+}
+
 export interface RoomTokenResponse {
   token: string;
   roomName: string;

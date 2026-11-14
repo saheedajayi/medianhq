@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
   Logger,
@@ -13,7 +14,8 @@ import {
   scryptSync,
   timingSafeEqual,
 } from 'crypto';
-import { UserRole, type User } from '@prisma/client';
+import { AdminRole, UserRole, type User } from '@prisma/client';
+import { adminAccessFor } from './admin-access';
 import { AuthRepository } from './auth.repository';
 import { EmailService } from '../../platform/email/email.service';
 import { getAccountStage } from './account-stage';
@@ -151,6 +153,7 @@ export class AuthService {
     ) {
       throw new UnauthorizedException('Invalid email or password.');
     }
+    this.assertNotSuspended(user);
 
     let emailSent = true;
     if (!user.emailVerifiedAt) {
@@ -173,6 +176,15 @@ export class AuthService {
     };
   }
 
+  /** Suspending also ends existing sessions, so this stops a new one being started */
+  private assertNotSuspended(user: { suspendedAt?: Date | null }) {
+    if (user.suspendedAt) {
+      throw new ForbiddenException(
+        'This account has been suspended. Contact support for help.',
+      );
+    }
+  }
+
   async getCurrentUser(sessionToken: string | undefined): Promise<AuthUser> {
     if (!sessionToken) {
       throw new UnauthorizedException('Authentication is required.');
@@ -188,6 +200,7 @@ export class AuthService {
     if (user.sessionVersion !== payload.sessionVersion) {
       throw new UnauthorizedException('Authentication is required.');
     }
+    this.assertNotSuspended(user);
 
     return this.toAuthUser(user);
   }
@@ -225,6 +238,7 @@ export class AuthService {
         user = await this.authRepository.create(createData);
       }
     }
+    this.assertNotSuspended(user!);
 
     return {
       sessionToken: this.signAccessToken(user!),
@@ -325,7 +339,8 @@ export class AuthService {
     );
     if (
       existingToken &&
-      Date.now() - new Date(existingToken.createdAt).getTime() < PASSWORD_RESET_COOLDOWN_MS
+      Date.now() - new Date(existingToken.createdAt).getTime() <
+        PASSWORD_RESET_COOLDOWN_MS
     ) {
       await this.securityAuditService.record({
         userId: user.id,
@@ -703,6 +718,16 @@ export class AuthService {
     return normalizedEmail;
   }
 
+  /**
+   * Checks a password someone is choosing against the same rules as sign-up
+   * and returns it hashed, for flows outside this service such as admin invites
+   */
+  async hashNewPassword(password: string) {
+    const validPassword = this.validatePassword(password);
+    await this.assertPasswordIsNotCompromised(validPassword);
+    return this.hashPassword(validPassword);
+  }
+
   private validatePassword(password: string) {
     const normalizedPassword = this.validateRequiredText(password, 'Password');
 
@@ -799,6 +824,7 @@ export class AuthService {
     if (user.sessionVersion !== payload.sessionVersion) {
       throw new UnauthorizedException('Authentication is required.');
     }
+    this.assertNotSuspended(user);
 
     return {
       sessionToken: this.signAccessToken(user),
@@ -1038,6 +1064,10 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      ...(user.role === UserRole.ADMIN && {
+        adminRole: user.adminRole ?? AdminRole.SUPER_ADMIN,
+        adminAccess: adminAccessFor(user.adminRole),
+      }),
       isEmailVerified: Boolean(user.emailVerifiedAt),
       hasMenteeProfile,
       hasMentorProfile: Boolean(user.mentorProfile),

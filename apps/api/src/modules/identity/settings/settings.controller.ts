@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import {
   SettingsService,
   type EducationDto,
@@ -23,7 +33,10 @@ export class SettingsController {
 
   @UseGuards(AuthGuard)
   @Patch('me')
-  updateMySettings(@CurrentUser() user: AuthUser, @Body() dto: UpdateSettingsDto) {
+  updateMySettings(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateSettingsDto,
+  ) {
     return this.settingsService.updateMySettings(user, dto);
   }
 
@@ -41,13 +54,20 @@ export class SettingsController {
 
   @UseGuards(AuthGuard)
   @Post('experiences')
-  createExperience(@CurrentUser() user: AuthUser, @Body() dto: WorkExperienceDto) {
+  createExperience(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: WorkExperienceDto,
+  ) {
     return this.settingsService.createExperience(user, dto);
   }
 
   @UseGuards(AuthGuard)
   @Patch('experiences/:id')
-  updateExperience(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: WorkExperienceDto) {
+  updateExperience(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: WorkExperienceDto,
+  ) {
     return this.settingsService.updateExperience(user, id, dto);
   }
 
@@ -65,7 +85,11 @@ export class SettingsController {
 
   @UseGuards(AuthGuard)
   @Patch('educations/:id')
-  updateEducation(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: EducationDto) {
+  updateEducation(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: EducationDto,
+  ) {
     return this.settingsService.updateEducation(user, id, dto);
   }
 

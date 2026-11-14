@@ -48,12 +48,16 @@ describe('ExchangeRatesService', () => {
 
   it('refuses a rate that makes no sense', async () => {
     mockRate(1);
-    await expect(new ExchangeRatesService().convertToNgn(20, 'USD')).rejects.toThrow();
+    await expect(
+      new ExchangeRatesService().convertToNgn(20, 'USD'),
+    ).rejects.toThrow();
   });
 
   it('refuses to charge when no rate is available', async () => {
     global.fetch = jest.fn().mockRejectedValue(new Error('down')) as never;
-    await expect(new ExchangeRatesService().convertToNgn(20, 'USD')).rejects.toThrow();
+    await expect(
+      new ExchangeRatesService().convertToNgn(20, 'USD'),
+    ).rejects.toThrow();
   });
 
   it('uses the configured fallback during an outage', async () => {

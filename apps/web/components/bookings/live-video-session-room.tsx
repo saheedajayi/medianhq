@@ -9,6 +9,11 @@ import { LiveKitRoomProvider } from "@/components/ui/custom/livekit-room-provide
 import { LiveKitVideoTile } from "@/components/ui/custom/livekit-video-tile";
 import { LiveKitCallControls } from "@/components/ui/custom/livekit-call-controls";
 import { stopAllMediaTracks } from "./media-utils";
+import { toast } from "sonner";
+import {
+  useBookingRecording,
+  useSetRecordingConsent,
+} from "@/services/bookings/queries/bookings.queries";
 
 // --------------------------------------------------------------------------
 // Inner room — must be rendered inside <LiveKitRoomProvider>
@@ -23,7 +28,11 @@ interface RoomInnerProps {
 function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
   const { localParticipant, isMicrophoneEnabled } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
-  const [isRecording, setIsRecording] = useState(recordingOption === "record");
+  const { data: recording } = useBookingRecording(booking.id, { poll: true });
+  const recordingConsentMutation = useSetRecordingConsent();
+  // Recording only runs once both people have agreed and joined, so this follows the server
+  const isRecording = recording?.isRecording ?? false;
+  const myConsent = recording?.myConsent ?? recordingOption === "record";
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const totalDurationSeconds = (booking.durationMinutes || 30) * 60;
 
@@ -53,6 +62,22 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
       stopAllMediaTracks();
     };
   }, [localParticipant]);
+
+  const handleToggleRecording = () => {
+    if (recordingConsentMutation.isPending) return;
+    const consent = !myConsent;
+    recordingConsentMutation.mutate(
+      { bookingId: booking.id, consent },
+      {
+        onSuccess: (status) => {
+          if (consent && !status.isRecording && status.otherConsent !== true) {
+            toast.info("Recording starts once the other person agrees too.");
+          }
+        },
+        onError: () => toast.error("We couldn't update recording. Please try again."),
+      }
+    );
+  };
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -137,7 +162,7 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
         <LiveKitCallControls
           onLeave={onEndCall}
           isRecording={isRecording}
-          onToggleRecording={() => setIsRecording((v) => !v)}
+          onToggleRecording={handleToggleRecording}
         />
       </footer>
     </div>

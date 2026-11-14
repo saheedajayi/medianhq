@@ -69,7 +69,11 @@ export class PaymentsRepository {
    * Only moves bookings still awaiting payment, so a late or repeated
    * confirmation can't revive a booking that was cancelled in the meantime.
    */
-  async confirmPaymentAndRequestMentor(paymentId: string, bookingId: string, respondBy: Date) {
+  async confirmPaymentAndRequestMentor(
+    paymentId: string,
+    bookingId: string,
+    respondBy: Date,
+  ) {
     const [payment, moved] = await this.prisma.$transaction([
       this.prisma.payment.update({
         where: { id: paymentId },
@@ -80,7 +84,9 @@ export class PaymentsRepository {
         data: { status: BookingStatus.PENDING_CONFIRMATION, respondBy },
       }),
     ]);
-    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
     return { payment, booking, movedToMentor: moved.count > 0 };
   }
 

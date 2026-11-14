@@ -1,5 +1,20 @@
 export type AuthRole = "MENTEE" | "MENTOR" | "ADMIN";
 
+export type AdminRole = "SUPER_ADMIN" | "OPERATIONS_ADMIN" | "MODERATION_ADMIN" | "FINANCE_ADMIN" | "SUPPORT_AGENT";
+
+export type AdminSection =
+  | "overview"
+  | "users"
+  | "applications"
+  | "sessions"
+  | "moderation"
+  | "finance"
+  | "analytics"
+  | "settings";
+
+/** Read lets an admin open a section; write also lets them change things there */
+export type AdminAccess = Partial<Record<AdminSection, "read" | "write">>;
+
 export type AccountStage =
   | "EMAIL_VERIFICATION"
   | "ROLE_SELECTION"
@@ -14,6 +29,9 @@ export type AuthUser = {
   firstName: string;
   lastName: string;
   role: AuthRole | null;
+  /** Admins only: their admin type and the sections it opens, as the API decides */
+  adminRole?: AdminRole | null;
+  adminAccess?: AdminAccess;
   isEmailVerified: boolean;
   hasMenteeProfile: boolean;
   hasMentorProfile: boolean;

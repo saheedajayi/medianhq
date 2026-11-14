@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import type { AuthUser } from '../../identity/auth/dto/auth.dto';
 
@@ -15,7 +19,9 @@ export class AsyncQaService {
         author: { select: { id: true, firstName: true, lastName: true } },
         mentor: { select: { id: true, firstName: true, lastName: true } },
         answers: {
-          include: { author: { select: { id: true, firstName: true, lastName: true } } },
+          include: {
+            author: { select: { id: true, firstName: true, lastName: true } },
+          },
           orderBy: { createdAt: 'asc' },
         },
       },
@@ -23,9 +29,14 @@ export class AsyncQaService {
     });
   }
 
-  async askQuestion(user: AuthUser, dto: { mentorId: string; title: string; content: string }) {
+  async askQuestion(
+    user: AuthUser,
+    dto: { mentorId: string; title: string; content: string },
+  ) {
     if (!dto.mentorId || !dto.title || !dto.content) {
-      throw new BadRequestException('mentorId, title, and content are required.');
+      throw new BadRequestException(
+        'mentorId, title, and content are required.',
+      );
     }
 
     return this.prisma.question.create({
@@ -48,7 +59,9 @@ export class AsyncQaService {
     });
 
     if (!question) {
-      throw new NotFoundException(`Question with ID '${questionId}' not found.`);
+      throw new NotFoundException(
+        `Question with ID '${questionId}' not found.`,
+      );
     }
 
     return this.prisma.answer.create({

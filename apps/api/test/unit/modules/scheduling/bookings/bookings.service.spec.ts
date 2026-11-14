@@ -40,7 +40,13 @@ describe('BookingsService money flows', () => {
       {} as never,
       payments as never,
       notifications as never,
-      { convertToNgn: jest.fn().mockImplementation((amount) => Promise.resolve({ amount, exchangeRate: null })) } as never,
+      {
+        convertToNgn: jest
+          .fn()
+          .mockImplementation((amount) =>
+            Promise.resolve({ amount, exchangeRate: null }),
+          ),
+      } as never,
       { publish: jest.fn() } as never,
     );
   });
@@ -137,7 +143,11 @@ describe('BookingsService money flows', () => {
     beforeEach(() => {
       repository.findUserWithMentorProfile.mockResolvedValue({
         id: 'mentor',
-        mentorProfile: { status: 'APPROVED', pricePerSession: 0, currency: 'NGN' },
+        mentorProfile: {
+          status: 'APPROVED',
+          pricePerSession: 0,
+          currency: 'NGN',
+        },
       });
       repository.findMentorSession.mockResolvedValue({
         id: 's1',
@@ -164,7 +174,11 @@ describe('BookingsService money flows', () => {
         } as never),
       ).rejects.toThrow('You already have this session booked');
       expect(repository.findActiveBookingOfSession).toHaveBeenCalledWith(
-        expect.objectContaining({ menteeId: 'mentee', mentorId: 'mentor', mentorSessionId: 's1' }),
+        expect.objectContaining({
+          menteeId: 'mentee',
+          mentorId: 'mentor',
+          mentorSessionId: 's1',
+        }),
       );
       expect(repository.createBookingWithPayment).not.toHaveBeenCalled();
     });

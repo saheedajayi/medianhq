@@ -17,6 +17,7 @@ import type {
   PaginatedExploreMentorsResponse,
 } from './dto/explore-mentors-query.dto';
 import { MentorsRepository } from './mentors.repository';
+import { ContentScannerService } from '../../platform/moderation/content-scanner.service';
 import { buildAvailableDays } from '../../scheduling/bookings/availability-slots';
 import { MIN_LEAD_TIME_MS } from '../../scheduling/bookings/booking-policy';
 
@@ -26,9 +27,14 @@ const MAX_PROFILE_LIST_ITEMS = 20;
 export class MentorsService {
   private readonly logger = new Logger(MentorsService.name);
 
-  constructor(private readonly mentorsRepository: MentorsRepository) {}
+  constructor(
+    private readonly mentorsRepository: MentorsRepository,
+    private readonly contentScanner: ContentScannerService,
+  ) {}
 
-  private mapCategory(industry?: string | null): 'Tech' | 'Finance' | 'Business' | 'Consulting' {
+  private mapCategory(
+    industry?: string | null,
+  ): 'Tech' | 'Finance' | 'Business' | 'Consulting' {
     if (!industry) return 'Business';
     const ind = industry.toLowerCase();
     if (
@@ -56,7 +62,10 @@ export class MentorsService {
     return 'Business';
   }
 
-  private formatPrice(pricePerSession: number, currency: string = 'NGN'): string {
+  private formatPrice(
+    pricePerSession: number,
+    currency: string = 'NGN',
+  ): string {
     if (!pricePerSession || pricePerSession <= 0) {
       return 'Free';
     }
@@ -71,12 +80,13 @@ export class MentorsService {
   private async getNextAvailability(mentorUserIds: string[]) {
     const now = new Date();
     const to = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
-    const { windows, bookings } = await this.mentorsRepository.findAvailabilityContext(
-      mentorUserIds,
-      now,
-      to,
-      now,
-    );
+    const { windows, bookings } =
+      await this.mentorsRepository.findAvailabilityContext(
+        mentorUserIds,
+        now,
+        to,
+        now,
+      );
 
     const result = new Map<string, ExploreMentorItem['nextAvailability']>();
     for (const mentorId of mentorUserIds) {
@@ -86,7 +96,9 @@ export class MentorsService {
           .filter((b) => b.mentorId === mentorId)
           .map((b) => ({
             startsAt: b.startsAt,
-            endsAt: new Date(b.startsAt.getTime() + b.durationMinutes * 60 * 1000),
+            endsAt: new Date(
+              b.startsAt.getTime() + b.durationMinutes * 60 * 1000,
+            ),
           })),
         durationMinutes: 30,
         from: now,
@@ -100,18 +112,27 @@ export class MentorsService {
       const format = (options: Intl.DateTimeFormatOptions) =>
         slot.toLocaleString('en-US', { timeZone: 'Africa/Lagos', ...options });
       result.set(mentorId, {
-        relative: dayIndex === 0 ? 'today' : dayIndex === 1 ? 'tomorrow' : `in ${dayIndex} days`,
-        formattedDate: `${format({ weekday: 'short', day: 'numeric', month: 'long' })} ${format({
-          hour: 'numeric',
-          minute: '2-digit',
-        })}`,
+        relative:
+          dayIndex === 0
+            ? 'today'
+            : dayIndex === 1
+              ? 'tomorrow'
+              : `in ${dayIndex} days`,
+        formattedDate: `${format({ weekday: 'short', day: 'numeric', month: 'long' })} ${format(
+          {
+            hour: 'numeric',
+            minute: '2-digit',
+          },
+        )}`,
       });
     }
     return result;
   }
 
   // Maps onboarding years of experience ("1-3 years" ... "10+ years") to the explore filter levels
-  private mapExperienceLevel(experience?: string | null): ExploreMentorItem['experienceLevel'] {
+  private mapExperienceLevel(
+    experience?: string | null,
+  ): ExploreMentorItem['experienceLevel'] {
     const years = parseInt(experience ?? '', 10);
     if (Number.isNaN(years) || years < 3) return 'beginner';
     if (years < 5) return 'intermediate';
@@ -133,7 +154,12 @@ export class MentorsService {
     const reviewCount = reviews.length;
     const avgRating =
       reviewCount > 0
-        ? Number((reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount).toFixed(1))
+        ? Number(
+            (
+              reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
+              reviewCount
+            ).toFixed(1),
+          )
         : 0; // New mentors have no rating until their first review
 
     const tags: string[] = [];
@@ -143,7 +169,9 @@ export class MentorsService {
 
     return {
       id: m.id,
-      name: `${m.user?.firstName ?? ''} ${m.user?.lastName ?? ''}`.trim() || 'Mentor',
+      name:
+        `${m.user?.firstName ?? ''} ${m.user?.lastName ?? ''}`.trim() ||
+        'Mentor',
       role: m.jobTitle || m.headline || 'Mentor',
       company: m.company || 'Independent',
       location: m.location || '',
@@ -166,7 +194,9 @@ export class MentorsService {
     };
   }
 
-  async explore(query: ExploreMentorsQueryDto): Promise<PaginatedExploreMentorsResponse> {
+  async explore(
+    query: ExploreMentorsQueryDto,
+  ): Promise<PaginatedExploreMentorsResponse> {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(query.limit) || 12));
     const skip = (page - 1) * limit;
@@ -192,7 +222,11 @@ export class MentorsService {
       rawMentors.map((m: any) => m.userId),
     );
     let formatted = rawMentors.map((m: any, index: number) =>
-      this.formatMentorItem(m, index < 2, nextAvailability.get(m.userId) ?? null),
+      this.formatMentorItem(
+        m,
+        index < 2,
+        nextAvailability.get(m.userId) ?? null,
+      ),
     );
 
     // Filter by minRating if requested
@@ -205,7 +239,9 @@ export class MentorsService {
 
     // Secondary in-memory sort if sortBy === 'rating'
     if (query.sortBy === 'rating') {
-      formatted.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
+      formatted.sort(
+        (a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount,
+      );
     }
 
     return {
@@ -221,7 +257,9 @@ export class MentorsService {
 
   async getFeatured(limit = 6): Promise<ExploreMentorItem[]> {
     const featured = await this.mentorsRepository.findFeaturedMentors(limit);
-    const nextAvailability = await this.getNextAvailability(featured.map((m: any) => m.userId));
+    const nextAvailability = await this.getNextAvailability(
+      featured.map((m: any) => m.userId),
+    );
     return featured.map((m: any) =>
       this.formatMentorItem(m, true, nextAvailability.get(m.userId) ?? null),
     );
@@ -237,7 +275,11 @@ export class MentorsService {
       this.getNextAvailability([mentor.userId]),
       this.mentorsRepository.findBookableSessions(mentor.userId),
     ]);
-    const item = this.formatMentorItem(mentor, false, nextAvailability.get(mentor.userId) ?? null);
+    const item = this.formatMentorItem(
+      mentor,
+      false,
+      nextAvailability.get(mentor.userId) ?? null,
+    );
 
     // Format all review details for the profile page
     const bookings = mentor.user?.mentorBookings || [];
@@ -248,7 +290,9 @@ export class MentorsService {
         id: r.id,
         rating: r.rating,
         comment: r.comment,
-        authorName: r.author ? `${r.author.firstName} ${r.author.lastName}`.trim() : 'Anonymous',
+        authorName: r.author
+          ? `${r.author.firstName} ${r.author.lastName}`.trim()
+          : 'Anonymous',
         authorAvatar: r.author?.menteeProfile?.avatarUrl || '',
         createdAt: r.createdAt,
       }));
@@ -291,7 +335,8 @@ export class MentorsService {
   }
 
   async getMatches(userId: string) {
-    const menteeProfile = await this.mentorsRepository.findMenteeProfileByUserId(userId);
+    const menteeProfile =
+      await this.mentorsRepository.findMenteeProfileByUserId(userId);
 
     const menteeIndustry = menteeProfile?.industry ?? '';
     const menteeRole = menteeProfile?.currentRole ?? '';
@@ -332,7 +377,10 @@ export class MentorsService {
       );
     }
 
-    if (user.mentorProfile && user.mentorProfile.status === MentorStatus.APPROVED) {
+    if (
+      user.mentorProfile &&
+      user.mentorProfile.status === MentorStatus.APPROVED
+    ) {
       throw new ConflictException(
         'Your mentor application has already been approved.',
       );
@@ -350,7 +398,10 @@ export class MentorsService {
         profile,
       };
     } catch (error) {
-      this.logger.error(`Failed to apply for mentor profile (userId: ${userId})`, error);
+      this.logger.error(
+        `Failed to apply for mentor profile (userId: ${userId})`,
+        error,
+      );
       throw error;
     }
   }
@@ -359,7 +410,9 @@ export class MentorsService {
     const user = await this.mentorsRepository.findUserForOnboarding(userId);
 
     if (!user?.mentorProfile) {
-      throw new NotFoundException('Apply to become a mentor before updating your profile.');
+      throw new NotFoundException(
+        'Apply to become a mentor before updating your profile.',
+      );
     }
 
     const gender = dto.gender?.trim();
@@ -385,7 +438,9 @@ export class MentorsService {
     }
 
     const profile = await this.mentorsRepository.updateProfileByUserId(userId, {
-      ...(gender && { gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase() }),
+      ...(gender && {
+        gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase(),
+      }),
       ...(dto.location?.trim() && { location: dto.location.trim() }),
       ...(bio && { bio }),
       ...(avatarUrl && { avatarUrl }),
@@ -393,6 +448,15 @@ export class MentorsService {
       ...(tools && { tools }),
       ...(certificates && { certificates }),
     });
+    if (bio) {
+      this.contentScanner.scan({
+        contentType: 'PROFILE_TEXT',
+        contentId: userId,
+        contentField: 'Bio',
+        content: bio,
+        authorId: userId,
+      });
+    }
 
     return {
       success: true,
@@ -404,10 +468,15 @@ export class MentorsService {
   /** Trims and de-duplicates a list field; undefined leaves the saved list alone */
   private cleanList(values: string[] | undefined, label: string) {
     if (values === undefined) return undefined;
-    if (!Array.isArray(values) || values.some((value) => typeof value !== 'string')) {
+    if (
+      !Array.isArray(values) ||
+      values.some((value) => typeof value !== 'string')
+    ) {
       throw new BadRequestException(`${label} must be a list of text values.`);
     }
-    const cleaned = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+    const cleaned = [
+      ...new Set(values.map((value) => value.trim()).filter(Boolean)),
+    ];
     if (cleaned.length > MAX_PROFILE_LIST_ITEMS) {
       throw new BadRequestException(
         `${label} cannot have more than ${MAX_PROFILE_LIST_ITEMS} items.`,

@@ -12,6 +12,7 @@ import { ConfirmSessionModal } from "./modals/confirm-session-modal";
 import { PaymentConfirmationModal } from "./modals/payment-confirmation-modal";
 import { BookingSuccessModal } from "./modals/booking-success-modal";
 import { AvailableDateSlot, MentorDetailProfile, SessionPackage } from "./types";
+import { analyticsService } from "@/services/analytics";
 import { useMentor } from "@/services/mentors/queries/mentors.queries";
 import {
   useCreateBooking,
@@ -135,6 +136,7 @@ function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
       toast.error("Pick a time", { description: "Choose one of the open slots to continue." });
       return;
     }
+    analyticsService.track({ type: "BOOK_CLICK", mentorId: mentor.mentorUserId ?? mentor.id });
     setIsConfirmOpen(true);
   };
 

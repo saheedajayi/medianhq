@@ -151,7 +151,8 @@ describe('AuthService', () => {
       });
 
       // Verify 15-minute TTL
-      const upsertArgs = authRepository.upsertVerificationToken.mock.calls[0][0];
+      const upsertArgs =
+        authRepository.upsertVerificationToken.mock.calls[0][0];
       const diffMs = new Date(upsertArgs.expiresAt).getTime() - Date.now();
       expect(diffMs).toBeGreaterThan(14 * 60 * 1000);
       expect(diffMs).toBeLessThanOrEqual(15 * 60 * 1000);
@@ -159,7 +160,9 @@ describe('AuthService', () => {
       expect(emailService.sendPasswordResetEmail).toHaveBeenCalledWith({
         email: 'john@example.com',
         firstName: 'John',
-        resetLink: expect.stringContaining('https://app.medianhq.com/reset-password/'),
+        resetLink: expect.stringContaining(
+          'https://app.medianhq.com/reset-password/',
+        ),
       });
     });
 
@@ -198,7 +201,9 @@ describe('AuthService', () => {
       // 6th attempt should be blocked with 429
       await expect(
         authService.forgotPassword({ email: 'spammer@example.com' }),
-      ).rejects.toThrow('Too many password reset requests for this account. Please try again later.');
+      ).rejects.toThrow(
+        'Too many password reset requests for this account. Please try again later.',
+      );
     });
   });
 
@@ -228,7 +233,9 @@ describe('AuthService', () => {
         sessionVersion: { increment: 1 },
       });
       // Verifies single-use deletion
-      expect(authRepository.deleteVerificationToken).toHaveBeenCalledWith('token-1');
+      expect(authRepository.deleteVerificationToken).toHaveBeenCalledWith(
+        'token-1',
+      );
     });
 
     it('rejects a malformed or empty reset token', async () => {
@@ -588,7 +595,10 @@ describe('AuthService', () => {
       user.passwordHash = (authService as any).hashPassword(currentPassword);
 
       authRepository.findById.mockResolvedValue(user as any);
-      authRepository.update.mockResolvedValue({ ...user, sessionVersion: 2 } as any);
+      authRepository.update.mockResolvedValue({
+        ...user,
+        sessionVersion: 2,
+      } as any);
       emailService.sendPasswordChangedEmail.mockRejectedValue(
         new Error('Resend provider outage'),
       );
@@ -627,7 +637,10 @@ describe('AuthService', () => {
         createdAt: new Date(),
       } as any);
       authRepository.findByEmail.mockResolvedValue(user as any);
-      authRepository.update.mockResolvedValue({ ...user, sessionVersion: 2 } as any);
+      authRepository.update.mockResolvedValue({
+        ...user,
+        sessionVersion: 2,
+      } as any);
       authRepository.deleteVerificationToken.mockResolvedValue({} as any);
       emailService.sendPasswordChangedEmail.mockRejectedValue(
         new Error('Network error sending email'),
@@ -640,8 +653,9 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true);
       expect(authRepository.update).toHaveBeenCalled();
-      expect(authRepository.deleteVerificationToken).toHaveBeenCalledWith('token-1');
+      expect(authRepository.deleteVerificationToken).toHaveBeenCalledWith(
+        'token-1',
+      );
     });
   });
 });
-

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Booking, RecordingOption } from "./types";
 import { stopAllMediaTracks } from "./media-utils";
-import { useBookingRoomToken } from "@/services/bookings/queries/bookings.queries";
+import { useBookingRoomToken, useSetRecordingConsent } from "@/services/bookings/queries/bookings.queries";
 
 interface SessionLobbyProps {
   booking: Booking;
@@ -46,6 +46,7 @@ export function SessionLobby({
     useState<RecordingOption>("do_not_record");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const roomTokenMutation = useBookingRoomToken();
+  const recordingConsentMutation = useSetRecordingConsent();
   const [roomError, setRoomError] = useState<string | null>(null);
 
   // --------------------------------------------------------------------------
@@ -122,6 +123,11 @@ export function SessionLobby({
     setIsCreatingRoom(true);
     setRoomError(null);
     try {
+      // Saved first, so nothing is recorded on a choice the server never heard
+      await recordingConsentMutation.mutateAsync({
+        bookingId: booking.id,
+        consent: recordingChoice === "record",
+      });
       const { token, serverUrl } = await roomTokenMutation.mutateAsync(booking.id);
 
       // Stop preview tracks before the real room publishes its own
