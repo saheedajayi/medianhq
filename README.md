@@ -221,6 +221,9 @@ sent email and the admin's decision preview.
 - **Mentor applications:** "application received" goes when a mentor applies.
   The Founding Mentor welcome (approve) and the decline letter (reject) come from
   the founder. Feedback the admin writes when rejecting goes in the decline letter.
+  The welcome carries the Mentor Onboarding Guide as a PDF attachment, kept in
+  `apps/api/src/modules/platform/email/attachments` (the build copies it to
+  `dist`). To update the guide, replace that file under the same name.
 - **5-day onboarding series:** mentors get day 1 the day after approval; mentees
   get day 1 straight after signing up. A sweeper sends whatever fell due every 30
   minutes. Nothing is stored per email, and Resend drops a repeat within a day,

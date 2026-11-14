@@ -38,6 +38,9 @@ export function DecisionEmailCard({ application }: DecisionEmailCardProps) {
           ["From", email.from],
           ["To", application.email],
           ["Subject", email.subject],
+          ...(email.attachments.length
+            ? ([["Attachment", email.attachments.join(", ")]] as [string, string][])
+            : []),
         ]}
       />
 

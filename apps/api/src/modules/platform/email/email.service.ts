@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 import { WaitlistAudience } from '@prisma/client';
 import { buildMenteeWaitlistConfirmationTemplate } from './templates/mentee-waitlist-confirmation.template';
 import { buildMentorWaitlistConfirmationTemplate } from './templates/mentor-waitlist-confirmation.template';
@@ -38,6 +40,7 @@ type ResendEmailPayload = {
   html: string;
   text: string;
   reply_to?: string;
+  attachments?: { filename: string; content: string }[];
 };
 
 type VerificationEmailInput = {
@@ -98,6 +101,7 @@ export function letterFrom(sender: LetterSender, fallbackFrom: string) {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
+  private readonly attachmentCache = new Map<string, Promise<string>>();
 
   async sendWaitlistConfirmation(input: WaitlistConfirmationInput) {
     const apiKey = process.env.RESEND_API_KEY;
@@ -261,6 +265,7 @@ export class EmailService {
           : undefined,
     });
     const replyTo = process.env.EMAIL_REPLY_TO;
+    const attachments = await this.loadAttachments(input.letter);
 
     await this.sendEmail(
       {
@@ -270,9 +275,45 @@ export class EmailService {
         html: template.html,
         text: template.text,
         ...(replyTo ? { reply_to: replyTo } : {}),
+        ...(attachments.length ? { attachments } : {}),
       },
       input.idempotencyKey,
     );
+  }
+
+  /** A missing file is logged and left off, so the email itself still goes */
+  private async loadAttachments(letter: Letter) {
+    const loaded = await Promise.all(
+      (letter.attachments ?? []).map(async (attachment) => {
+        try {
+          return {
+            filename: attachment.filename,
+            content: await this.readAttachment(attachment.file),
+          };
+        } catch (error) {
+          this.logger.error(
+            `Couldn't attach ${attachment.file} to "${letter.subject}"`,
+            error,
+          );
+          return null;
+        }
+      }),
+    );
+    return loaded.filter((attachment) => attachment !== null);
+  }
+
+  /** Base64 of a file in ./attachments, read once; the build copies these next to this file */
+  private readAttachment(file: string) {
+    let content = this.attachmentCache.get(file);
+    if (!content) {
+      content = readFile(join(__dirname, 'attachments', file)).then((data) =>
+        data.toString('base64'),
+      );
+      // A failed read is retried on the next email rather than cached
+      content.catch(() => this.attachmentCache.delete(file));
+      this.attachmentCache.set(file, content);
+    }
+    return content;
   }
 
   /**
