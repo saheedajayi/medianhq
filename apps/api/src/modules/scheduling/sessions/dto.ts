@@ -8,5 +8,12 @@ export type CreateMentorSessionDto = {
   maxCapacity?: number;
   flyerUrl?: string;
 };
-export type UpdateMentorSessionDto = Partial<CreateMentorSessionDto> & { isLive?: boolean };
-export type AvailabilityDto = { dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean };
+export type UpdateMentorSessionDto = Partial<CreateMentorSessionDto> & {
+  isLive?: boolean;
+};
+export type AvailabilityDto = {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive?: boolean;
+};

@@ -1,5 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { AdminGuard } from '../identity/auth/guards/admin.guard';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import type { CreateWaitlistEntryDto } from './dto/create-waitlist-entry.dto';
 import { WaitlistService } from './waitlist.service';
 
@@ -10,16 +9,6 @@ export class WaitlistController {
   @Get('stats')
   getStats() {
     return this.waitlistService.getStats();
-  }
-
-  // Entries hold names and emails, so only the backoffice can list them
-  @Get('entries')
-  @UseGuards(AdminGuard)
-  getEntries(@Query('page') page = '1', @Query('limit') limit = '20') {
-    return this.waitlistService.getDashboard({
-      page: Number(page),
-      limit: Number(limit),
-    });
   }
 
   @Post()

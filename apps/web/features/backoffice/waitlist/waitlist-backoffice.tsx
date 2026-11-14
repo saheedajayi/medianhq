@@ -26,87 +26,14 @@ import {
   CardTitle,
 } from "@/components/ui/base/card";
 import { verifyBackofficeAccessKey } from "@/features/backoffice/actions";
-import { MentorApplications } from "@/features/backoffice/mentors/mentor-applications";
 import { useBackofficeStore } from "@/features/backoffice/store";
-
-type WaitlistAudience = "MENTEE" | "MENTOR";
-
-type WaitlistEntry = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  audience: WaitlistAudience;
-  location: string | null;
-  expertise: string | null;
-  currentRole: string;
-  company: string | null;
-  levelOfExperience: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type WaitlistPagination = {
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-};
-
-type WaitlistDashboard = {
-  summary: {
-    total: number;
-    mentees: number;
-    mentors: number;
-    latestSignupAt: string | null;
-  };
-  pagination: WaitlistPagination;
-  entries: WaitlistEntry[];
-};
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  message?: string;
-  data?: T;
-};
-
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
-  .replace(/\/$/, "");
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
-const PAGE_SIZE = 20;
-
-async function getWaitlistDashboard(
-  page: number,
-  accessKey: string,
-  signal?: AbortSignal,
-): Promise<WaitlistDashboard> {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(PAGE_SIZE),
-  });
-  const response = await fetch(
-    `${API_BASE_URL}/api/${API_VERSION}/waitlist/entries?${params}`,
-    {
-      cache: "no-store",
-      headers: { "x-backoffice-key": accessKey },
-      signal,
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Unable to load waitlist data.");
-  }
-
-  const payload = (await response.json()) as ApiEnvelope<WaitlistDashboard>;
-
-  if (!payload.success || !payload.data) {
-    throw new Error(payload.message ?? "Unable to load waitlist data.");
-  }
-
-  return payload.data;
-}
+import {
+  backofficeWaitlistService,
+  type WaitlistAudience,
+  type WaitlistDashboard,
+  type WaitlistEntry,
+  type WaitlistPagination,
+} from "@/services/backoffice/waitlist";
 
 const formatDate = (value: string | null) => {
   if (!value) {
@@ -396,7 +323,7 @@ export default function BackofficePage() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    getWaitlistDashboard(page, accessKey, abortController.signal)
+    backofficeWaitlistService.getDashboard(page, accessKey, abortController.signal)
       .then((data) => {
         setDashboard(data);
         if (data.pagination.page !== page) {
@@ -540,8 +467,6 @@ export default function BackofficePage() {
 
   return (
     <BackofficeShell>
-      {accessKey && <MentorApplications accessKey={accessKey} />}
-
       <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total signups"
