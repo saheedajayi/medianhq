@@ -15,7 +15,9 @@ describe('SessionsService.stats', () => {
         ]),
       },
       mentorEarning: {
-        aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 9000 }, _count: 2 }),
+        aggregate: jest
+          .fn()
+          .mockResolvedValue({ _sum: { amount: 9000 }, _count: 2 }),
       },
     };
     return { prisma, service: new SessionsService(prisma as never) };
@@ -50,37 +52,54 @@ describe('SessionsService.stats', () => {
 
   it("refuses another mentor's session", async () => {
     const { service } = setup(null);
-    await expect(service.stats(user, 'other')).rejects.toThrow(NotFoundException);
+    await expect(service.stats(user, 'other')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('shows zero earnings when there are none', async () => {
     const { prisma, service } = setup({ id: 's1' });
-    prisma.mentorEarning.aggregate.mockResolvedValue({ _sum: { amount: null }, _count: 0 });
+    prisma.mentorEarning.aggregate.mockResolvedValue({
+      _sum: { amount: null },
+      _count: 0,
+    });
 
-    await expect(service.stats(user, 's1')).resolves.toMatchObject({ earnings: 0, paidSessions: 0 });
+    await expect(service.stats(user, 's1')).resolves.toMatchObject({
+      earnings: 0,
+      paidSessions: 0,
+    });
   });
 });
 
 describe('SessionsService approval rule', () => {
-  const dto = { title: 'CV review', description: 'Review', durationMinutes: 30 };
+  const dto = {
+    title: 'CV review',
+    description: 'Review',
+    durationMinutes: 30,
+  };
   const setup = () => {
     const prisma = {
       mentorSession: {
         create: jest.fn().mockResolvedValue({ id: 's1' }),
         update: jest.fn().mockResolvedValue({ id: 's1' }),
-        findFirst: jest.fn().mockResolvedValue({ id: 's1', price: 0, currency: 'NGN' }),
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({ id: 's1', price: 0, currency: 'NGN' }),
       },
     };
     return { prisma, service: new SessionsService(prisma as never) };
   };
-  const mentor = (mentorStatus: string) => ({ id: 'm1', role: 'MENTOR', mentorStatus }) as never;
+  const mentor = (mentorStatus: string) =>
+    ({ id: 'm1', role: 'MENTOR', mentorStatus }) as never;
 
   it.each(['PENDING_REVIEW', 'REJECTED', 'DRAFT', undefined])(
     'refuses to create a session when the application is %s',
     async (status) => {
       const { prisma, service } = setup();
 
-      await expect(service.create(mentor(status as string), dto)).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.create(mentor(status as string), dto),
+      ).rejects.toThrow(ForbiddenException);
       expect(prisma.mentorSession.create).not.toHaveBeenCalled();
     },
   );
@@ -95,7 +114,9 @@ describe('SessionsService approval rule', () => {
   it('refuses to put a session live before approval', async () => {
     const { prisma, service } = setup();
 
-    await expect(service.update(mentor('PENDING_REVIEW'), 's1', { isLive: true })).rejects.toThrow(ForbiddenException);
+    await expect(
+      service.update(mentor('PENDING_REVIEW'), 's1', { isLive: true }),
+    ).rejects.toThrow(ForbiddenException);
     expect(prisma.mentorSession.update).not.toHaveBeenCalled();
   });
 

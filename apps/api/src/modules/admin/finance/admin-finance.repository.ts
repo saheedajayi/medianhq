@@ -25,7 +25,12 @@ const REFUND_SELECT = {
   amount: true,
   refundAmount: true,
   refundStatus: true,
+  refundReference: true,
   refundedAt: true,
+  refundNote: true,
+  refundNoteAt: true,
+  refundNoteBy: true,
+  refundInfoRequestedAt: true,
   updatedAt: true,
   booking: {
     select: {
@@ -35,6 +40,7 @@ const REFUND_SELECT = {
       mentee: {
         select: {
           ...PERSON_NAME_SELECT,
+          email: true,
           menteeProfile: { select: { avatarUrl: true } },
         },
       },
@@ -165,6 +171,21 @@ export class AdminFinanceRepository {
       });
     }
     return { AND: and };
+  }
+
+  findRefundById(paymentId: string) {
+    return this.prisma.payment.findFirst({
+      where: { id: paymentId, refundStatus: { not: null } },
+      select: REFUND_SELECT,
+    });
+  }
+
+  updateRefund(paymentId: string, data: Prisma.PaymentUpdateInput) {
+    return this.prisma.payment.update({
+      where: { id: paymentId },
+      data,
+      select: REFUND_SELECT,
+    });
   }
 
   findRefunds(where: Prisma.PaymentWhereInput, skip?: number, take?: number) {

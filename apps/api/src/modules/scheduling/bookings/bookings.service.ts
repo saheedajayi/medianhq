@@ -33,6 +33,7 @@ import {
   getEndsAt,
   getRespondBy,
   isLateCancellation,
+  sessionRoomName,
 } from './booking-policy';
 
 export type ExtendedCreateBookingDto = CreateBookingDto & {
@@ -206,7 +207,9 @@ export class BookingsService {
 
     const isFree = price <= 0;
     // Checkout is in NGN, so the charge is fixed now and every later step uses it
-    const charge = isFree ? null : await this.exchangeRates.convertToNgn(price, currency);
+    const charge = isFree
+      ? null
+      : await this.exchangeRates.convertToNgn(price, currency);
     let notes = dto.notes?.trim() || '';
     if (dto.goals && dto.goals.length > 0) {
       notes = `${notes} (Goals: ${dto.goals.join(', ')})`.trim();
@@ -329,7 +332,7 @@ export class BookingsService {
     const participantName =
       `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
       (isMentor ? 'Mentor' : 'Mentee');
-    const roomName = `median-session-${booking.id}`;
+    const roomName = sessionRoomName(booking.id);
 
     const at = new AccessToken(key, secret, {
       identity: user.id,

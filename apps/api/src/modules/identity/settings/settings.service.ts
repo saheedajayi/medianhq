@@ -6,13 +6,17 @@ import {
 } from '@nestjs/common';
 import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
+import { ContentScannerService } from '../../platform/moderation/content-scanner.service';
 import type { AuthUser } from '../auth/dto/auth.dto';
 
 export type UpdateSettingsDto = {
   emailNotifications?: boolean;
   marketingEmails?: boolean;
   timezone?: string;
-  notificationPreferences?: Record<string, { email?: boolean; inApp?: boolean }>;
+  notificationPreferences?: Record<
+    string,
+    { email?: boolean; inApp?: boolean }
+  >;
 };
 
 export type UpdateProfileDto = {
@@ -73,7 +77,10 @@ const CAREER_ORDER = [
 
 @Injectable()
 export class SettingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contentScanner: ContentScannerService,
+  ) {}
 
   async getMySettings(user: AuthUser) {
     const settings = await this.prisma.userSettings.upsert({
@@ -116,8 +123,12 @@ export class SettingsService {
         timezone: dto.timezone ?? 'Africa/Lagos',
       },
       update: {
-        ...(dto.emailNotifications !== undefined && { emailNotifications: dto.emailNotifications }),
-        ...(dto.marketingEmails !== undefined && { marketingEmails: dto.marketingEmails }),
+        ...(dto.emailNotifications !== undefined && {
+          emailNotifications: dto.emailNotifications,
+        }),
+        ...(dto.marketingEmails !== undefined && {
+          marketingEmails: dto.marketingEmails,
+        }),
         ...(dto.timezone !== undefined && { timezone: dto.timezone }),
         ...(dto.notificationPreferences !== undefined && {
           notificationPreferences: await this.mergeNotificationPreferences(
@@ -169,14 +180,27 @@ export class SettingsService {
         ...(lastName && { lastName }),
         menteeProfile: {
           update: {
-            ...(gender && { gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase() }),
-            ...(dto.location !== undefined && { location: dto.location.trim() || null }),
+            ...(gender && {
+              gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase(),
+            }),
+            ...(dto.location !== undefined && {
+              location: dto.location.trim() || null,
+            }),
             ...(dto.bio !== undefined && { bio: bio || null }),
             ...(avatarUrl && { avatarUrl }),
           },
         },
       },
     });
+    if (bio) {
+      this.contentScanner.scan({
+        contentType: 'PROFILE_TEXT',
+        contentId: user.id,
+        contentField: 'Bio',
+        content: bio,
+        authorId: user.id,
+      });
+    }
 
     return { success: true };
   }
@@ -205,7 +229,9 @@ export class SettingsService {
 
   async updateExperience(user: AuthUser, id: string, dto: WorkExperienceDto) {
     this.ensureMentee(user);
-    await this.assertOwned(this.prisma.workExperience.findFirst({ where: { id, userId: user.id } }));
+    await this.assertOwned(
+      this.prisma.workExperience.findFirst({ where: { id, userId: user.id } }),
+    );
     return this.prisma.workExperience.update({
       where: { id },
       data: this.cleanExperience(dto),
@@ -214,7 +240,9 @@ export class SettingsService {
 
   async deleteExperience(user: AuthUser, id: string) {
     this.ensureMentee(user);
-    await this.prisma.workExperience.deleteMany({ where: { id, userId: user.id } });
+    await this.prisma.workExperience.deleteMany({
+      where: { id, userId: user.id },
+    });
     return { success: true };
   }
 
@@ -227,7 +255,9 @@ export class SettingsService {
 
   async updateEducation(user: AuthUser, id: string, dto: EducationDto) {
     this.ensureMentee(user);
-    await this.assertOwned(this.prisma.education.findFirst({ where: { id, userId: user.id } }));
+    await this.assertOwned(
+      this.prisma.education.findFirst({ where: { id, userId: user.id } }),
+    );
     return this.prisma.education.update({
       where: { id },
       data: this.cleanEducation(dto),
@@ -254,7 +284,9 @@ export class SettingsService {
 
     const custom = dto.links ?? [];
     if (custom.length > MAX_CUSTOM_LINKS) {
-      throw new BadRequestException(`You can add up to ${MAX_CUSTOM_LINKS} extra links.`);
+      throw new BadRequestException(
+        `You can add up to ${MAX_CUSTOM_LINKS} extra links.`,
+      );
     }
     const rows = [
       { kind: 'LINKEDIN', title: null, url: this.cleanUrl(dto.linkedinUrl) },
@@ -294,7 +326,9 @@ export class SettingsService {
       where: { userId },
       select: { notificationPreferences: true },
     });
-    const merged = { ...((current?.notificationPreferences ?? {}) as Record<string, object>) };
+    const merged = {
+      ...((current?.notificationPreferences ?? {}) as Record<string, object>),
+    };
 
     for (const [type, value] of Object.entries(updates)) {
       if (!NOTIFICATION_TYPES.includes(type)) {
@@ -312,21 +346,29 @@ export class SettingsService {
   private cleanDates(dto: CareerDates) {
     const isCurrent = !!dto.isCurrent;
     const validMonth = (month: unknown) =>
-      Number.isInteger(month) && (month as number) >= 1 && (month as number) <= 12;
+      Number.isInteger(month) &&
+      (month as number) >= 1 &&
+      (month as number) <= 12;
     const validYear = (year: unknown) =>
-      Number.isInteger(year) && (year as number) >= 1950 && (year as number) <= 2100;
+      Number.isInteger(year) &&
+      (year as number) >= 1950 &&
+      (year as number) <= 2100;
 
     if (!validMonth(dto.startMonth) || !validYear(dto.startYear)) {
       throw new BadRequestException('Start date is required.');
     }
     if (!isCurrent && (!validMonth(dto.endMonth) || !validYear(dto.endYear))) {
-      throw new BadRequestException('End date is required unless this is your present position.');
+      throw new BadRequestException(
+        'End date is required unless this is your present position.',
+      );
     }
     if (
       !isCurrent &&
       dto.endYear! * 12 + dto.endMonth! < dto.startYear * 12 + dto.startMonth
     ) {
-      throw new BadRequestException('End date cannot be before the start date.');
+      throw new BadRequestException(
+        'End date cannot be before the start date.',
+      );
     }
 
     return {
@@ -368,11 +410,19 @@ export class SettingsService {
   private cleanList(values: string[] | undefined, label: string) {
     const list = Array.isArray(values) ? values : [];
     const cleaned = [
-      ...new Set(list.filter((v) => typeof v === 'string').map((v) => v.trim()).filter(Boolean)),
+      ...new Set(
+        list
+          .filter((v) => typeof v === 'string')
+          .map((v) => v.trim())
+          .filter(Boolean),
+      ),
     ];
-    if (cleaned.length === 0) throw new BadRequestException(`Add at least one item to ${label}.`);
+    if (cleaned.length === 0)
+      throw new BadRequestException(`Add at least one item to ${label}.`);
     if (cleaned.length > MAX_LIST_ITEMS) {
-      throw new BadRequestException(`${label} cannot have more than ${MAX_LIST_ITEMS} items.`);
+      throw new BadRequestException(
+        `${label} cannot have more than ${MAX_LIST_ITEMS} items.`,
+      );
     }
     return cleaned;
   }
@@ -384,10 +434,14 @@ export class SettingsService {
     try {
       parsed = new URL(url);
     } catch {
-      throw new BadRequestException(`"${url}" isn't a valid link. Include https://.`);
+      throw new BadRequestException(
+        `"${url}" isn't a valid link. Include https://.`,
+      );
     }
     if (!['http:', 'https:'].includes(parsed.protocol)) {
-      throw new BadRequestException(`"${url}" isn't a valid link. Include https://.`);
+      throw new BadRequestException(
+        `"${url}" isn't a valid link. Include https://.`,
+      );
     }
     return url;
   }

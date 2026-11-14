@@ -1,5 +1,19 @@
 import { AdminFinanceService } from '../../../../../src/modules/admin/finance/admin-finance.service';
 
+const payouts = {
+  bankNames: jest.fn().mockResolvedValue(new Map([['058', 'GTBank']])),
+};
+
+/** The service with stubs for everything but the repository under test */
+const financeService = (repository: unknown) =>
+  new AdminFinanceService(
+    repository as never,
+    {} as never,
+    payouts as never,
+    {} as never,
+    {} as never,
+  );
+
 describe('AdminFinanceService', () => {
   const now = new Date('2026-10-07T09:42:00.000Z');
   const payment = (amount: number, createdAt: string, type = 'ONE_ON_ONE') => ({
@@ -17,7 +31,7 @@ describe('AdminFinanceService', () => {
         payment(15000, '2026-09-29T08:00:00.000Z'),
       ]),
     };
-    const service = new AdminFinanceService(repository as never);
+    const service = financeService(repository);
 
     const revenue = await service.getRevenue({ period: 'daily' }, now);
 
@@ -72,7 +86,7 @@ describe('AdminFinanceService', () => {
       ]),
       findPayoutAmounts: jest.fn().mockResolvedValue([]),
     };
-    const service = new AdminFinanceService(repository as never);
+    const service = financeService(repository);
 
     const payouts = await service.getPayouts({ status: 'PENDING' }, now);
 
@@ -122,7 +136,7 @@ describe('AdminFinanceService', () => {
         ]),
       findRefundStatuses: jest.fn().mockResolvedValue([]),
     };
-    const service = new AdminFinanceService(repository as never);
+    const service = financeService(repository);
 
     const refunds = await service.getRefunds({}, now);
 
@@ -132,5 +146,92 @@ describe('AdminFinanceService', () => {
     ]);
     expect(refunds.stats.completed.count).toBe(2);
     expect(refunds.stats.failed.count).toBe(0);
+  });
+});
+
+describe('AdminFinanceService refund actions', () => {
+  const refund = (
+    refundStatus: string,
+    refundReference: string | null = null,
+  ) => ({
+    id: 'pay-1',
+    amount: 25000,
+    refundAmount: 25000,
+    refundStatus,
+    refundReference,
+    refundedAt: null,
+    refundNote: null,
+    refundNoteAt: null,
+    refundNoteBy: null,
+    refundInfoRequestedAt: null,
+    updatedAt: new Date('2026-11-14T08:00:00.000Z'),
+    booking: {
+      id: 'bk-1',
+      status: 'CANCELLED',
+      cancellationReason: null,
+      mentee: {
+        id: 'e1',
+        firstName: 'Aisha',
+        lastName: 'Bello',
+        email: 'aisha@example.com',
+        menteeProfile: null,
+      },
+    },
+  });
+
+  const setup = (status: string, reference: string | null = null) => {
+    const repository = {
+      findRefundById: jest.fn().mockResolvedValue(refund(status, reference)),
+      updateRefund: jest
+        .fn()
+        .mockImplementation((_id: string, data: { refundStatus?: string }) =>
+          Promise.resolve(refund(data.refundStatus ?? status, reference)),
+        ),
+    };
+    const payments = {
+      refund: jest.fn().mockResolvedValue(25000),
+      syncRefund: jest.fn().mockResolvedValue(undefined),
+    };
+    const email = { sendBookingUpdate: jest.fn().mockResolvedValue(undefined) };
+    const audit = { record: jest.fn().mockResolvedValue(undefined) };
+    const service = new AdminFinanceService(
+      repository as never,
+      payments as never,
+      {} as never,
+      email as never,
+      audit as never,
+    );
+    return { repository, payments, email, service };
+  };
+
+  it('retries a failed refund through Paystack', async () => {
+    const { payments, service } = setup('FAILED');
+
+    await service.approveRefund('pay-1');
+
+    expect(payments.refund).toHaveBeenCalledWith('bk-1', 25000);
+  });
+
+  it('re-checks a pending refund instead of sending another', async () => {
+    const { payments, service } = setup('PENDING', 'ref-9');
+
+    await service.approveRefund('pay-1');
+
+    expect(payments.refund).not.toHaveBeenCalled();
+    expect(payments.syncRefund).toHaveBeenCalledWith('ref-9');
+  });
+
+  it('only rejects a failed refund, and tells the mentee', async () => {
+    const completed = setup('PROCESSED');
+    await expect(completed.service.rejectRefund('pay-1', 'x')).rejects.toThrow(
+      'Only a failed refund can be rejected.',
+    );
+
+    const failed = setup('FAILED');
+    const rejected = await failed.service.rejectRefund('pay-1', 'Card closed');
+    expect(rejected.status).toBe('REJECTED');
+    expect(failed.email.sendBookingUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'aisha@example.com' }),
+    );
   });
 });

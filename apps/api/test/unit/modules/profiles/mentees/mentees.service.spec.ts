@@ -15,7 +15,10 @@ describe('MenteesService', () => {
       updateProfileByUserId: jest.fn(),
     };
 
-    service = new MenteesService(repository as unknown as MenteesRepository);
+    service = new MenteesService(
+      repository as unknown as MenteesRepository,
+      { scan: jest.fn() } as never,
+    );
   });
 
   const validDto: CreateMenteeProfileDto = {
@@ -121,4 +124,3 @@ describe('MenteesService', () => {
     );
   });
 });
-

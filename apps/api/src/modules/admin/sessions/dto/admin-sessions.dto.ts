@@ -56,8 +56,26 @@ export interface NoShowTrackerQueryDto {
   page?: number | string;
 }
 
+export type RecordingConsent = 'BOTH' | 'MENTOR' | 'MENTEE';
+
 export interface RecordingsQueryDto {
+  search?: string;
+  range?: string;
+  mentorId?: string;
+  menteeId?: string;
+  type?: string;
+  consent?: string;
   page?: number | string;
+}
+
+export interface RecordingsFilters {
+  search?: string;
+  range?: '7d' | '30d' | '90d';
+  mentorId?: string;
+  menteeId?: string;
+  type?: string;
+  /** Who still agrees to the recording being kept */
+  consent?: RecordingConsent;
 }
 
 export interface SessionsCalendarQueryDto {

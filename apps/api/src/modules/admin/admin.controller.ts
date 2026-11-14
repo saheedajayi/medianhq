@@ -9,12 +9,14 @@ import {
 } from '@nestjs/common';
 import { MentorStatus } from '@prisma/client';
 import { CurrentUser } from '../identity/auth/decorators/current-user.decorator';
+import { AdminSectionAccess } from '../identity/auth/decorators/admin-section.decorator';
 import { AdminGuard } from '../identity/auth/guards/admin.guard';
 import type { AdminActor } from './common/admin-actor';
 import { AdminService } from './admin.service';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
+@AdminSectionAccess('applications')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

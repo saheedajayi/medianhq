@@ -25,11 +25,16 @@ describe('MentorsService', () => {
       findExploreMentors: jest.fn(),
       countExploreMentors: jest.fn(),
       findFeaturedMentors: jest.fn(),
-      findAvailabilityContext: jest.fn().mockResolvedValue({ windows: [], bookings: [] }),
+      findAvailabilityContext: jest
+        .fn()
+        .mockResolvedValue({ windows: [], bookings: [] }),
       findBookableSessions: jest.fn().mockResolvedValue([]),
     };
 
-    service = new MentorsService(repository as unknown as MentorsRepository);
+    service = new MentorsService(
+      repository as unknown as MentorsRepository,
+      { scan: jest.fn() } as never,
+    );
   });
 
   describe('apply', () => {
@@ -70,7 +75,10 @@ describe('MentorsService', () => {
       const result = await service.apply('user-1', validDto);
 
       expect(repository.findUserForOnboarding).toHaveBeenCalledWith('user-1');
-      expect(repository.upsertProfileByUserId).toHaveBeenCalledWith('user-1', validDto);
+      expect(repository.upsertProfileByUserId).toHaveBeenCalledWith(
+        'user-1',
+        validDto,
+      );
       expect(result).toEqual({
         success: true,
         message: 'Application submitted successfully',
@@ -160,7 +168,10 @@ describe('MentorsService', () => {
       const result = await service.getMatches('user-1');
 
       expect(result).toEqual({ data: [] });
-      expect(repository.findApprovedMatches).toHaveBeenCalledWith('Finance', 'Analyst');
+      expect(repository.findApprovedMatches).toHaveBeenCalledWith(
+        'Finance',
+        'Analyst',
+      );
     });
 
     it('should map matches correctly and format match percentage', async () => {
@@ -252,7 +263,9 @@ describe('MentorsService', () => {
         },
       ];
 
-      repository.buildExploreWhereClause.mockReturnValue({ status: 'APPROVED' });
+      repository.buildExploreWhereClause.mockReturnValue({
+        status: 'APPROVED',
+      });
       repository.findExploreMentors.mockResolvedValue(mockMentors);
       repository.countExploreMentors.mockResolvedValue(1);
 
@@ -368,11 +381,13 @@ describe('MentorsService', () => {
     });
 
     it('should throw NotFoundException if the user has no mentor profile', async () => {
-      repository.findUserForOnboarding.mockResolvedValue({ mentorProfile: null });
+      repository.findUserForOnboarding.mockResolvedValue({
+        mentorProfile: null,
+      });
 
-      await expect(service.updateProfile('user-1', { gender: 'Male' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.updateProfile('user-1', { gender: 'Male' }),
+      ).rejects.toThrow(NotFoundException);
       expect(repository.updateProfileByUserId).not.toHaveBeenCalled();
     });
 
@@ -381,9 +396,9 @@ describe('MentorsService', () => {
         mentorProfile: { id: 'mentor-1', status: MentorStatus.APPROVED },
       });
 
-      await expect(service.updateProfile('user-1', { gender: 'other' })).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.updateProfile('user-1', { gender: 'other' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject a non-https profile picture URL', async () => {

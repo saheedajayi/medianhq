@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { TaxonomyRepository } from './taxonomy.repository';
 
-const ALLOWED_INDUSTRIES = new Set(['Finance', 'Technology', 'Business', 'Consulting']);
+const ALLOWED_INDUSTRIES = new Set([
+  'Finance',
+  'Technology',
+  'Business',
+  'Consulting',
+]);
 
 const DEFAULT_BUSINESS_ROLES = [
   'Business Analyst',
@@ -19,8 +24,9 @@ export class TaxonomyService {
   constructor(private readonly taxonomyRepository: TaxonomyRepository) {}
 
   async getIndustries() {
-    const industries = await this.taxonomyRepository.findAllIndustriesWithRoles();
-    
+    const industries =
+      await this.taxonomyRepository.findAllIndustriesWithRoles();
+
     // Filter dictionary to only include Finance, Technology, Business, Consulting
     const result: Record<string, string[]> = {
       Finance: [],
@@ -32,20 +38,20 @@ export class TaxonomyService {
     for (const ind of industries) {
       if (ALLOWED_INDUSTRIES.has(ind.name)) {
         const roles = ind.roles.map((r: { name: string }) => r.name).sort();
-        result[ind.name] = roles.length > 0 ? roles : (result[ind.name] || []);
+        result[ind.name] = roles.length > 0 ? roles : result[ind.name] || [];
       }
     }
-    
+
     return { data: result };
   }
 
   async createIndustry(name: string) {
     const existing = await this.taxonomyRepository.findIndustryByName(name);
-    
+
     if (existing) {
       return existing; // Idempotent
     }
-    
+
     return this.taxonomyRepository.createIndustry(name);
   }
 
@@ -58,7 +64,10 @@ export class TaxonomyService {
     } catch (error: any) {
       if (error.code === 'P2002') {
         // Already exists
-        return this.taxonomyRepository.findRoleByNameAndIndustry(roleName, industry.id);
+        return this.taxonomyRepository.findRoleByNameAndIndustry(
+          roleName,
+          industry.id,
+        );
       }
       throw error;
     }

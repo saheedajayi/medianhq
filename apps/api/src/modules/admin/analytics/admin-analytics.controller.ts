@@ -1,10 +1,12 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { AdminSectionAccess } from '../../identity/auth/decorators/admin-section.decorator';
 import { AdminGuard } from '../../identity/auth/guards/admin.guard';
 import { AdminAnalyticsService } from './admin-analytics.service';
 import type { VisitorsQueryDto } from './dto/admin-analytics.dto';
 
 @Controller('admin/analytics')
 @UseGuards(AdminGuard)
+@AdminSectionAccess('analytics')
 export class AdminAnalyticsController {
   constructor(private readonly analyticsService: AdminAnalyticsService) {}
 

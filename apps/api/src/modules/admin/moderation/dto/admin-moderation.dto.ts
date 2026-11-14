@@ -92,3 +92,15 @@ export interface ModerationHistoryQueryDto {
 export interface TakeFlagActionDto {
   action?: string;
 }
+
+export interface AddBlockedTermDto {
+  term?: string;
+  reason?: string;
+}
+
+export interface BlockedTermItem {
+  id: string;
+  term: string;
+  reason: string;
+  createdAt: Date;
+}

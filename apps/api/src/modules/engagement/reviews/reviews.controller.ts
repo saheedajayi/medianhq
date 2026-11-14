@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import type { CreateReviewDto } from './dto/create-review.dto';
 import { ReviewsService } from './reviews.service';
 import { AuthGuard } from '../../identity/auth/guards/auth.guard';

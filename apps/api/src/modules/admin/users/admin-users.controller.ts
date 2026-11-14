@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../../identity/auth/decorators/current-user.decorator';
+import { AdminSectionAccess } from '../../identity/auth/decorators/admin-section.decorator';
 import { AdminGuard } from '../../identity/auth/guards/admin.guard';
 import type { AdminActor } from '../common/admin-actor';
 import { AdminUsersService } from './admin-users.service';
@@ -19,6 +20,7 @@ import type {
 
 @Controller('admin/users')
 @UseGuards(AdminGuard)
+@AdminSectionAccess('users')
 export class AdminUsersController {
   constructor(private readonly usersService: AdminUsersService) {}
 

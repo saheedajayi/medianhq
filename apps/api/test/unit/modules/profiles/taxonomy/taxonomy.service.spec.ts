@@ -26,7 +26,15 @@ describe('TaxonomyService', () => {
           name: 'Finance',
           createdAt: new Date(),
           updatedAt: new Date(),
-          roles: [{ id: 'r-1', name: 'Financial Analyst', industryId: 'ind-1', createdAt: new Date(), updatedAt: new Date() }],
+          roles: [
+            {
+              id: 'r-1',
+              name: 'Financial Analyst',
+              industryId: 'ind-1',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
         },
         {
           id: 'ind-2',
@@ -40,13 +48,26 @@ describe('TaxonomyService', () => {
           name: 'Technology',
           createdAt: new Date(),
           updatedAt: new Date(),
-          roles: [{ id: 'r-2', name: 'Software Engineer', industryId: 'ind-3', createdAt: new Date(), updatedAt: new Date() }],
+          roles: [
+            {
+              id: 'r-2',
+              name: 'Software Engineer',
+              industryId: 'ind-3',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
         },
       ]);
 
       const res = await service.getIndustries();
 
-      expect(Object.keys(res.data)).toEqual(['Finance', 'Technology', 'Business', 'Consulting']);
+      expect(Object.keys(res.data)).toEqual([
+        'Finance',
+        'Technology',
+        'Business',
+        'Consulting',
+      ]);
       expect(res.data.Finance).toEqual(['Financial Analyst']);
       expect(res.data.Technology).toEqual(['Software Engineer']);
       expect(res.data.Business).toContain('Business Analyst');
@@ -58,7 +79,12 @@ describe('TaxonomyService', () => {
 
       const res = await service.getIndustries();
 
-      expect(Object.keys(res.data)).toEqual(['Finance', 'Technology', 'Business', 'Consulting']);
+      expect(Object.keys(res.data)).toEqual([
+        'Finance',
+        'Technology',
+        'Business',
+        'Consulting',
+      ]);
       expect(res.data.Business).toContain('Business Analyst');
     });
   });
