@@ -1,5 +1,13 @@
 import { AdminRole } from '@prisma/client';
 
+/** Every admin account must use a Median address */
+export const ADMIN_EMAIL_DOMAIN = 'medianhq.co';
+export const ADMIN_EMAIL_MESSAGE = `Admins must use an @${ADMIN_EMAIL_DOMAIN} email address.`;
+
+/** Only the exact domain counts; lookalikes such as medianhq.co.evil.com or sub.medianhq.co don't */
+export const isAdminEmail = (email: string | null | undefined) =>
+  !!email && email.trim().toLowerCase().endsWith(`@${ADMIN_EMAIL_DOMAIN}`);
+
 export const ADMIN_SECTIONS = [
   'overview',
   'users',

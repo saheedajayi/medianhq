@@ -8,14 +8,19 @@ import { Reflector } from '@nestjs/core';
 import { UserRole } from '@prisma/client';
 import { timingSafeEqual } from 'crypto';
 import type { Request } from 'express';
-import { canAccessSection, type AdminSection } from '../admin-access';
+import {
+  ADMIN_EMAIL_MESSAGE,
+  canAccessSection,
+  isAdminEmail,
+  type AdminSection,
+} from '../admin-access';
 import { AuthService } from '../auth.service';
 import { ADMIN_SECTION_KEY } from '../decorators/admin-section.decorator';
 
 const BACKOFFICE_KEY_HEADER = 'x-backoffice-key';
 
 /**
- * Allows a signed-in ADMIN, or the backoffice, which has no user accounts and
+ * Allows a signed-in ADMIN with a Median email address, or the backoffice, which has no user accounts and
  * sends the shared BACKOFFICE_ACCESS_KEY in the x-backoffice-key header.
  * Where a controller names its admin section, the admin's type must allow it:
  * reading for GET requests, changing for anything else.
@@ -44,6 +49,9 @@ export class AdminGuard implements CanActivate {
     const user = await this.authService.getCurrentUser(token);
     if (user.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Admin access required.');
+    }
+    if (!isAdminEmail(user.email)) {
+      throw new ForbiddenException(ADMIN_EMAIL_MESSAGE);
     }
 
     const section = this.reflector.getAllAndOverride<AdminSection | undefined>(
