@@ -7,6 +7,10 @@ import {
 import type { AdminInvite, AdminRole } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import type { Response } from 'express';
+import {
+  ADMIN_EMAIL_MESSAGE,
+  isAdminEmail,
+} from '../../identity/auth/admin-access';
 import { AuthService } from '../../identity/auth/auth.service';
 import {
   SecurityAuditService,
@@ -89,6 +93,10 @@ export class AdminInvitesService {
   /** Sends a new link with a fresh expiry; the old link stops working */
   async resend(inviteId: string, actor?: AdminActor, now = new Date()) {
     const existing = await this.findUnused(inviteId);
+    // Invites sent before the domain rule can't be resent; send a new one instead
+    if (!isAdminEmail(existing.email)) {
+      throw new BadRequestException(ADMIN_EMAIL_MESSAGE);
+    }
     const token = this.newToken();
     const invite = await this.invitesRepository.replaceToken(
       existing.id,
@@ -177,7 +185,7 @@ export class AdminInvitesService {
           hashToken(trimmed),
         )
       : null;
-    if (!invite || invite.expiresAt <= now) {
+    if (!invite || invite.expiresAt <= now || !isAdminEmail(invite.email)) {
       throw new BadRequestException(INVALID_LINK);
     }
     return invite;
@@ -229,6 +237,9 @@ export class AdminInvitesService {
     const normalized = email?.trim().toLowerCase();
     if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
       throw new BadRequestException('Enter a valid email address.');
+    }
+    if (!isAdminEmail(normalized)) {
+      throw new BadRequestException(ADMIN_EMAIL_MESSAGE);
     }
     return normalized;
   }

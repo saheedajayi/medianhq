@@ -122,6 +122,30 @@ describe('AdminInvitesService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('only invites @medianhq.co addresses', async () => {
+    const { repository, service } = setup();
+
+    await expect(
+      service.create(
+        { email: 'ops@gmail.com', role: 'SUPER_ADMIN' },
+        admin,
+        now,
+      ),
+    ).rejects.toThrow('Admins must use an @medianhq.co email address.');
+    expect(repository.createInvite).not.toHaveBeenCalled();
+  });
+
+  it('will not open an older invite to another domain', async () => {
+    const { repository, service } = setup();
+    repository.findUnusedInviteByTokenHash.mockResolvedValue(
+      invite({ email: 'ops@gmail.com' }),
+    );
+
+    await expect(service.getByToken('token', now)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
   it('rejects an expired link', async () => {
     const { repository, service } = setup();
     repository.findUnusedInviteByTokenHash.mockResolvedValue(

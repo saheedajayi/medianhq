@@ -12,6 +12,7 @@ import type { AdminRoleValue } from "@/services/admin/invites";
 import { useCreateAdminInvite } from "@/services/admin/invites/queries/invites.queries";
 import { cn } from "@/lib/utils";
 import { ADMIN_ROLES } from "./admin-roles";
+import { ADMIN_EMAIL_DOMAIN, isAdminEmail } from "../shared/admin-access";
 
 interface AddAdminModalProps {
   onClose: () => void;
@@ -23,10 +24,12 @@ export function AddAdminModal({ onClose }: AddAdminModalProps) {
   const [role, setRole] = useState<AdminRoleValue | null>(null);
   const createInvite = useCreateAdminInvite();
   const trimmedEmail = email.trim();
+  // Flagged once they've typed the domain, not while they're still typing the name
+  const isWrongDomain = trimmedEmail.includes("@") && !isAdminEmail(trimmedEmail);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!trimmedEmail || !role) return;
+    if (!trimmedEmail || !role || isWrongDomain) return;
 
     createInvite.mutate(
       { email: trimmedEmail, role },
@@ -65,8 +68,15 @@ export function AddAdminModal({ onClose }: AddAdminModalProps) {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Enter email address"
-              className="h-12 rounded-lg border border-[#EAECF0] bg-[#FCFCFD] px-3.5 text-sm text-[#101828] outline-none placeholder:text-[#98A2B3] focus:border-[#FF5514]"
+              aria-invalid={isWrongDomain}
+              aria-describedby={isWrongDomain ? "admin-email-domain" : undefined}
+              className="h-12 rounded-lg border border-[#EAECF0] bg-[#FCFCFD] px-3.5 text-sm text-[#101828] outline-none placeholder:text-[#98A2B3] focus:border-[#FF5514] aria-[invalid=true]:border-red-500"
             />
+            {isWrongDomain && (
+              <span id="admin-email-domain" className="text-xs font-medium text-red-600">
+                Admins must use an @{ADMIN_EMAIL_DOMAIN} email address.
+              </span>
+            )}
           </label>
 
           <fieldset className="flex flex-col gap-2.5">
@@ -98,7 +108,7 @@ export function AddAdminModal({ onClose }: AddAdminModalProps) {
 
           <button
             type="submit"
-            disabled={!trimmedEmail || !role || createInvite.isPending}
+            disabled={!trimmedEmail || !role || isWrongDomain || createInvite.isPending}
             className="mt-2 rounded-full bg-[#FF5514] py-3 text-base font-medium text-white transition-colors hover:bg-[#E84D12] disabled:opacity-60"
           >
             {createInvite.isPending ? "Sending invite..." : "Add Admin"}

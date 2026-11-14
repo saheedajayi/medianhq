@@ -41,3 +41,7 @@ export function useAdminAccess() {
     canWrite: (section: AdminSection) => access[section] === "write",
   };
 }
+
+/** Every admin account must use a Median address; the API enforces the same rule */
+export const ADMIN_EMAIL_DOMAIN = "medianhq.co";
+export const isAdminEmail = (email: string) => email.trim().toLowerCase().endsWith(`@${ADMIN_EMAIL_DOMAIN}`);
