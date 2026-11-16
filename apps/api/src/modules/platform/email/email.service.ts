@@ -104,47 +104,19 @@ export class EmailService {
   private readonly attachmentCache = new Map<string, Promise<string>>();
 
   async sendWaitlistConfirmation(input: WaitlistConfirmationInput) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        'Skipping waitlist confirmation email because RESEND_API_KEY or EMAIL_FROM is not configured.',
-      );
-      return;
-    }
+    const from = this.getConfiguredFrom('waitlist confirmation email');
+    if (!from) return;
 
     const payload = this.buildWaitlistConfirmationPayload(input, from);
-    const response = await fetch(RESEND_EMAILS_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': `waitlist-confirmation:${input.audience}:${input.email}`,
-        'User-Agent': 'Median API',
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(
-        `Resend email request failed with status ${response.status}: ${body}`,
-      );
-    }
+    await this.sendEmail(
+      payload,
+      `waitlist-confirmation:${input.audience}:${input.email}`,
+    );
   }
 
   async sendVerificationEmail(input: VerificationEmailInput) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        'Skipping verification email because RESEND_API_KEY or EMAIL_FROM is not configured.',
-      );
-      return;
-    }
+    const from = this.getConfiguredFrom('verification email');
+    if (!from) return;
 
     const payload = this.buildVerificationEmailPayload(input, from);
     await this.sendEmail(
@@ -154,15 +126,8 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(input: PasswordResetEmailInput) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        'Skipping password reset email because RESEND_API_KEY or EMAIL_FROM is not configured.',
-      );
-      return;
-    }
+    const from = this.getConfiguredFrom('password reset email');
+    if (!from) return;
 
     const payload = this.buildPasswordResetPayload(input, from);
     // Extract the token from the resetLink to use as part of the idempotency key
@@ -171,15 +136,8 @@ export class EmailService {
   }
 
   async sendPasswordChangedEmail(input: PasswordChangedEmailInput) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        'Skipping password changed email because RESEND_API_KEY or EMAIL_FROM is not configured.',
-      );
-      return;
-    }
+    const from = this.getConfiguredFrom('password changed email');
+    if (!from) return;
 
     const payload = this.buildPasswordChangedPayload(input, from);
     await this.sendEmail(
@@ -189,15 +147,8 @@ export class EmailService {
   }
 
   async sendBookingUpdate(input: BookingUpdateEmailInput) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        'Skipping booking email because RESEND_API_KEY or EMAIL_FROM is not configured.',
-      );
-      return;
-    }
+    const from = this.getConfiguredFrom('booking email');
+    if (!from) return;
 
     const replyTo = process.env.EMAIL_REPLY_TO;
     const siteUrl = this.getSiteUrl();
@@ -235,15 +186,8 @@ export class EmailService {
    * so the footer carries a one-click unsubscribe link.
    */
   async sendLetter(input: SendLetterInput) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        `Skipping "${input.letter.subject}" email because RESEND_API_KEY or EMAIL_FROM is not configured.`,
-      );
-      return;
-    }
+    const from = this.getConfiguredFrom(`"${input.letter.subject}" email`);
+    if (!from) return;
 
     const siteUrl = this.getSiteUrl();
     const token = input.unsubscribeUserId
@@ -324,15 +268,8 @@ export class EmailService {
   async sendContactMessage(
     input: ContactMessageTemplateInput & { inbox: string },
   ) {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-
-    if (!apiKey || !from) {
-      this.logger.warn(
-        'Skipping contact message because RESEND_API_KEY or EMAIL_FROM is not configured.',
-      );
-      return false;
-    }
+    const from = this.getConfiguredFrom('contact message');
+    if (!from) return false;
 
     const template = buildContactMessageTemplate(input);
     await this.sendEmail(
@@ -347,6 +284,20 @@ export class EmailService {
       `contact:${input.email}:${Date.now()}`,
     );
     return true;
+  }
+
+  private getConfiguredFrom(emailLabel: string): string | null {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM;
+
+    if (!apiKey || !from) {
+      this.logger.warn(
+        `Skipping ${emailLabel} because RESEND_API_KEY or EMAIL_FROM is not configured.`,
+      );
+      return null;
+    }
+
+    return from;
   }
 
   private async sendEmail(payload: ResendEmailPayload, idempotencyKey: string) {
