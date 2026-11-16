@@ -11,13 +11,9 @@ export const metadata: Metadata = {
 export default async function SettingsPage() {
   const { role } = await getSessionHint();
 
-  // Mentors keep the existing page until their settings designs arrive
-  if (role !== "MENTEE") return <SettingsView />;
-
-  // The view reads ?tab= from the URL, which needs a Suspense boundary
+  // Both views read ?tab= from the URL, which needs a Suspense boundary.
+  // Mentors keep the existing page until their settings designs arrive.
   return (
-    <Suspense>
-      <MenteeSettingsView />
-    </Suspense>
+    <Suspense>{role === "MENTEE" ? <MenteeSettingsView /> : <SettingsView />}</Suspense>
   );
 }

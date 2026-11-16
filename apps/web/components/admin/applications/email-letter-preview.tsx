@@ -69,7 +69,7 @@ export function EmailLetterPreview({ email }: { email: AdminDecisionEmail }) {
             return (
               <span
                 key={index}
-                className="w-fit rounded-md bg-[#101828] px-4 py-2 text-sm font-semibold text-white"
+                className="w-fit rounded-md bg-[#FF5514] px-4 py-2 text-sm font-semibold text-white"
               >
                 {block.label}
               </span>
