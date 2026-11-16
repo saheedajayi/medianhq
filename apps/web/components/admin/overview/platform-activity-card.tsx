@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/base/skeleton";
+import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
 import { SegmentedTabs } from "@/components/ui/custom/segmented-tabs";
 import type { AdminOverview, AdminOverviewRange } from "@/services/admin/overview";
 import { cn } from "@/lib/utils";
@@ -64,20 +64,13 @@ export function PlatformActivityCard({ activity, range, onRangeChange, isLoading
         ))}
       </dl>
 
-      {/* The previous chart stays, dimmed, so the card doesn't jump while the new range loads */}
-      <div className="relative" aria-busy={isLoadingRange}>
-        <div className={cn("transition-opacity", isLoadingRange && "opacity-30")}>
-          <PlatformActivityChart days={activity.days} />
-        </div>
-        {isLoadingRange && (
-          <div role="status" className="absolute inset-0 flex items-center justify-center">
-            <span className="flex items-center gap-2 rounded-full border border-[#EAECF0] bg-white px-4 py-2 text-sm font-medium text-[#344054] shadow-sm">
-              <span className="size-4 animate-spin rounded-full border-2 border-[#FF5514] border-t-transparent" />
-              Loading {range === "30d" ? "30" : "7"} days…
-            </span>
-          </div>
-        )}
-      </div>
+      {isLoadingRange ? (
+        <SkeletonGroup label={`Loading ${range === "30d" ? "30" : "7"} days`}>
+          <Skeleton className="h-[240px] w-full" />
+        </SkeletonGroup>
+      ) : (
+        <PlatformActivityChart days={activity.days} />
+      )}
     </section>
   );
 }
