@@ -175,3 +175,16 @@ describe('EmailService.sendLetter attachments', () => {
     expect(sentBody().attachments).toBeUndefined();
   });
 });
+
+describe('application decision letters', () => {
+  it.each([
+    ['accepted', applicationAcceptedLetter('Ada')],
+    ['declined', applicationDeclinedLetter('Ada', 'Add a CV.')],
+  ])('the %s letter has a button to the dashboard', (_name, letter) => {
+    expect(letter.blocks).toContainEqual({
+      type: 'button',
+      label: 'Go to Your Dashboard',
+      path: '/dashboard',
+    });
+  });
+});

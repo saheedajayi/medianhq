@@ -27,6 +27,7 @@ const MUTED = '#667085';
 const QUOTE_BAR = '#0284C7';
 const FOOTER_BG = '#5B1825';
 const ACCENT = '#EA580C';
+const BUTTON = '#FF5514';
 const FOOTER_LINK = '#FED7AA';
 const FOOTER_TEXT = '#FFEDD5';
 
@@ -104,7 +105,7 @@ function renderBlock(block: LetterBlock, siteUrl: string) {
         )
         .join('')}</ol>`;
     case 'button':
-      return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;"><tr><td bgcolor="${DARK}" style="border-radius:6px;background-color:${DARK};">
+      return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;"><tr><td bgcolor="${BUTTON}" style="border-radius:6px;background-color:${BUTTON};">
             <a href="${escapeHtml(siteUrl + block.path)}" style="display:inline-block;padding:12px 22px;font-family:${FONT};font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;border-radius:6px;">${escapeHtml(block.label)}</a>
           </td></tr></table>`;
   }

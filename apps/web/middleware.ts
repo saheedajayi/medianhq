@@ -150,8 +150,8 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    // Admins have no mentee or mentor dashboard
-    if (pathname === "/dashboard" && role === "ADMIN") {
+    // Admins have no mentee or mentor pages, so every one of them leads back to the admin
+    if (role === "ADMIN" && !isAdminRoute) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
 

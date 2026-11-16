@@ -73,6 +73,7 @@ export const applicationAcceptedLetter = (firstName: string): Letter => ({
         },
       ],
     },
+    { type: 'button', label: 'Go to Your Dashboard', path: '/dashboard' },
     paragraph(
       "You can also share your acceptance and your new role as a Founding Mentor with your network. We'd love to see you spread the word!",
     ),
@@ -120,6 +121,7 @@ export const applicationDeclinedLetter = (
     paragraph(
       "As part of this transition, we're offering you **3 months of Mentee Pro free** so you can explore what Median has to offer.",
     ),
+    { type: 'button', label: 'Go to Your Dashboard', path: '/dashboard' },
     paragraph(
       "You're also welcome to reapply for the mentor programme in six months.",
     ),
