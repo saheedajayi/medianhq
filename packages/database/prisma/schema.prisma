@@ -97,6 +97,7 @@ model User {
   answersGiven       Answer[]
   mentorEarnings     MentorEarning[]
   payoutRequests     PayoutRequest[]
+  payoutAccount      PayoutAccount?
   securityAuditLogs  SecurityAuditLog[]
   deviceSessions     DeviceSession[]
   workExperiences    WorkExperience[]
@@ -515,6 +516,20 @@ model PayoutRequest {
   updatedAt     DateTime @default(now()) @updatedAt
 
   @@index([status])
+}
+
+// The bank account a mentor's payouts go to; one per mentor, in their own name
+model PayoutAccount {
+  id            String   @id @default(cuid())
+  mentorId      String   @unique
+  mentor        User     @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  bankCode      String
+  bankName      String
+  accountNumber String
+  // The name the bank holds for the account, as resolved by Paystack
+  accountName   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model SecurityAuditLog {
