@@ -269,13 +269,14 @@ your host restarts it automatically.
 ## Known gaps
 
 - Calendar connections on the settings page aren't built yet.
-- Only booking updates and cancellations honour the email notification toggles.
+- Only booking updates, cancellations and "Tips and getting started" honour the
+  email notification toggles.
   The other types send no email yet, and in-app notifications don't exist yet.
 - The fee shown on the session form (10% + $1) differs from the fee used for
   earnings (4% + ₦100).
 - The "fee handling" options on the session form aren't saved.
 - Explore price filters assume naira and only use a mentor's profile price.
-- Mentor settings still use the older settings page, so mentors can only turn
-  off onboarding emails through the email's Unsubscribe link.
+- Mentor settings still use the older settings page. It now includes the
+  notification settings, which email links open at `/settings?tab=notifications`.
 - The application emails promise 3 months of Mentor Pro or Mentee Pro free, but
   nothing in the app grants it yet.

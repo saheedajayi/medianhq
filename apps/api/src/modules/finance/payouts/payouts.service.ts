@@ -149,6 +149,11 @@ export class PayoutsService {
     return this.banks.names;
   }
 
+  /** The account holder's name as the bank has it; throws when the bank doesn't know the account */
+  resolveAccountName(input: { accountNumber: string; bankCode: string }) {
+    return this.transfers().resolveAccount(input);
+  }
+
   private async syncTransfer(payout: PayoutRecord) {
     const transfer = await this.transfers().verifyTransfer(
       payout.transferReference as string,

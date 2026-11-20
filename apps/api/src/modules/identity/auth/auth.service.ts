@@ -555,6 +555,28 @@ export class AuthService {
     return { success: true, message: 'Password has been reset.' };
   }
 
+  /** Checks the signed-in user's password before a sensitive action, such as a payout */
+  async confirmPassword(userId: string, password: string) {
+    const limitKey = `confirm-password:${userId}`;
+    this.rateLimiterService.checkLimit(
+      limitKey,
+      5,
+      15 * 60 * 1000,
+      'Too many incorrect passwords. Please try again later.',
+    );
+
+    const user = await this.authRepository.findById(userId);
+    if (!user?.passwordHash) {
+      throw new ForbiddenException(
+        'Set a password for your account in Settings first.',
+      );
+    }
+    if (!password || !this.verifyPassword(password, user.passwordHash)) {
+      throw new ForbiddenException('Incorrect password.');
+    }
+    this.rateLimiterService.reset(limitKey);
+  }
+
   async changePassword(
     userId: string,
     dto: ChangePasswordDto,

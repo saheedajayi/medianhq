@@ -74,6 +74,18 @@ export class PaystackTransfers {
     );
   }
 
+  /** The name the bank holds for an account, so a mentor can confirm it is theirs */
+  async resolveAccount(input: { accountNumber: string; bankCode: string }) {
+    const query = new URLSearchParams({
+      account_number: input.accountNumber,
+      bank_code: input.bankCode,
+    });
+    const data = await this.request<{ account_name: string }>(
+      `/bank/resolve?${query.toString()}`,
+    );
+    return data.account_name;
+  }
+
   private async request<T>(
     path: string,
     options: { method?: string; body?: unknown } = {},

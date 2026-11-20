@@ -123,6 +123,13 @@ export class SettingsService {
         emailNotifications: dto.emailNotifications ?? true,
         marketingEmails: dto.marketingEmails ?? false,
         timezone: dto.timezone ?? 'Africa/Lagos',
+        // A first save of notification choices must not be dropped
+        ...(dto.notificationPreferences !== undefined && {
+          notificationPreferences: await this.mergeNotificationPreferences(
+            user.id,
+            dto.notificationPreferences,
+          ),
+        }),
       },
       update: {
         ...(dto.emailNotifications !== undefined && {

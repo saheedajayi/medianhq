@@ -58,7 +58,9 @@ describe('letters', () => {
       links,
     );
     expect(html).toMatch(/<strong[^>]*>3 months of Mentee Pro free<\/strong>/);
-    expect(text).toContain('3 months of Mentee Pro free so you can');
+    expect(text).toContain(
+      "3 months of Mentee Pro free (when it's live) so you can",
+    );
     expect(text).not.toContain('**');
   });
 

@@ -55,7 +55,7 @@ export const applicationAcceptedLetter = (firstName: string): Letter => ({
       type: 'bullets',
       items: [
         'Founding Mentor recognition on Median.',
-        '3 months of Mentor Pro free.',
+        "3 months of Mentor Pro free (when it's live).",
         'Early access to the Median platform and its opportunities.',
       ],
     },
@@ -119,7 +119,7 @@ export const applicationDeclinedLetter = (
       "We'd still love to have you on the platform as a mentee. You can connect with experienced professionals, get guidance, and continue developing your skills and career.",
     ),
     paragraph(
-      "As part of this transition, we're offering you **3 months of Mentee Pro free** so you can explore what Median has to offer.",
+      "As part of this transition, we're offering you **3 months of Mentee Pro free** (when it's live) so you can explore what Median has to offer.",
     ),
     { type: 'button', label: 'Go to Your Dashboard', path: '/dashboard' },
     paragraph(

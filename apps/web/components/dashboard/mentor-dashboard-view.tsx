@@ -48,7 +48,7 @@ export function MentorDashboardView({ user }: { user?: AuthUser }) {
       // Everything earned but not paid out yet, requested or not.
       // The stat font has no ₦ glyph, so this follows the design's "N21,000"
       value: earnings
-        ? `N${(earnings.availableBalance + earnings.pendingPayout).toLocaleString()}`
+        ? `N${(earnings.availableBalance + earnings.pendingClearance + earnings.pendingPayout).toLocaleString()}`
         : "-",
     },
     { label: "RATING", value: reviews?.count ? reviews.avgRating.toFixed(1) : "-" },

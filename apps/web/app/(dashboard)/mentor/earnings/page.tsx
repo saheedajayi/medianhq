@@ -1,5 +1,5 @@
-import { EmptyState } from "@/components/ui/custom/empty-state";
+import { EarningsView } from "@/components/earnings/earnings-view";
 
 export default function MentorEarningsPage() {
-  return <EmptyState title="Earnings" />;
+  return <EarningsView />;
 }
