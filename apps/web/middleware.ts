@@ -125,7 +125,8 @@ export function middleware(request: NextRequest) {
   // If not authenticated, redirect to signin immediately
   if (!isAuthenticated) {
     const signinUrl = new URL("/signin", request.url);
-    signinUrl.searchParams.set("redirect", pathname);
+    // Keep the query too, so an emailed link like /settings?tab=notifications lands where it pointed
+    signinUrl.searchParams.set("redirect", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(signinUrl);
   }
 
