@@ -59,9 +59,12 @@ export function BasicInfoTab() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Mentors use this same tab; their details live on the mentor profile
+  const isMentor = data?.profile.role === "MENTOR";
+
   const reset = () => {
     if (!data) return;
-    const profile = data.profile.menteeProfile;
+    const profile = isMentor ? data.profile.mentorProfile : data.profile.menteeProfile;
     setFirstName(data.profile.firstName);
     setLastName(data.profile.lastName);
     setGender(toGenderOption(profile?.gender));
@@ -232,7 +235,7 @@ export function BasicInfoTab() {
           value={bio}
           disabled={!isEditing}
           onChange={(e) => setBio(e.target.value)}
-          placeholder="Tell mentors about yourself..."
+          placeholder={isMentor ? "Tell mentees about yourself..." : "Tell mentors about yourself..."}
           className={textareaClass}
         />
       </Field>

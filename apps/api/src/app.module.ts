@@ -30,6 +30,7 @@ import { AsyncQaModule } from './modules/engagement/async-qa/async-qa.module';
 import { EarningsModule } from './modules/finance/earnings/earnings.module';
 import { ExchangeRatesModule } from './modules/finance/exchange-rates/exchange-rates.module';
 import { SettingsModule } from './modules/identity/settings/settings.module';
+import { AccountModule } from './modules/identity/account/account.module';
 
 const envFilePath = ['apps/api/.env.local', '.env.local'].filter((path) =>
   existsSync(path),
@@ -68,6 +69,7 @@ const envFilePath = ['apps/api/.env.local', '.env.local'].filter((path) =>
     EarningsModule,
     ExchangeRatesModule,
     SettingsModule,
+    AccountModule,
   ],
   controllers: [AppController],
   providers: [AppService],

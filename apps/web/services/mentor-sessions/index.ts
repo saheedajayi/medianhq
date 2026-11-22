@@ -4,6 +4,7 @@ import type {
   MentorSessionDto,
   MentorSessionInput,
   MentorSessionStats,
+  SessionBookingsPage,
   UpdateMentorSessionPayload,
 } from "./types";
 
@@ -15,6 +16,11 @@ export const mentorSessionsService = {
   },
   getStats(id: string) {
     return apiClient.get<MentorSessionStats>(`${MENTOR_SESSIONS_PATH}/${id}/stats`);
+  },
+  getBookings(id: string, page: number) {
+    return apiClient.get<SessionBookingsPage>(
+      `${MENTOR_SESSIONS_PATH}/${id}/bookings?page=${page}`
+    );
   },
   create(payload: MentorSessionInput) {
     return apiClient.post<MentorSessionDto>(MENTOR_SESSIONS_PATH, payload);
@@ -39,6 +45,9 @@ export const mentorSessionsService = {
 };
 
 export type {
+  SessionBooking,
+  SessionBookingsPage,
+  SessionBookingStatus,
   AvailabilityInput,
   MentorSessionDto,
   MentorSessionInput,

@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import {
   SettingsService,
+  type CareerGoalsDto,
+  type ServiceChargeDto,
   type EducationDto,
   type SocialLinksDto,
   type UpdateProfileDto,
@@ -44,6 +46,24 @@ export class SettingsController {
   @Patch('profile')
   updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
     return this.settingsService.updateProfile(user, dto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('career-goals')
+  updateCareerGoals(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CareerGoalsDto,
+  ) {
+    return this.settingsService.updateCareerGoals(user, dto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('service-charge')
+  updateServiceCharge(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ServiceChargeDto,
+  ) {
+    return this.settingsService.updateServiceCharge(user, dto);
   }
 
   @UseGuards(AuthGuard)

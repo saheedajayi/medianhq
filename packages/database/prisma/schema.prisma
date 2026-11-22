@@ -70,6 +70,14 @@ model User {
   suspensionReason String?
   // Set by an admin to mark the account as under review
   flaggedAt        DateTime?
+  // Set by the user from settings to pause their account; signing in again clears it
+  deactivatedAt    DateTime?
+  // Set when the user asked to delete their account; signing in before this
+  // time cancels it, otherwise the account is erased once it passes
+  deletionScheduledFor DateTime?
+  // Set when the user erased their account. The row stays, stripped of personal
+  // data, so past bookings and payments still have someone to point at
+  deletedAt        DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   mentorProfile  MentorProfile?
@@ -128,6 +136,9 @@ model MentorProfile {
   certificates      String[]     @default([])
   linkedinUrl       String?
   pricePerSession   Int          @default(0)
+  // The mentor's choice in Settings > Payouts. Saved only: charging still takes
+  // the platform fee from the mentor's side until pricing is changed to read it
+  passFeeToMentee   Boolean      @default(false)
   currency          String       @default("NGN")
   status            MentorStatus @default(DRAFT)
   // When the application last went in for review
@@ -141,6 +152,8 @@ model MentorProfile {
   reviewNoteAt      DateTime?
   reviewNoteBy      String?
   decidedAt         DateTime?
+  // When a rejected applicant, now a mentee, dismissed the "We're sorry!" notice
+  rejectionSeenAt   DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 

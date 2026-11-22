@@ -154,6 +154,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password.');
     }
     this.assertNotSuspended(user);
+    await this.reactivate(user);
 
     let emailSent = true;
     if (!user.emailVerifiedAt) {
@@ -183,6 +184,36 @@ export class AuthService {
         'This account has been suspended. Contact support for help.',
       );
     }
+  }
+
+  /** Signing in is how someone comes back after deactivating their account */
+  private async reactivate(user: {
+    id: string;
+    deactivatedAt?: Date | null;
+    deletionScheduledFor?: Date | null;
+  }) {
+    // The same sign-in also calls off a deletion that hasn't happened yet
+    if (!user.deactivatedAt && !user.deletionScheduledFor) return;
+    await this.authRepository.update(user.id, {
+      deactivatedAt: null,
+      deletionScheduledFor: null,
+    });
+    user.deactivatedAt = null;
+    user.deletionScheduledFor = null;
+  }
+
+  /**
+   * Re-checks the password before something that can't be undone, with the
+   * same limit on wrong guesses as a payout. Accounts that only sign in with
+   * Google or LinkedIn have no password to check.
+   */
+  async assertCurrentPassword(userId: string, password: string | undefined) {
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Authentication is required.');
+    }
+    if (!user.passwordHash) return;
+    await this.confirmPassword(userId, password ?? '');
   }
 
   async getCurrentUser(sessionToken: string | undefined): Promise<AuthUser> {
@@ -239,6 +270,7 @@ export class AuthService {
       }
     }
     this.assertNotSuspended(user!);
+    await this.reactivate(user!);
 
     return {
       sessionToken: this.signAccessToken(user!),
@@ -1094,6 +1126,12 @@ export class AuthService {
       hasMenteeProfile,
       hasMentorProfile: Boolean(user.mentorProfile),
       mentorStatus: user.mentorProfile?.status,
+      showMentorRejectionNotice:
+        user.role === UserRole.MENTEE &&
+        user.mentorProfile?.status === 'REJECTED' &&
+        !user.mentorProfile.rejectionSeenAt,
+      hasMenteeGoals: (user.menteeProfile?.goals?.length ?? 0) > 0,
+      hasPassword: Boolean(user.passwordHash),
       accountStage: getAccountStage(user),
       createdAt: user.createdAt,
       isProfileComplete,

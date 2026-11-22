@@ -36,6 +36,11 @@ export type AuthUser = {
   hasMenteeProfile: boolean;
   hasMentorProfile: boolean;
   mentorStatus?: string;
+  /** A mentee whose mentor application was rejected and who hasn't dismissed the notice yet */
+  showMentorRejectionNotice?: boolean;
+  hasMenteeGoals?: boolean;
+  /** False for accounts that only sign in with Google or LinkedIn */
+  hasPassword?: boolean;
   accountStage: AccountStage;
   createdAt?: string;
   isProfileComplete?: boolean;

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiError } from "@/services/api-client";
+import { authQueryKeys } from "@/services/auth/queries/query-keys";
 import {
   mentorsService,
   type CreateMentorProfilePayload,
@@ -12,6 +13,15 @@ import {
   type UpdateMentorProfilePayload,
 } from "@/services/mentors";
 import { mentorsQueryKeys } from "./query-keys";
+
+export const useMarkRejectionSeen = () => {
+  const queryClient = useQueryClient();
+  return useMutation<unknown, ApiError, void>({
+    mutationFn: () => mentorsService.markRejectionSeen(),
+    // The current user carries the flag that shows the notice
+    onSettled: () => queryClient.invalidateQueries({ queryKey: authQueryKeys.me() }),
+  });
+};
 
 export const useExploreMentors = (params?: ExploreMentorsParams) => {
   return useQuery<any[], ApiError>({

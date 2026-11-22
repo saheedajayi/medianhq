@@ -25,6 +25,20 @@ import { MIN_LEAD_TIME_MS } from '../../scheduling/bookings/booking-policy';
 
 const MAX_PROFILE_LIST_ITEMS = 20;
 
+/** A link to a profile on linkedin.com, on any of its country subdomains */
+export function isLinkedinProfileUrl(value: string) {
+  try {
+    const url = new URL(value.trim());
+    return (
+      url.protocol === 'https:' &&
+      /(^|\.)linkedin\.com$/.test(url.hostname) &&
+      /^\/(in|pub)\/[^/]+/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 @Injectable()
 export class MentorsService {
   private readonly logger = new Logger(MentorsService.name);
@@ -365,6 +379,11 @@ export class MentorsService {
     };
   }
 
+  async markRejectionSeen(userId: string) {
+    await this.mentorsRepository.markRejectionSeen(userId);
+    return { success: true };
+  }
+
   async apply(userId: string, dto: CreateMentorProfileDto) {
     const user = await this.mentorsRepository.findUserForOnboarding(userId);
 
@@ -386,6 +405,12 @@ export class MentorsService {
     ) {
       throw new ConflictException(
         'Your mentor application has already been approved.',
+      );
+    }
+
+    if (dto.linkedinUrl?.trim() && !isLinkedinProfileUrl(dto.linkedinUrl)) {
+      throw new BadRequestException(
+        'Enter your LinkedIn profile link, like https://linkedin.com/in/your-name.',
       );
     }
 

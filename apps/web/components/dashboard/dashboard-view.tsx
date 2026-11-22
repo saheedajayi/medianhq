@@ -16,6 +16,8 @@ import {
   MentorApplicationStatusCard,
   MentorApplicationStatusCardSkeleton,
 } from "@/components/dashboard/mentor-application-status-card";
+import { MenteeSetupChecklistCard } from "@/components/dashboard/mentee-setup-checklist-card";
+import { MentorRejectionNotice } from "@/components/dashboard/mentor-rejection-notice";
 import { MentorDashboardView } from "@/components/dashboard/mentor-dashboard-view";
 import { MentorsForYouSection } from "@/components/dashboard/mentors-for-you-section";
 import { UpcomingSessionsCard } from "@/components/dashboard/upcoming-sessions-card";
@@ -70,6 +72,7 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
     isMentor
   );
   const is100PercentComplete = completionPercentage === 100;
+  const needsMenteeSetup = !isMentor && user?.hasMenteeGoals === false;
 
   const {
     data: bookings,
@@ -153,6 +156,8 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
+      <MentorRejectionNotice open={!!user?.showMentorRejectionNotice} />
+
       {/* Top Notice Banner (Visible strictly when completion reaches 100% for mentees) */}
       {!isMentor && is100PercentComplete && <TopSignupNoticeBanner />}
 
@@ -185,7 +190,11 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
       {user && isMentor && user.mentorStatus !== "APPROVED" && (
         <MentorApplicationStatusCard status={user?.mentorStatus} />
       )}
-      {user && !is100PercentComplete && (
+      {/* Someone moved over from a rejected mentor application never chose goals at onboarding */}
+      {user && needsMenteeSetup && (
+        <MenteeSetupChecklistCard isProfileComplete={is100PercentComplete} hasGoals={false} />
+      )}
+      {user && !needsMenteeSetup && !is100PercentComplete && (
         <ProfileCompletionCard
           percentage={completionPercentage}
           description={

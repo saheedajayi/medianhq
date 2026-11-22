@@ -4,6 +4,7 @@ export type CreateMentorProfilePayload = {
   industry: string;
   experience: string;
   location: string;
+  linkedinUrl?: string;
   /** Answer to "Why do you want to mentor?" (private, for application review) */
   motivation: string;
   cvUrl?: string;

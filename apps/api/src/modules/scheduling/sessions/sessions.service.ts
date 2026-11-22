@@ -14,6 +14,7 @@ import type {
 import { SessionsRepository } from './sessions.repository';
 
 const MIN_PAID_PRICE: Record<string, number> = { NGN: 100, USD: 1 };
+const BOOKINGS_PAGE_SIZE = 8;
 const MIN_DURATION_MINUTES = 15;
 const MAX_DURATION_MINUTES = 240;
 
@@ -85,6 +86,33 @@ export class SessionsService {
       earnings: earnings._sum.amount ?? 0,
       paidSessions: earnings._count,
       currency: 'NGN',
+    };
+  }
+
+  /** Everyone who has booked this session, a page at a time */
+  async bookings(user: AuthUser, id: string, pageParam?: string) {
+    this.ensureMentor(user);
+    await this.findOwnSession(user, id);
+
+    const page = Math.max(1, Number.parseInt(pageParam ?? '', 10) || 1);
+    const [bookings, total] =
+      await this.sessionsRepository.findSessionBookingsPage(
+        id,
+        (page - 1) * BOOKINGS_PAGE_SIZE,
+        BOOKINGS_PAGE_SIZE,
+      );
+
+    return {
+      items: bookings.map((booking) => ({
+        id: booking.id,
+        menteeName:
+          `${booking.mentee.firstName} ${booking.mentee.lastName}`.trim(),
+        date: booking.startsAt,
+        status: booking.status,
+      })),
+      total,
+      page,
+      pageSize: BOOKINGS_PAGE_SIZE,
     };
   }
 

@@ -150,7 +150,9 @@ export class BookingsService {
     }
     if (
       mentorUser.mentorProfile?.status !== MentorStatus.APPROVED ||
-      mentorUser.suspendedAt
+      mentorUser.suspendedAt ||
+      mentorUser.deactivatedAt ||
+      mentorUser.deletionScheduledFor
     ) {
       throw new BadRequestException('This mentor is not taking bookings yet.');
     }

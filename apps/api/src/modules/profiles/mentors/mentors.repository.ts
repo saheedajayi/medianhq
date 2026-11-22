@@ -7,6 +7,13 @@ import type {
   UpdateMentorProfileDto,
 } from './dto/create-mentor-profile.dto';
 
+/** Accounts that are suspended, deactivated or waiting to be deleted stay out of listings */
+const VISIBLE_USER = {
+  suspendedAt: null,
+  deactivatedAt: null,
+  deletionScheduledFor: null,
+};
+
 @Injectable()
 export class MentorsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -51,6 +58,9 @@ export class MentorsRepository {
       FROM "MentorProfile" m
       JOIN "User" u ON m."userId" = u.id
       WHERE m.status = 'APPROVED'
+        AND u."suspendedAt" IS NULL
+        AND u."deactivatedAt" IS NULL
+        AND u."deletionScheduledFor" IS NULL
       ORDER BY score DESC
       LIMIT 5
     `;
@@ -146,8 +156,8 @@ export class MentorsRepository {
     location?: string;
     approvedOnly?: boolean;
   }) {
-    // Suspended mentors are never listed
-    const where: any = { user: { suspendedAt: null } };
+    // Suspended, deactivated and leaving mentors are never listed
+    const where: any = { user: VISIBLE_USER };
 
     if (params.approvedOnly !== false) {
       where.status = MentorStatus.APPROVED;
@@ -259,7 +269,7 @@ export class MentorsRepository {
     return this.prisma.mentorProfile.findMany({
       where: {
         status: MentorStatus.APPROVED,
-        user: { suspendedAt: null },
+        user: VISIBLE_USER,
       },
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -294,6 +304,13 @@ export class MentorsRepository {
     });
   }
 
+  markRejectionSeen(userId: string) {
+    return this.prisma.mentorProfile.updateMany({
+      where: { userId, status: MentorStatus.REJECTED, rejectionSeenAt: null },
+      data: { rejectionSeenAt: new Date() },
+    });
+  }
+
   async upsertProfileByUserId(userId: string, dto: CreateMentorProfileDto) {
     // Sync User role to MENTOR
     await this.prisma.user.update({
@@ -325,6 +342,10 @@ export class MentorsRepository {
       dto.location !== undefined
         ? dto.location || null
         : (existing?.location ?? null);
+    const linkedinUrl =
+      dto.linkedinUrl !== undefined
+        ? dto.linkedinUrl.trim() || null
+        : (existing?.linkedinUrl ?? null);
     // The onboarding answer is private application context, not the public bio
     const motivationInput = dto.motivation ?? dto.bio;
     const motivation =
@@ -344,6 +365,7 @@ export class MentorsRepository {
         company,
         jobTitle,
         location,
+        linkedinUrl,
         motivation,
         cvUrl,
         status: MentorStatus.PENDING_REVIEW,
@@ -365,6 +387,7 @@ export class MentorsRepository {
         company,
         jobTitle,
         location,
+        linkedinUrl,
         motivation,
         cvUrl,
         status: MentorStatus.PENDING_REVIEW,

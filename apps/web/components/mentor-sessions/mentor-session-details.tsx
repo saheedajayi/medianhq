@@ -3,12 +3,15 @@
 import * as React from "react";
 import { useState } from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { ChevronRight, Share2, Check } from "lucide-react";
+import { ChevronRight, Share2 } from "lucide-react";
 import { Edit2 } from "iconsax-react";
 import { Skeleton } from "@/components/ui/base/skeleton";
 import { formatAmount } from "@/lib/currency";
 import type { MentorSessionDto } from "@/services/mentor-sessions";
+import { useCurrentUser } from "@/services/auth/queries/auth.queries";
 import { useMentorSessionStats } from "@/services/mentor-sessions/queries/mentor-sessions.queries";
+import { SessionBookingsTable } from "./session-bookings-table";
+import { ShareSessionModal } from "./share-session-modal";
 
 interface MentorSessionDetailsProps {
   session: MentorSessionDto;
@@ -57,17 +60,15 @@ export function MentorSessionDetails({
   onEdit,
   onDelete,
 }: MentorSessionDetailsProps) {
-  const [copied, setCopied] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const { data: user } = useCurrentUser();
   const stats = useMentorSessionStats(session.id);
 
-  const handleCopy = () => {
-    if (typeof window !== "undefined") {
-      const url = `${window.location.origin}/sessions/${session.id}`;
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  // The mentor's public page with this session already picked
+  const shareUrl =
+    typeof window !== "undefined" && user
+      ? `${window.location.origin}/mentors/${user.id}?session=${session.id}`
+      : "";
 
   const formattedPrice = formatAmount(session.price, session.currency);
 
@@ -121,20 +122,12 @@ export function MentorSessionDetails({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleCopy}
-              className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-4 py-2 text-xs font-semibold text-[#344054] transition hover:bg-[#F9FAFB] cursor-pointer"
+              disabled={!shareUrl}
+              onClick={() => setIsShareOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-[#D0D5DD] bg-white px-4 py-2 text-xs font-semibold text-[#344054] transition hover:bg-[#F9FAFB] cursor-pointer disabled:cursor-default disabled:opacity-60"
             >
-              {copied ? (
-                <>
-                  <Check className="size-3.5 text-[#12B76A]" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="size-3.5 text-[#667085]" />
-                  <span>Share</span>
-                </>
-              )}
+              <Share2 className="size-3.5 text-[#667085]" />
+              <span>Share</span>
             </button>
 
             <button
@@ -208,7 +201,18 @@ export function MentorSessionDetails({
             )}
           </div>
         </div>
+
+        <div className="mt-10">
+          <SessionBookingsTable sessionId={session.id} />
+        </div>
       </div>
+
+      <ShareSessionModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        sessionTitle={session.title}
+        url={shareUrl}
+      />
 
       {/* Footer Meta & Actions (pinned to bottom of page) */}
       <div className="mt-auto pt-10 flex items-center justify-between text-xs text-[#667085]">

@@ -26,25 +26,12 @@ import {
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
 import { useCreateRole, useIndustries } from "@/services/taxonomy/queries/taxonomy.queries";
 import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries";
+import { GOAL_TIMEFRAMES, MENTEE_GOALS } from "@/constants/mentee-goals";
 
 const ALLOWED_INDUSTRIES = ["Finance", "Technology", "Business", "Consulting"];
 
-const goals = [
-  "Career switch",
-  "Leadership",
-  "Portfolio review",
-  "Interview prep",
-  "Job search",
-  "Skills growth",
-  "Fundraising",
-  "Others",
-];
-
-const timeframes = [
-  "1-3 months",
-  "3-6 months",
-  "6+ months",
-];
+const goals = MENTEE_GOALS;
+const timeframes = GOAL_TIMEFRAMES;
 
 export function MenteeOnboardingPage() {
   const router = useRouter();

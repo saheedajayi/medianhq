@@ -5,9 +5,25 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { MentorStatus, UserRole } from '@prisma/client';
-import { MentorsService } from '../../../../../src/modules/profiles/mentors/mentors.service';
+import { MentorsService, isLinkedinProfileUrl } from '../../../../../src/modules/profiles/mentors/mentors.service';
 import { MentorsRepository } from '../../../../../src/modules/profiles/mentors/mentors.repository';
 import type { CreateMentorProfileDto } from '../../../../../src/modules/profiles/mentors/dto/create-mentor-profile.dto';
+
+describe('isLinkedinProfileUrl', () => {
+  it('accepts profile links on linkedin.com and its country subdomains', () => {
+    expect(isLinkedinProfileUrl('https://linkedin.com/in/ada-obi')).toBe(true);
+    expect(isLinkedinProfileUrl('https://www.linkedin.com/in/ada-obi/')).toBe(true);
+    expect(isLinkedinProfileUrl('https://ng.linkedin.com/in/ada-obi')).toBe(true);
+  });
+
+  it('rejects other sites, lookalikes and non-profile pages', () => {
+    expect(isLinkedinProfileUrl('https://notlinkedin.com/in/ada-obi')).toBe(false);
+    expect(isLinkedinProfileUrl('https://linkedin.com.evil.co/in/ada')).toBe(false);
+    expect(isLinkedinProfileUrl('https://linkedin.com/company/median')).toBe(false);
+    expect(isLinkedinProfileUrl('http://linkedin.com/in/ada-obi')).toBe(false);
+    expect(isLinkedinProfileUrl('ada-obi')).toBe(false);
+  });
+});
 
 describe('MentorsService', () => {
   let service: MentorsService;
@@ -18,6 +34,7 @@ describe('MentorsService', () => {
     repository = {
       findUserForOnboarding: jest.fn(),
       upsertProfileByUserId: jest.fn(),
+      markRejectionSeen: jest.fn(),
       updateProfileByUserId: jest.fn(),
       findMenteeProfileByUserId: jest.fn(),
       findApprovedMatches: jest.fn(),
