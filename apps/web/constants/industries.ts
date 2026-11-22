@@ -1,3 +1,9 @@
+/**
+ * The industries and job titles offered at onboarding. This file is the only
+ * source: nothing is seeded or read from the database, so adding a role is an
+ * edit here. A title someone types that isn't listed is still saved on their
+ * own profile.
+ */
 export const INDUSTRY_ROLES: Record<string, string[]> = {
   Finance: [
     "Financial Analyst",
@@ -75,6 +81,8 @@ export const INDUSTRY_ROLES: Record<string, string[]> = {
     "Developer Relations (DevRel)",
     "Technical Writer",
     "ERP Consultant",
+    "Product Designer",
+    "Project Manager",
   ],
   Business: [
     "Business Analyst",

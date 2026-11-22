@@ -24,8 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
-import { useCreateRole, useIndustries } from "@/services/taxonomy/queries/taxonomy.queries";
-import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries";
+import { INDUSTRY_ROLES } from "@/constants/industries";
 import { GOAL_TIMEFRAMES, MENTEE_GOALS } from "@/constants/mentee-goals";
 
 const ALLOWED_INDUSTRIES = ["Finance", "Technology", "Business", "Consulting"];
@@ -44,16 +43,9 @@ export function MenteeOnboardingPage() {
   const [timeframe, setTimeframe] = useState("");
   const otherInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { data: taxonomyData } = useIndustries();
-
-  const createRoleMutation = useCreateRole();
   const createMenteeProfileMutation = useCreateMenteeProfile();
 
   const INDUSTRIES = ALLOWED_INDUSTRIES;
-  const INDUSTRY_ROLES: Record<string, string[]> = {
-    ...DEFAULT_INDUSTRY_ROLES,
-    ...(taxonomyData || {}),
-  };
 
   function toggleGoal(goal: string) {
     setSelectedGoals((prev) =>
@@ -266,7 +258,6 @@ export function MenteeOnboardingPage() {
               onValueChange={setCurrentRole}
               onCreate={(val) => {
                 setCurrentRole(val);
-                createRoleMutation.mutate({ industryName: industry, roleName: val });
               }}
               placeholder="Select a role..."
               emptyText={industry ? "No role found." : "Please select an industry first."}

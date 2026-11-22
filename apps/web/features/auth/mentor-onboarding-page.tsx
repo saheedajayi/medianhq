@@ -27,9 +27,8 @@ import {
 } from "@/components/ui/base/select";
 import { CreatableCombobox } from "@/components/ui/custom/creatable-combobox";
 import { ProgressiveLocationSelect } from "@/components/ui/custom/progressive-location-select";
-import { useCreateRole, useIndustries } from "@/services/taxonomy/queries/taxonomy.queries";
 
-import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries";
+import { INDUSTRY_ROLES } from "@/constants/industries";
 
 const ALLOWED_INDUSTRIES = ["Finance", "Technology", "Business", "Consulting"];
 
@@ -86,17 +85,10 @@ export function MentorOnboardingPage() {
     } catch {}
   }, [currentSubStep, router]);
 
-  const { data: taxonomyData } = useIndustries();
-
   const applyMentorMutation = useApplyMentor();
-  const createRoleMutation = useCreateRole();
   const uploadCvMutation = useUploadCv();
 
   const INDUSTRIES = ALLOWED_INDUSTRIES;
-  const INDUSTRY_ROLES: Record<string, string[]> = {
-    ...DEFAULT_INDUSTRY_ROLES,
-    ...(taxonomyData || {}),
-  };
 
   function handleFileSelect(file: File) {
     try {
@@ -269,7 +261,6 @@ export function MentorOnboardingPage() {
               onValueChange={setCurrentRole}
               onCreate={(val) => {
                 setCurrentRole(val);
-                createRoleMutation.mutate({ industryName: industry, roleName: val });
               }}
               placeholder="Select a role..."
               emptyText={
