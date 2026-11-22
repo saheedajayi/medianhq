@@ -8,6 +8,12 @@ export interface InitializePaymentResponse {
   status?: string;
 }
 
+export interface PaymentQuote {
+  amount: number;
+  currency: string;
+  provider: "PAYSTACK" | "FLUTTERWAVE";
+}
+
 export interface VerifyPaymentResponse {
   success: boolean;
   verified: boolean;

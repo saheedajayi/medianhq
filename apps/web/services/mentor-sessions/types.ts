@@ -22,6 +22,30 @@ export type MentorSessionStats = {
   currency: string;
 };
 
+export type SessionBookingStatus =
+  | "PENDING_CONFIRMATION"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "DECLINED"
+  | "EXPIRED"
+  | "NO_SHOW";
+
+export type SessionBooking = {
+  id: string;
+  menteeName: string;
+  /** When the session starts */
+  date: string;
+  status: SessionBookingStatus;
+};
+
+export type SessionBookingsPage = {
+  items: SessionBooking[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
 export type MentorSessionInput = {
   title: string;
   description: string;

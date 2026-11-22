@@ -14,6 +14,7 @@ import {
   useDeviceSessions,
   useRevokeOtherSessions,
 } from "@/services/auth/queries/auth.queries";
+import { DangerZone } from "./danger-zone";
 import {
   cardClass,
   cardTitleClass,
@@ -200,6 +201,7 @@ export function SecurityTab() {
       </form>
 
       <ActiveSessions />
+      <DangerZone />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiError } from "@/services/api-client";
 import {
@@ -9,6 +9,7 @@ import {
   type MentorSessionDto,
   type MentorSessionInput,
   type MentorSessionStats,
+  type SessionBookingsPage,
   type UpdateMentorSessionPayload,
 } from "@/services/mentor-sessions";
 import { mentorSessionsQueryKeys } from "./query-keys";
@@ -41,6 +42,16 @@ export const useMentorSessionStats = (id: string) => {
       return response.data;
     },
     // Bookings change without this page knowing, so don't trust an old count
+    staleTime: 0,
+  });
+};
+
+export const useMentorSessionBookings = (id: string, page: number) => {
+  return useQuery<SessionBookingsPage, ApiError>({
+    queryKey: mentorSessionsQueryKeys.bookings(id, page),
+    queryFn: async () => (await mentorSessionsService.getBookings(id, page)).data,
+    // Keep the current rows on screen while the next page loads
+    placeholderData: keepPreviousData,
     staleTime: 0,
   });
 };

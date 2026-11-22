@@ -33,6 +33,9 @@ import { INDUSTRY_ROLES as DEFAULT_INDUSTRY_ROLES } from "@/constants/industries
 
 const ALLOWED_INDUSTRIES = ["Finance", "Technology", "Business", "Consulting"];
 
+// Mirrors the API check: a profile link on linkedin.com or one of its country subdomains
+const LINKEDIN_PROFILE_PATTERN = /^https:\/\/([a-z0-9-]+\.)?linkedin\.com\/(in|pub)\/[^/\s]+/i;
+
 const experienceYears = [
   "1-3 years",
   "3-5 years",
@@ -48,6 +51,7 @@ export function MentorOnboardingPage() {
   const stepParam = searchParams.get("step");
   const currentSubStep = stepParam === "2" ? 2 : 1;
 
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [currentRole, setCurrentRole] = useState("");
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
@@ -67,6 +71,7 @@ export function MentorOnboardingPage() {
       const saved = sessionStorage.getItem(MENTOR_DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        if (parsed.linkedinUrl) setLinkedinUrl(parsed.linkedinUrl);
         if (parsed.currentRole) setCurrentRole(parsed.currentRole);
         if (parsed.company) setCompany(parsed.company);
         if (parsed.industry) setIndustry(parsed.industry);
@@ -116,11 +121,18 @@ export function MentorOnboardingPage() {
       return;
     }
 
+    if (linkedinUrl.trim() && !LINKEDIN_PROFILE_PATTERN.test(linkedinUrl.trim())) {
+      toast.error("Check your LinkedIn URL", {
+        description: "It should look like https://linkedin.com/in/your-name.",
+      });
+      return;
+    }
+
     if (typeof window !== "undefined") {
       try {
         sessionStorage.setItem(
           MENTOR_DRAFT_KEY,
-          JSON.stringify({ currentRole, company, industry, experience, location, motivation }),
+          JSON.stringify({ linkedinUrl, currentRole, company, industry, experience, location, motivation }),
         );
       } catch {}
     }
@@ -153,6 +165,7 @@ export function MentorOnboardingPage() {
       }
 
       await applyMentorMutation.mutateAsync({
+        linkedinUrl: linkedinUrl.trim() || undefined,
         currentRole,
         company,
         industry,
@@ -210,6 +223,22 @@ export function MentorOnboardingPage() {
 
       {currentSubStep === 1 ? (
         <form onSubmit={handleSubStep1Submit} className="grid gap-6">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="mentor-linkedin" className="text-sm font-medium text-[#111827]">
+              LinkedIn URL
+            </label>
+            <Input
+              id="mentor-linkedin"
+              type="url"
+              inputMode="url"
+              autoComplete="url"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              placeholder="https://linkedin.com/in/your-name"
+              className="h-[46px] rounded-xl text-[15px] px-3.5 border-[#e2e8f0] bg-transparent shadow-none placeholder:text-[#94a3b8]"
+            />
+          </div>
+
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[#111827]">
               Industry

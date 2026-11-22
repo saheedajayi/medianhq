@@ -24,11 +24,23 @@ export interface MySettings {
     firstName: string;
     lastName: string;
     email: string;
+    role?: "MENTEE" | "MENTOR" | "ADMIN" | null;
+    mentorProfile?: {
+      gender?: string | null;
+      location?: string | null;
+      bio?: string | null;
+      avatarUrl?: string | null;
+      /** True when the mentee pays the platform fee on top of the listed price */
+      passFeeToMentee?: boolean;
+    } | null;
     menteeProfile?: {
       gender?: string | null;
       location?: string | null;
       bio?: string | null;
       avatarUrl?: string | null;
+      goals?: string[];
+      goalDescription?: string | null;
+      timeframe?: string | null;
     } | null;
   };
 }
@@ -45,6 +57,12 @@ export interface UpdateProfilePayload {
   location?: string;
   bio?: string;
   avatarUrl?: string;
+}
+
+export interface CareerGoalsPayload {
+  goals: string[];
+  goalDescription: string;
+  timeframe: string;
 }
 
 export interface CareerDates {

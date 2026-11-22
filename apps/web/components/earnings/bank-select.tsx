@@ -40,7 +40,7 @@ export function BankSelect({ id, value, onChange }: BankSelectProps) {
       <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
         <Command>
           <CommandInput placeholder="Search banks" />
-          <CommandList>
+          <CommandList onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
             {banks ? (
               <>
                 <CommandEmpty>No bank with that name.</CommandEmpty>

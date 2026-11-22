@@ -121,3 +121,64 @@ describe('SessionsService approval rule', () => {
     expect(repository.updateSession).toHaveBeenCalled();
   });
 });
+
+describe('SessionsService.bookings', () => {
+  const user = { id: 'mentor-1', role: 'MENTOR' } as never;
+  const setup = (session: unknown = { id: 's1' }) => {
+    const repository = {
+      findMentorSession: jest.fn().mockResolvedValue(session),
+      findSessionBookingsPage: jest.fn().mockResolvedValue([
+        [
+          {
+            id: 'b1',
+            startsAt: new Date('2026-11-18T10:00:00.000Z'),
+            status: 'COMPLETED',
+            mentee: { firstName: 'Daniel', lastName: 'Abubakar' },
+          },
+        ],
+        12,
+      ]),
+    };
+    return { repository, service: new SessionsService(repository as never) };
+  };
+
+  it('returns a page of who booked the session', async () => {
+    const { repository, service } = setup();
+
+    await expect(service.bookings(user, 's1', '2')).resolves.toEqual({
+      items: [
+        {
+          id: 'b1',
+          menteeName: 'Daniel Abubakar',
+          date: new Date('2026-11-18T10:00:00.000Z'),
+          status: 'COMPLETED',
+        },
+      ],
+      total: 12,
+      page: 2,
+      pageSize: 8,
+    });
+    expect(repository.findSessionBookingsPage).toHaveBeenCalledWith('s1', 8, 8);
+  });
+
+  it.each([undefined, '0', '-3', 'abc'])(
+    'falls back to the first page for %p',
+    async (page) => {
+      const { repository, service } = setup();
+      await service.bookings(user, 's1', page);
+      expect(repository.findSessionBookingsPage).toHaveBeenCalledWith(
+        's1',
+        0,
+        8,
+      );
+    },
+  );
+
+  it("refuses another mentor's session", async () => {
+    const { repository, service } = setup(null);
+    await expect(service.bookings(user, 'other')).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(repository.findSessionBookingsPage).not.toHaveBeenCalled();
+  });
+});

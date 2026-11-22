@@ -107,13 +107,19 @@ export function BookingsView({ viewerRole }: { viewerRole: ViewerRole }) {
   useEffect(() => {
     let isMounted = true;
 
-    // Returning from Paystack checkout (mentees only): confirm the payment, then refresh bookings
+    // Returning from Paystack or Flutterwave checkout (mentees only): confirm the payment, then refresh bookings
     if (isMentor) return;
     const params = new URLSearchParams(window.location.search);
     const reference = params.get("reference");
     if (params.get("payment") !== "success" || !reference) return;
 
     window.history.replaceState(null, "", window.location.pathname);
+    // Flutterwave adds a status when the mentee backs out or the charge doesn't go through
+    const checkoutStatus = params.get("status");
+    if (checkoutStatus === "cancelled" || checkoutStatus === "failed") {
+      showToast("Payment wasn't completed. You haven't been charged.");
+      return;
+    }
     // Refreshes bookings once settled, so the paid request shows under Pending
     verifyPayment(reference)
       .then((res) => {

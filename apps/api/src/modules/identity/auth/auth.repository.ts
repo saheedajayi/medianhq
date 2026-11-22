@@ -4,6 +4,7 @@ import { PrismaService } from '../../../database/prisma.service';
 
 const MENTEE_PROFILE_SELECT = {
   id: true,
+  goals: true,
   gender: true,
   location: true,
   bio: true,
@@ -13,6 +14,7 @@ const MENTEE_PROFILE_SELECT = {
 const MENTOR_PROFILE_SELECT = {
   id: true,
   status: true,
+  rejectionSeenAt: true,
   gender: true,
   location: true,
   bio: true,

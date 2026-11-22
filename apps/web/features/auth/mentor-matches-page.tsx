@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/base/button";
 import { ArrowRight, UserSearch } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +11,9 @@ export function MentorMatchesPage() {
   const { data, isLoading, error } = useMentorMatches();
 
   const mentors = data || [];
+  // The best match starts selected, so Book mentor always has somewhere to go
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const selectedId = pickedId ?? (mentors[0] ? String(mentors[0].id) : null);
 
   if (!isLoading && mentors.length === 0 && !error) {
     return (
@@ -44,10 +48,13 @@ export function MentorMatchesPage() {
         <h1 className="text-[28px] font-bold tracking-[-0.02em] text-[#4b100d]">
           Top mentor matches for you
         </h1>
-        <p className="mt-2 text-lg text-[#344054]">Based on your goals</p>
+        <p className="mx-auto mt-2 max-w-[360px] text-base text-[#101828]">
+          These recommendations are based on your goals. Choose a mentor to book your first
+          session with.
+        </p>
       </header>
 
-      <div className="grid gap-4">
+      <div role="radiogroup" aria-label="Your mentor matches" className="grid gap-4">
         {isLoading && (
           <SkeletonGroup label="Finding your best matches" className="grid gap-4">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -71,13 +78,23 @@ export function MentorMatchesPage() {
         {error && (
           <div className="text-center text-red-500 py-8">Failed to load mentors</div>
         )}
-        {mentors.map((mentor) => (
-          <div
+        {mentors.map((mentor) => {
+          const isSelected = String(mentor.id) === selectedId;
+          return (
+          <button
             key={mentor.id}
-            className="flex items-center justify-between rounded-2xl border border-[#f1f5f9] bg-white p-4 transition-shadow"
+            type="button"
+            role="radio"
+            aria-checked={isSelected}
+            onClick={() => setPickedId(String(mentor.id))}
+            className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5500]/30 ${
+              isSelected
+                ? "border-[#FFB89C] bg-[#FFF6F2]"
+                : "border-[#f1f5f9] bg-white hover:border-[#FFD9C9]"
+            }`}
           >
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <span className="flex items-center gap-4">
+              <span className="relative">
                 <img
                   src={mentor.image}
                   alt={mentor.name}
@@ -101,33 +118,34 @@ export function MentorMatchesPage() {
                     strokeLinejoin="round"
                   />
                 </svg>
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-[#111827]">
+              </span>
+              <span>
+                <span className="block text-base font-semibold text-[#111827]">
                   {mentor.name}
-                </h3>
-                <p className="mt-0.5 text-[15px] text-[#64748b]">
+                </span>
+                <span className="mt-0.5 block text-[15px] text-[#64748b]">
                   {mentor.role}
-                </p>
-                <p className="mt-1 text-[15px] text-[#64748b]">
+                </span>
+                <span className="mt-1 block text-[15px] text-[#64748b]">
                   {mentor.sessions}
-                </p>
-              </div>
-            </div>
+                </span>
+              </span>
+            </span>
 
-            <div className="flex h-8 items-center justify-center rounded-full bg-[#e6f4ea] px-3">
+            <span className="flex h-8 shrink-0 items-center justify-center rounded-full bg-[#e6f4ea] px-3">
               <span className="text-[13px] font-medium text-[#14532d]">
                 {mentor.match} Match
               </span>
-            </div>
-          </div>
-        ))}
+            </span>
+          </button>
+          );
+        })}
       </div>
 
       <div className="mt-8">
         <Button asChild className="h-14 w-full rounded-full text-base font-medium shadow-none">
-          <Link href="/dashboard">
-            Go to Dashboard
+          <Link href={selectedId ? `/mentors/${selectedId}` : "/explore"}>
+            Book mentor
             <ArrowRight className="ml-2 size-5" />
           </Link>
         </Button>

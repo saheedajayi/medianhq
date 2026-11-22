@@ -44,6 +44,29 @@ export class SessionsRepository {
     });
   }
 
+  /** One page of a session's bookings, newest first, with who booked it */
+  findSessionBookingsPage(sessionId: string, skip: number, take: number) {
+    const where = {
+      mentorSessionId: sessionId,
+      status: { not: BookingStatus.PENDING_PAYMENT },
+    };
+    return this.prisma.$transaction([
+      this.prisma.booking.findMany({
+        where,
+        orderBy: { startsAt: 'desc' },
+        skip,
+        take,
+        select: {
+          id: true,
+          startsAt: true,
+          status: true,
+          mentee: { select: { firstName: true, lastName: true } },
+        },
+      }),
+      this.prisma.booking.count({ where }),
+    ]);
+  }
+
   sumEarnings(mentorId: string, bookingIds: string[]) {
     return this.prisma.mentorEarning.aggregate({
       where: { mentorId, bookingId: { in: bookingIds } },

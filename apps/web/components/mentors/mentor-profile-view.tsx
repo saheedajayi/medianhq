@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MentorHeroCard } from "./mentor-hero-card";
@@ -64,7 +65,12 @@ export function MentorProfileView({ mentorId }: MentorProfileViewProps) {
 }
 
 function MentorProfileContent({ mentor }: { mentor: MentorDetailProfile }) {
-  const initialPackage = mentor.packages[0] || EMPTY_PACKAGE;
+  // A shared session link (?session=) opens with that session already picked
+  const linkedSessionId = useSearchParams().get("session");
+  const initialPackage =
+    mentor.packages.find((pkg) => linkedSessionId && pkg.mentorSessionId === linkedSessionId) ||
+    mentor.packages[0] ||
+    EMPTY_PACKAGE;
 
   // State management
   const [activeTab, setActiveTab] = useState<"profile" | "reviews">("profile");

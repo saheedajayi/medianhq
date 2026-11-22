@@ -193,6 +193,23 @@ describe('MentorPayoutsService', () => {
     ).rejects.toThrow('10-digit');
   });
 
+  it('surfaces a service-unavailable error when Paystack rate-limits lookups', async () => {
+    const { payouts, service } = setup();
+    payouts.resolveAccountName.mockRejectedValue(
+      new PaystackError(
+        'Your daily limit for resolving account numbers has been exceeded',
+        429,
+      ),
+    );
+
+    await expect(
+      service.resolveAccount(mentor, {
+        bankCode: '058',
+        accountNumber: '0123454421',
+      }),
+    ).rejects.toThrow('Could not verify your bank account right now');
+  });
+
   it('shows the admin review steps to the mentor as processing', async () => {
     const row = (id: string, status: string) => ({
       id,

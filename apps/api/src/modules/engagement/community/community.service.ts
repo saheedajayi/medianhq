@@ -15,7 +15,11 @@ export class CommunityService {
   ) {}
 
   async listPosts(category?: string) {
-    const where = category && category !== 'All' ? { category } : {};
+    const where = {
+      ...(category && category !== 'All' && { category }),
+      // A deactivated or leaving account's posts stay hidden until it comes back
+      author: { deactivatedAt: null, deletionScheduledFor: null },
+    };
     const posts = await this.prisma.communityPost.findMany({
       where,
       include: {

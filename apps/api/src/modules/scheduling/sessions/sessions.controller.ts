@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
@@ -47,6 +48,13 @@ export class SessionsController {
     @Param('id') id: string,
   ) {
     return this.sessionsService.stats(user, id);
+  }
+  @UseGuards(AuthGuard) @Get('mentor/:id/bookings') bookings(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Query('page') page?: string,
+  ) {
+    return this.sessionsService.bookings(user, id, page);
   }
   @UseGuards(AuthGuard) @Patch('mentor/:id') update(
     @CurrentUser() user: AuthUser,

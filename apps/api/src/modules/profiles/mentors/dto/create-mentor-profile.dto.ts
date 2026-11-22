@@ -4,6 +4,8 @@ export type CreateMentorProfileDto = {
   industry: string;
   experience: string;
   location?: string;
+  /** Public LinkedIn profile, collected on the first application step */
+  linkedinUrl?: string;
   /** Answer to "Why do you want to mentor?" (private, for application review) */
   motivation?: string;
   /** @deprecated older clients sent the motivation answer as `bio` */

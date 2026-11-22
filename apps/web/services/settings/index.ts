@@ -1,5 +1,6 @@
 import { apiClient } from "@/services/api-client";
 import type {
+  CareerGoalsPayload,
   CareerInfo,
   Education,
   EducationPayload,
@@ -23,6 +24,12 @@ export const settingsService = {
   },
   updateProfile(payload: UpdateProfilePayload) {
     return apiClient.patch(`${SETTINGS_PATH}/profile`, payload);
+  },
+  updateCareerGoals(payload: CareerGoalsPayload) {
+    return apiClient.patch(`${SETTINGS_PATH}/career-goals`, payload);
+  },
+  updateServiceCharge(passFeeToMentee: boolean) {
+    return apiClient.patch(`${SETTINGS_PATH}/service-charge`, { passFeeToMentee });
   },
   getCareer() {
     return apiClient.get<CareerInfo>(`${SETTINGS_PATH}/career`);

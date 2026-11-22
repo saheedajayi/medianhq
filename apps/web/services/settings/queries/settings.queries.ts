@@ -6,6 +6,7 @@ import type { ApiError } from "@/services/api-client";
 import { authQueryKeys } from "@/services/auth/queries/query-keys";
 import {
   settingsService,
+  type CareerGoalsPayload,
   type CareerInfo,
   type EducationPayload,
   type MySettings,
@@ -69,6 +70,41 @@ export const useUpdateProfile = () => {
       // The name and photo also show in the greeting and sidebar
       queryClient.invalidateQueries({ queryKey: settingsQueryKeys.mine() });
       queryClient.invalidateQueries({ queryKey: authQueryKeys.me() });
+    },
+  });
+};
+
+export const useUpdateCareerGoals = () => {
+  const queryClient = useQueryClient();
+  return useMutation<unknown, ApiError, CareerGoalsPayload>({
+    mutationFn: (payload) => settingsService.updateCareerGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: settingsQueryKeys.mine() }),
+  });
+};
+
+/** Moves the radio straight away and puts it back if saving fails */
+export const useUpdateServiceCharge = () => {
+  const queryClient = useQueryClient();
+  const key = settingsQueryKeys.mine();
+
+  return useMutation<unknown, ApiError, boolean, { previous?: MySettings }>({
+    mutationFn: (passFeeToMentee) => settingsService.updateServiceCharge(passFeeToMentee),
+    onMutate: async (passFeeToMentee) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<MySettings>(key);
+      if (previous?.profile.mentorProfile) {
+        queryClient.setQueryData<MySettings>(key, {
+          ...previous,
+          profile: {
+            ...previous.profile,
+            mentorProfile: { ...previous.profile.mentorProfile, passFeeToMentee },
+          },
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _choice, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
     },
   });
 };

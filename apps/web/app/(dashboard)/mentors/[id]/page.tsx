@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { MentorProfileView } from "@/components/mentors/mentor-profile-view";
 import { getMentorMetadata } from "@/components/mentors/mentor-metadata";
 
@@ -17,5 +18,10 @@ export default async function MentorProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <MentorProfileView mentorId={id} />;
+  // The profile reads ?session= from the URL, which needs a Suspense boundary
+  return (
+    <Suspense>
+      <MentorProfileView mentorId={id} />
+    </Suspense>
+  );
 }

@@ -34,6 +34,8 @@ interface NavItem {
   }>;
   variant?: "Outline" | "Linear" | "Bold" | "Bulk";
   activeVariant?: "Outline" | "Linear" | "Bold" | "Bulk";
+  /** Shown greyed out with a "Soon" tag: the screen isn't designed yet */
+  comingSoon?: boolean;
 }
 
 const menteeNavItems: NavItem[] = [
@@ -42,8 +44,8 @@ const menteeNavItems: NavItem[] = [
   { label: "Bookings", href: "/mentee/booking-session", icon: Calendar, variant: "Outline", activeVariant: "Bulk" },
   { label: "Messages", href: "/mentee/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
   // { label: "Async Q&A", href: "/mentee/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
-  { label: "Community", href: "/mentee/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
-  { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Community", href: "/mentee/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk", comingSoon: true },
+  { label: "Achievements", href: "/mentee/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk", comingSoon: true },
 ];
 
 const mentorNavItems: NavItem[] = [
@@ -54,8 +56,8 @@ const mentorNavItems: NavItem[] = [
   { label: "Messages", href: "/mentor/messages", icon: Messages2, variant: "Outline", activeVariant: "Bold" },
   // { label: "Async Q&A", href: "/mentor/async-qa", icon: MessageQuestion, variant: "Outline", activeVariant: "Bold" },
   { label: "Earnings", href: "/mentor/earnings", icon: Wallet, variant: "Outline", activeVariant: "Bulk" },
-  { label: "Community", href: "/mentor/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk" },
-  { label: "Achievements", href: "/mentor/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk" },
+  { label: "Community", href: "/mentor/community", icon: Profile2User, variant: "Outline", activeVariant: "Bulk", comingSoon: true },
+  { label: "Achievements", href: "/mentor/achievements", icon: MedalStar, variant: "Outline", activeVariant: "Bulk", comingSoon: true },
 ];
 
 interface DashboardSidebarProps {
@@ -140,6 +142,22 @@ export function DashboardSidebar({ isMobileOpen = false, onMobileClose, userRole
             const currentVariant = isActive
               ? (item.activeVariant || "Bulk")
               : (item.variant || "Outline");
+
+            if (item.comingSoon) {
+              return (
+                <div
+                  key={item.label}
+                  aria-disabled="true"
+                  className="flex cursor-not-allowed items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#98A2B3]"
+                >
+                  <Icon size="18" variant="Outline" color="#D0D5DD" className="shrink-0" />
+                  <span>{item.label}</span>
+                  <span className="ml-auto rounded-full bg-[#F2F4F7] px-2 py-0.5 text-[11px] font-medium text-[#667085]">
+                    Soon
+                  </span>
+                </div>
+              );
+            }
 
             return (
               <Link

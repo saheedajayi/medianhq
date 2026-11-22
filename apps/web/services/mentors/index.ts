@@ -28,6 +28,9 @@ export const mentorsService = {
   getMatches() {
     return apiClient.get<MentorMatch[]>(`${MENTORS_PATH}/matches`);
   },
+  markRejectionSeen() {
+    return apiClient.post(`${MENTORS_PATH}/me/rejection-seen`);
+  },
   explore(params?: ExploreMentorsParams) {
     const query = new URLSearchParams();
     if (params) {

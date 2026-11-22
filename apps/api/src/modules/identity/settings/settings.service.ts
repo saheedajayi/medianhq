@@ -28,6 +28,16 @@ export type UpdateProfileDto = {
   avatarUrl?: string;
 };
 
+export type ServiceChargeDto = {
+  passFeeToMentee?: boolean;
+};
+
+export type CareerGoalsDto = {
+  goals?: string[];
+  goalDescription?: string | null;
+  timeframe?: string | null;
+};
+
 type CareerDates = {
   startMonth: number;
   startYear: number;
@@ -69,6 +79,8 @@ const NOTIFICATION_TYPES = [
   // The onboarding series and other tips from Mide
   'tips',
 ];
+const GOAL_TIMEFRAMES = ['1-3 months', '3-6 months', '6+ months'];
+const MAX_GOAL_DESCRIPTION_LENGTH = 200;
 const MAX_LIST_ITEMS = 20;
 const MAX_CUSTOM_LINKS = 10;
 const CAREER_ORDER = [
@@ -155,7 +167,7 @@ export class SettingsService {
   }
 
   async updateProfile(user: AuthUser, dto: UpdateProfileDto) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
 
     const firstName = dto.firstName?.trim();
     const lastName = dto.lastName?.trim();
@@ -182,23 +194,25 @@ export class SettingsService {
       throw new BadRequestException('Profile picture must be an https URL.');
     }
 
+    const profile = {
+      ...(gender && {
+        gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase(),
+      }),
+      ...(dto.location !== undefined && {
+        location: dto.location.trim() || null,
+      }),
+      ...(dto.bio !== undefined && { bio: bio || null }),
+      ...(avatarUrl && { avatarUrl }),
+    };
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
-        menteeProfile: {
-          update: {
-            ...(gender && {
-              gender: gender[0].toUpperCase() + gender.slice(1).toLowerCase(),
-            }),
-            ...(dto.location !== undefined && {
-              location: dto.location.trim() || null,
-            }),
-            ...(dto.bio !== undefined && { bio: bio || null }),
-            ...(avatarUrl && { avatarUrl }),
-          },
-        },
+        // The same fields live on whichever profile the person's role uses
+        ...(user.role === UserRole.MENTOR
+          ? { mentorProfile: { update: profile } }
+          : { menteeProfile: { update: profile } }),
       },
     });
     if (bio) {
@@ -214,8 +228,43 @@ export class SettingsService {
     return { success: true };
   }
 
-  async getCareer(user: AuthUser) {
+  /** The goals a mentee picked at onboarding, editable from settings */
+  async updateCareerGoals(user: AuthUser, dto: CareerGoalsDto) {
     this.ensureMentee(user);
+
+    const goals = this.cleanList(dto.goals, 'Goals');
+    const goalDescription = dto.goalDescription?.trim() || null;
+    if ((goalDescription?.length ?? 0) > MAX_GOAL_DESCRIPTION_LENGTH) {
+      throw new BadRequestException(
+        `Keep your goal to ${MAX_GOAL_DESCRIPTION_LENGTH} characters or fewer.`,
+      );
+    }
+    const timeframe = dto.timeframe?.trim() || null;
+    if (timeframe && !GOAL_TIMEFRAMES.includes(timeframe)) {
+      throw new BadRequestException('Pick one of the listed timeframes.');
+    }
+
+    const data = { goals, goalDescription, timeframe };
+    await this.prisma.menteeProfile.upsert({
+      where: { userId: user.id },
+      create: { userId: user.id, ...data },
+      update: data,
+    });
+    if (goalDescription) {
+      this.contentScanner.scan({
+        contentType: 'PROFILE_TEXT',
+        contentId: user.id,
+        contentField: 'Goal',
+        content: goalDescription,
+        authorId: user.id,
+      });
+    }
+
+    return { success: true, ...data };
+  }
+
+  async getCareer(user: AuthUser) {
+    this.ensureMember(user);
     const [experiences, educations] = await Promise.all([
       this.prisma.workExperience.findMany({
         where: { userId: user.id },
@@ -230,14 +279,14 @@ export class SettingsService {
   }
 
   createExperience(user: AuthUser, dto: WorkExperienceDto) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
     return this.prisma.workExperience.create({
       data: { userId: user.id, ...this.cleanExperience(dto) },
     });
   }
 
   async updateExperience(user: AuthUser, id: string, dto: WorkExperienceDto) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
     await this.assertOwned(
       this.prisma.workExperience.findFirst({ where: { id, userId: user.id } }),
     );
@@ -248,7 +297,7 @@ export class SettingsService {
   }
 
   async deleteExperience(user: AuthUser, id: string) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
     await this.prisma.workExperience.deleteMany({
       where: { id, userId: user.id },
     });
@@ -256,14 +305,14 @@ export class SettingsService {
   }
 
   createEducation(user: AuthUser, dto: EducationDto) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
     return this.prisma.education.create({
       data: { userId: user.id, ...this.cleanEducation(dto) },
     });
   }
 
   async updateEducation(user: AuthUser, id: string, dto: EducationDto) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
     await this.assertOwned(
       this.prisma.education.findFirst({ where: { id, userId: user.id } }),
     );
@@ -274,13 +323,13 @@ export class SettingsService {
   }
 
   async deleteEducation(user: AuthUser, id: string) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
     await this.prisma.education.deleteMany({ where: { id, userId: user.id } });
     return { success: true };
   }
 
   async getSocialLinks(user: AuthUser) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
     return this.prisma.socialLink.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'asc' },
@@ -289,7 +338,7 @@ export class SettingsService {
 
   /** Replaces every link at once, since the screen saves them together */
   async saveSocialLinks(user: AuthUser, dto: SocialLinksDto) {
-    this.ensureMentee(user);
+    this.ensureMember(user);
 
     const custom = dto.links ?? [];
     if (custom.length > MAX_CUSTOM_LINKS) {
@@ -315,6 +364,30 @@ export class SettingsService {
       }),
     ]);
     return this.getSocialLinks(user);
+  }
+
+  /** Mentors and mentees share the profile, career and socials settings */
+  private ensureMember(user: AuthUser) {
+    if (user.role !== UserRole.MENTEE && user.role !== UserRole.MENTOR) {
+      throw new ForbiddenException(
+        'Only mentors and mentees can change these settings.',
+      );
+    }
+  }
+
+  /** Who covers the platform fee by default: the mentor, or the mentee on top of the price */
+  async updateServiceCharge(user: AuthUser, dto: ServiceChargeDto) {
+    if (user.role !== UserRole.MENTOR) {
+      throw new ForbiddenException('Only mentors can change this setting.');
+    }
+    if (typeof dto?.passFeeToMentee !== 'boolean') {
+      throw new BadRequestException('Choose who covers the platform fee.');
+    }
+    await this.prisma.mentorProfile.update({
+      where: { userId: user.id },
+      data: { passFeeToMentee: dto.passFeeToMentee },
+    });
+    return { success: true, passFeeToMentee: dto.passFeeToMentee };
   }
 
   private ensureMentee(user: AuthUser) {

@@ -13,7 +13,14 @@ export type TransferStatus =
 
 type PaystackResponse<T> = { status: boolean; message?: string; data?: T };
 
-export class PaystackError extends Error {}
+export class PaystackError extends Error {
+  constructor(
+    message: string,
+    readonly statusCode?: number,
+  ) {
+    super(message);
+  }
+}
 
 /** Thin wrapper over the Paystack Transfers API; amounts are in naira and sent as kobo */
 export class PaystackTransfers {
@@ -102,6 +109,7 @@ export class PaystackTransfers {
     if (!response.ok || !payload.status || !payload.data) {
       throw new PaystackError(
         payload.message || `Paystack request failed with ${response.status}`,
+        response.status,
       );
     }
     return payload.data;

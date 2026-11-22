@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+// A mentee's profile is edited in Settings; this used to land on Community
 export default function MenteeProfilePage() {
-  redirect("/mentee/community");
+  redirect("/settings?tab=account");
 }

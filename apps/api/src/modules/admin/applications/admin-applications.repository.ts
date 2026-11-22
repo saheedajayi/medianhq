@@ -169,7 +169,22 @@ export class AdminApplicationsRepository {
   setDecision(applicationId: string, status: MentorStatus) {
     return this.prisma.mentorProfile.update({
       where: { id: applicationId },
-      data: { status, decidedAt: new Date() },
+      data: {
+        status,
+        decidedAt: new Date(),
+        rejectionSeenAt: null,
+        // A rejected applicant carries on as a mentee instead of being left with
+        // nothing to do; approving puts them back on the mentor side
+        user: {
+          update:
+            status === MentorStatus.REJECTED
+              ? {
+                  role: UserRole.MENTEE,
+                  menteeProfile: { upsert: { create: {}, update: {} } },
+                }
+              : { role: UserRole.MENTOR },
+        },
+      },
       include: APPLICATION_INCLUDE,
     });
   }

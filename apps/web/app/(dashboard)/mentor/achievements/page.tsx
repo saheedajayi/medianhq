@@ -1,5 +1,6 @@
-import { EmptyState } from "@/components/ui/custom/empty-state";
+import { redirect } from "next/navigation";
 
+// Achievements has no designed screen yet and is switched off in the sidebar
 export default function MentorAchievementsPage() {
-  return <EmptyState title="Achievements" />;
+  redirect("/dashboard");
 }

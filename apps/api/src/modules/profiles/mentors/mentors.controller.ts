@@ -75,6 +75,13 @@ export class MentorsController {
     };
   }
 
+  /** The rejected applicant has read the "We're sorry!" notice, so stop showing it */
+  @UseGuards(AuthGuard)
+  @Post('me/rejection-seen')
+  markRejectionSeen(@CurrentUser() user: AuthUser) {
+    return this.mentorsService.markRejectionSeen(user.id);
+  }
+
   @Get(':id')
   async getMentorProfile(@Req() request: Request, @Param('id') id: string) {
     const profile = await this.mentorsService.getMentorProfile(id);
