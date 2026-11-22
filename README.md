@@ -68,7 +68,6 @@ waitlist/
    npm run db:up
    npm run db:generate
    npm run db:migrate:deploy
-   npm run db:seed
    ```
 
 4. Start the apps:
@@ -98,7 +97,7 @@ Run these from the repo root.
 | `npm run db:generate`       | Generates the Prisma client                |
 | `npm run db:migrate`        | Creates and applies a migration in dev     |
 | `npm run db:migrate:deploy` | Applies pending migrations                 |
-| `npm run db:seed`           | Seeds baseline data                        |
+| `npm run db:seed`           | Does nothing now: no baseline data needed  |
 | `npm run db:seed:demo`      | Seeds demo accounts and bookings           |
 | `npm run db:purge:demo`     | Removes the demo data                      |
 | `npm run db:studio`         | Opens Prisma Studio                        |

@@ -1,5 +1,13 @@
 # Taxonomy Architecture: Database vs. Frontend
 
+> **Decision (22 November 2026): frontend only (Option B).** The onboarding
+> dropdowns read `apps/web/constants/industries.ts` and nothing else. The seed
+> script no longer adds industries or roles, and the web app no longer reads or
+> writes the taxonomy API. The `Industry` and `Role` tables and the API's
+> `TaxonomyModule` are still in place but unused; they can be removed in a
+> later cleanup. The rest of this document is the analysis that led here and
+> describes the earlier hybrid setup.
+
 This document explains what the **Taxonomy (Industries & Roles)** data is, how it is currently used across the Median platform, and whether it is better to store it in the database or keep it in the frontend.
 
 ---
