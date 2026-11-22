@@ -73,8 +73,13 @@ export function CareerGoalsTab() {
     );
 
   const handleSave = async () => {
-    const goals = selected.map((goal) =>
-      goal === OTHER_GOAL && otherGoal.trim() ? otherGoal.trim() : goal
+    // Typed goals are shown joined by commas, so split them back into one goal each
+    const typed = otherGoal
+      .split(",")
+      .map((goal) => goal.trim())
+      .filter(Boolean);
+    const goals = selected.flatMap((goal) =>
+      goal === OTHER_GOAL && typed.length > 0 ? typed : [goal]
     );
     if (goals.length === 0) {
       setError("Pick at least one goal.");

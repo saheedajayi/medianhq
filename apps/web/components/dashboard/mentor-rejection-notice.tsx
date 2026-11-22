@@ -27,17 +27,16 @@ export function MentorRejectionNotice({ open }: { open: boolean }) {
           <X className="size-4" />
         </DialogClose>
         <DialogTitle className="text-2xl font-semibold text-[#4B100D]">We&apos;re sorry!</DialogTitle>
-        <DialogDescription asChild>
-          <div className="flex flex-col gap-4 text-base leading-relaxed text-[#101828]">
-            <p>
-              Your mentor application has been rejected. After review, we concluded that you are
-              not a fit at this moment, but we encourage you to reapply in 6 months.
-            </p>
-            <p>
-              In the meantime, we&apos;ve set you up as a mentee, tell us what you&apos;re working
-              on so we can match you with the right mentor.
-            </p>
-          </div>
+        {/* Spans, not paragraphs: the description itself renders as a paragraph */}
+        <DialogDescription className="flex flex-col gap-4 text-base leading-relaxed text-[#101828]">
+          <span>
+            Your mentor application has been rejected. After review, we concluded that you are not
+            a fit at this moment, but we encourage you to reapply in 6 months.
+          </span>
+          <span>
+            In the meantime, we&apos;ve set you up as a mentee, tell us what you&apos;re working on
+            so we can match you with the right mentor.
+          </span>
         </DialogDescription>
         <div className="mt-4 flex justify-center pb-2">
           <button
