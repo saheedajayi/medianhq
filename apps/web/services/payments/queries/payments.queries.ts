@@ -1,21 +1,32 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiError } from "@/services/api-client";
 import { bookingsQueryKeys } from "@/services/bookings/queries/query-keys";
 import {
   paymentsService,
   type InitializePaymentResponse,
+  type PaymentQuote,
   type VerifyPaymentResponse,
 } from "@/services/payments";
 import { paymentsQueryKeys } from "./query-keys";
 
+/** What a booking will charge in a currency other than naira; naira needs no quote */
+export const usePaymentQuote = (bookingId: string | undefined, currency: string) => {
+  return useQuery<PaymentQuote, ApiError>({
+    queryKey: paymentsQueryKeys.quote(bookingId ?? "", currency),
+    queryFn: async () => (await paymentsService.quote(bookingId as string, currency)).data,
+    enabled: !!bookingId && currency !== "NGN",
+    retry: false,
+  });
+};
+
 export const useInitializePayment = () => {
-  return useMutation<InitializePaymentResponse, ApiError, string>({
+  return useMutation<InitializePaymentResponse, ApiError, { bookingId: string; currency: string }>({
     mutationKey: paymentsQueryKeys.initialize(),
-    mutationFn: async (bookingId) => {
-      const response = await paymentsService.initialize(bookingId);
+    mutationFn: async ({ bookingId, currency }) => {
+      const response = await paymentsService.initialize(bookingId, currency);
       return response.data;
     },
   });

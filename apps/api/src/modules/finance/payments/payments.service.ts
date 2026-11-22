@@ -7,8 +7,16 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { BookingStatus, PaymentStatus } from '@prisma/client';
+import { BookingStatus, PaymentStatus, type Payment } from '@prisma/client';
 import { PaymentsRepository } from './payments.repository';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
+import {
+  FlutterwaveClient,
+  isFlutterwaveCurrency,
+  isPaidTransaction,
+  refundStatusFor,
+  type FlutterwaveCurrency,
+} from './flutterwave';
 import type { AuthUser } from '../../identity/auth/dto/auth.dto';
 import { getRespondBy } from '../../scheduling/bookings/booking-policy';
 import { BookingNotificationsService } from '../../scheduling/booking-notifications/booking-notifications.service';
@@ -30,9 +38,37 @@ export class PaymentsService {
     private readonly paymentsRepository: PaymentsRepository,
     private readonly bookingNotifications: BookingNotificationsService,
     private readonly payoutsService: PayoutsService,
+    private readonly exchangeRates: ExchangeRatesService,
   ) {}
 
-  async initialize(user: AuthUser, bookingId: string) {
+  /**
+   * What the mentee will pay in their chosen currency, before they pay. Naira
+   * goes through Paystack; the other supported currencies through Flutterwave.
+   */
+  async quote(user: AuthUser, bookingId: string, currency = 'NGN') {
+    const booking = await this.findPayableBooking(user, bookingId);
+    const payment = booking.payment;
+    if (!payment || payment.amount <= 0) {
+      throw new BadRequestException('This session is free.');
+    }
+    if (currency === 'NGN') {
+      return { amount: payment.amount, currency, provider: 'PAYSTACK' };
+    }
+    if (!isFlutterwaveCurrency(currency)) {
+      throw new BadRequestException(`We can't take payments in ${currency}.`);
+    }
+    this.flutterwave();
+    return {
+      amount: await this.chargeIn(payment, currency),
+      currency,
+      provider: 'FLUTTERWAVE',
+    };
+  }
+
+  async initialize(user: AuthUser, bookingId: string, currency = 'NGN') {
+    if (currency !== 'NGN' && !isFlutterwaveCurrency(currency)) {
+      throw new BadRequestException(`We can't take payments in ${currency}.`);
+    }
     const booking = await this.paymentsRepository.findBookingById(bookingId);
 
     if (!booking) {
@@ -71,6 +107,14 @@ export class PaymentsService {
     }
 
     const reference = `MEDIAN_${bookingId}_${Date.now()}`;
+    if (isFlutterwaveCurrency(currency) && booking.payment) {
+      return this.initializeFlutterwave(user, booking.payment, {
+        reference,
+        currency,
+        mentorId: booking.mentorId,
+      });
+    }
+
     const webOrigin = process.env.WEB_ORIGIN;
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
     if (!webOrigin || !paystackSecret) {
@@ -138,6 +182,8 @@ export class PaymentsService {
       provider: 'PAYSTACK',
       providerReference: reference,
       authorizationUrl,
+      chargeAmount: null,
+      chargeCurrency: null,
     });
 
     return {
@@ -148,6 +194,119 @@ export class PaymentsService {
       currency: payment.currency,
       payment,
     };
+  }
+
+  private async initializeFlutterwave(
+    user: AuthUser,
+    payment: Payment,
+    input: {
+      reference: string;
+      currency: FlutterwaveCurrency;
+      mentorId: string;
+    },
+  ) {
+    const flutterwave = this.flutterwave();
+    const webOrigin = this.webOrigin();
+    const chargeAmount = await this.chargeIn(payment, input.currency);
+    const redirectUrl = `${webOrigin}/mentee/booking-session?payment=success&bookingId=${payment.bookingId}&reference=${input.reference}`;
+
+    let authorizationUrl: string;
+    try {
+      authorizationUrl = await flutterwave.createCheckout({
+        reference: input.reference,
+        amount: chargeAmount,
+        currency: input.currency,
+        redirectUrl,
+        customer: {
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+        },
+        meta: {
+          bookingId: payment.bookingId,
+          mentorId: input.mentorId,
+          menteeId: user.id,
+        },
+      });
+    } catch (err) {
+      this.logger.error('Flutterwave checkout could not be started', err);
+      throw new InternalServerErrorException(
+        'Unable to start the payment. Please try again.',
+      );
+    }
+
+    const saved = await this.paymentsRepository.upsertPayment(
+      payment.bookingId,
+      {
+        amount: payment.amount,
+        currency: 'NGN',
+        status: PaymentStatus.PENDING,
+        provider: 'FLUTTERWAVE',
+        providerReference: input.reference,
+        authorizationUrl,
+        chargeAmount,
+        chargeCurrency: input.currency,
+      },
+    );
+
+    return {
+      success: true,
+      authorizationUrl,
+      reference: input.reference,
+      amount: chargeAmount,
+      currency: input.currency,
+      payment: saved,
+    };
+  }
+
+  /** The booking a mentee is about to pay for, checked to be theirs and still unpaid */
+  private async findPayableBooking(user: AuthUser, bookingId: string) {
+    const booking = await this.paymentsRepository.findBookingById(bookingId);
+    if (!booking) {
+      throw new NotFoundException(`Booking with ID '${bookingId}' not found.`);
+    }
+    if (booking.menteeId !== user.id) {
+      throw new ForbiddenException(
+        'Only the mentee who booked this session can make payment.',
+      );
+    }
+    if (booking.status !== BookingStatus.PENDING_PAYMENT) {
+      throw new BadRequestException('This booking has already been paid for.');
+    }
+    return booking;
+  }
+
+  /**
+   * The price in another currency. A session listed in that currency charges
+   * its listed price; anything else converts from what was listed.
+   */
+  private chargeIn(payment: Payment, currency: FlutterwaveCurrency) {
+    const listedCurrency = payment.listedCurrency ?? payment.currency;
+    const listedAmount = payment.listedAmount ?? payment.amount;
+    return this.exchangeRates.convert(listedAmount, listedCurrency, currency);
+  }
+
+  private flutterwave() {
+    const secret = process.env.FLUTTERWAVE_SECRET_KEY;
+    if (!secret) {
+      this.logger.error(
+        'Payments are not configured: FLUTTERWAVE_SECRET_KEY is missing.',
+      );
+      throw new ServiceUnavailableException(
+        "Payments in this currency aren't available right now. Please try again later.",
+      );
+    }
+    return new FlutterwaveClient(secret);
+  }
+
+  private webOrigin() {
+    const webOrigin = process.env.WEB_ORIGIN;
+    if (!webOrigin) {
+      this.logger.error('Payments are not configured: WEB_ORIGIN is missing.');
+      throw new ServiceUnavailableException(
+        "Payments aren't available right now. Please try again later.",
+      );
+    }
+    return webOrigin;
   }
 
   async verify(reference: string) {
@@ -170,10 +329,13 @@ export class PaymentsService {
     }
 
     // Only confirm once Paystack reports the charge as successful for the full amount
-    const isPaid = await this.isPaidOnPaystack(
-      payment.providerReference,
-      payment.amount,
-    );
+    const isPaid =
+      payment.provider === 'FLUTTERWAVE'
+        ? await this.isPaidOnFlutterwave(payment)
+        : await this.isPaidOnPaystack(
+            payment.providerReference,
+            payment.amount,
+          );
     if (!isPaid) {
       return {
         success: false,
@@ -209,6 +371,34 @@ export class PaymentsService {
       payment: updatedPayment,
       booking: updatedBooking,
     };
+  }
+
+  private async isPaidOnFlutterwave(payment: Payment) {
+    const secret = process.env.FLUTTERWAVE_SECRET_KEY;
+    if (
+      !secret ||
+      !payment.providerReference ||
+      !payment.chargeAmount ||
+      !payment.chargeCurrency
+    ) {
+      return false;
+    }
+    try {
+      const transaction = await new FlutterwaveClient(secret).findTransaction(
+        payment.providerReference,
+      );
+      return isPaidTransaction(transaction, {
+        reference: payment.providerReference,
+        amount: payment.chargeAmount,
+        currency: payment.chargeCurrency,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to verify Flutterwave transaction: ${payment.providerReference}`,
+        err,
+      );
+      return false;
+    }
   }
 
   private async isPaidOnPaystack(
@@ -276,6 +466,11 @@ export class PaymentsService {
       return refundAmount;
     }
 
+    if (payment.provider === 'FLUTTERWAVE') {
+      await this.refundOnFlutterwave(payment, refundAmount);
+      return refundAmount;
+    }
+
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
 
     try {
@@ -322,12 +517,60 @@ export class PaymentsService {
   }
 
   /**
+   * Refunds through Flutterwave in the currency the mentee paid. The refund is
+   * the same share of what they paid as refundAmount is of the naira price.
+   */
+  private async refundOnFlutterwave(payment: Payment, refundAmount: number) {
+    try {
+      const secret = process.env.FLUTTERWAVE_SECRET_KEY;
+      if (!secret || !payment.providerReference || !payment.chargeAmount) {
+        throw new Error('Missing FLUTTERWAVE_SECRET_KEY or payment details.');
+      }
+      const flutterwave = new FlutterwaveClient(secret);
+      const chargeRefund = Math.max(
+        1,
+        Math.round((payment.chargeAmount * refundAmount) / payment.amount),
+      );
+      const transaction = await flutterwave.findTransaction(
+        payment.providerReference,
+      );
+      const refund = await flutterwave.refund(transaction.id, chargeRefund);
+      const status = refundStatusFor(refund.status);
+      if (status === 'FAILED') {
+        throw new Error(`Flutterwave reported the refund as ${refund.status}`);
+      }
+
+      await this.paymentsRepository.updatePayment(payment.id, {
+        refundAmount,
+        refundStatus: status,
+        refundReference: String(refund.id),
+        ...(status === 'PROCESSED'
+          ? { status: PaymentStatus.REFUNDED, refundedAt: new Date() }
+          : {}),
+      });
+    } catch (err) {
+      // Recorded as FAILED so the team can retry it from admin Finance
+      this.logger.error(
+        `Flutterwave refund failed for booking ${payment.bookingId}`,
+        err,
+      );
+      await this.paymentsRepository.updatePayment(payment.id, {
+        refundAmount,
+        refundStatus: 'FAILED',
+      });
+    }
+  }
+
+  /**
    * Re-reads a refund's status from Paystack rather than trusting a webhook
    * payload. Also used by admins to check a refund that is still pending.
    */
   async syncRefund(refundId: string) {
     const payment =
       await this.paymentsRepository.findPaymentByRefundReference(refundId);
+    if (payment?.provider === 'FLUTTERWAVE') {
+      return this.syncFlutterwaveRefund(payment.id, refundId);
+    }
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
     if (!payment || !paystackSecret) return;
 
@@ -352,6 +595,67 @@ export class PaymentsService {
         refundStatus: 'FAILED',
       });
     }
+  }
+
+  private async syncFlutterwaveRefund(paymentId: string, refundId: string) {
+    const secret = process.env.FLUTTERWAVE_SECRET_KEY;
+    if (!secret) return;
+    const refund = await new FlutterwaveClient(secret).findRefund(refundId);
+    const status = refundStatusFor(refund.status);
+    if (status === 'PROCESSED') {
+      await this.paymentsRepository.updatePayment(paymentId, {
+        refundStatus: 'PROCESSED',
+        refundedAt: new Date(),
+        status: PaymentStatus.REFUNDED,
+      });
+    } else if (status === 'FAILED') {
+      await this.paymentsRepository.updatePayment(paymentId, {
+        refundStatus: 'FAILED',
+      });
+    }
+  }
+
+  /**
+   * Flutterwave's v3 webhooks. Payments arrive as charge.completed; refund
+   * updates come without an event name, as the refund itself. Either way the
+   * details are re-read from Flutterwave rather than trusted from the body.
+   */
+  async handleFlutterwaveWebhook(payload: unknown) {
+    const body = (payload ?? {}) as {
+      event?: unknown;
+      data?: { tx_ref?: unknown };
+      id?: unknown;
+      TransactionId?: unknown;
+    };
+
+    if (body.event === 'charge.completed') {
+      const reference = body.data?.tx_ref;
+      if (typeof reference === 'string') {
+        try {
+          await this.verify(reference);
+        } catch (err) {
+          this.logger.error(
+            `Error processing Flutterwave charge: ${reference}`,
+            err,
+          );
+        }
+      }
+    } else if (
+      body.event === undefined &&
+      body.TransactionId !== undefined &&
+      (typeof body.id === 'number' || typeof body.id === 'string')
+    ) {
+      try {
+        await this.syncRefund(String(body.id));
+      } catch (err) {
+        this.logger.error(
+          `Error syncing Flutterwave refund ${String(body.id)}`,
+          err,
+        );
+      }
+    }
+
+    return { received: true };
   }
 
   async handlePaystackWebhook(payload: any) {

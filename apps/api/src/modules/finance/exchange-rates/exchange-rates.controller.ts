@@ -8,6 +8,6 @@ export class ExchangeRatesController {
   // Public: logged-out visitors see converted prices on mentor profiles too
   @Get()
   getRates() {
-    return this.exchangeRates.getUsdToNgn();
+    return this.exchangeRates.getRates();
   }
 }

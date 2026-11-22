@@ -261,7 +261,12 @@ model Payment {
   listedCurrency    String?
   exchangeRate      Float?
   status            PaymentStatus @default(PENDING)
+  // PAYSTACK for naira, FLUTTERWAVE for other currencies
   provider          String        @default("PAYSTACK")
+  // What the mentee was charged when they paid in another currency through
+  // Flutterwave; amount above stays the naira price that earnings use
+  chargeAmount      Int?
+  chargeCurrency    String?
   providerReference String?       @unique
   authorizationUrl  String?
   refundAmount      Int?

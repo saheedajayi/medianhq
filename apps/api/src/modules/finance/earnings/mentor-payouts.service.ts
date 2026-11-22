@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -63,9 +64,20 @@ function mentorStatusOf(status: string): MentorPayoutStatus {
   return 'PROCESSING';
 }
 
+const isLookupUnavailable = (error: PaystackError) =>
+  error.statusCode === 401 ||
+  error.statusCode === 403 ||
+  error.statusCode === 429 ||
+  (error.statusCode !== undefined && error.statusCode >= 500) ||
+  /daily limit|rate limit|too many|invalid key|unauthorized/i.test(
+    error.message,
+  );
+
 /** A mentor's side of payouts: the account they are paid into, their requests and statements */
 @Injectable()
 export class MentorPayoutsService {
+  private readonly logger = new Logger(MentorPayoutsService.name);
+
   constructor(
     private readonly earningsRepository: EarningsRepository,
     private readonly earningsService: EarningsService,
@@ -260,8 +272,15 @@ export class MentorPayoutsService {
     try {
       return await this.payoutsService.resolveAccountName(account);
     } catch (error) {
-      // Paystack answers with an error when the bank has no such account
       if (error instanceof PaystackError) {
+        this.logger.warn(
+          `Paystack account lookup failed for bank ${account.bankCode}: ${error.message}`,
+        );
+        if (isLookupUnavailable(error)) {
+          throw new ServiceUnavailableException(
+            'Could not verify your bank account right now. Please try again later.',
+          );
+        }
         throw new BadRequestException(
           "We couldn't find that account. Check the bank and account number.",
         );

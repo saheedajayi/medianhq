@@ -36,6 +36,8 @@ export class PaymentsRepository {
       provider: string;
       providerReference: string;
       authorizationUrl: string;
+      chargeAmount: number | null;
+      chargeCurrency: string | null;
     },
   ) {
     return this.prisma.payment.upsert({
@@ -49,6 +51,10 @@ export class PaymentsRepository {
         providerReference: data.providerReference,
         authorizationUrl: data.authorizationUrl,
         status: data.status,
+        // A mentee can start in one currency and come back in another
+        provider: data.provider,
+        chargeAmount: data.chargeAmount,
+        chargeCurrency: data.chargeCurrency,
       },
     });
   }

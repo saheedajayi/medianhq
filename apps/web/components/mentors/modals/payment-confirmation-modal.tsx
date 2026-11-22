@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormatPrice, useLocalCurrency } from "@/hooks/use-currency";
+import { useFormatPrice, usePayCurrency } from "@/hooks/use-currency";
 import { formatAmount } from "@/lib/currency";
 import { toast } from "sonner";
 
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/base/dialog";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { SessionPackage } from "../types";
-import { useInitializePayment } from "@/services/payments/queries/payments.queries";
+import { useInitializePayment, usePaymentQuote } from "@/services/payments/queries/payments.queries";
 
 interface PaymentConfirmationModalProps {
   isOpen: boolean;
@@ -39,11 +39,20 @@ export function PaymentConfirmationModal({
 }: PaymentConfirmationModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const formatPrice = useFormatPrice();
-  const localCurrency = useLocalCurrency();
+  const payCurrency = usePayCurrency();
   const initializePaymentMutation = useInitializePayment();
+  // Outside Nigeria the mentee pays in their own currency through Flutterwave.
+  // If that can't be priced, they can still pay in naira through Paystack.
+  const quote = usePaymentQuote(bookingId, payCurrency);
+  const isLocalCharge = payCurrency !== "NGN" && !!quote.data;
+  const isQuoting = payCurrency !== "NGN" && quote.isLoading;
   // Mentees pay exactly the listed price; Median's fee comes out of the mentor's side
   // The booking fixed the naira charge, so show that rather than recalculating it
-  const formattedTotal = chargedAmount ? formatAmount(chargedAmount, "NGN") : formatPrice(selectedPackage.numericPrice, selectedPackage.currency);
+  const formattedTotal = isLocalCharge
+    ? formatAmount(quote.data!.amount, quote.data!.currency)
+    : chargedAmount
+      ? formatAmount(chargedAmount, "NGN")
+      : formatPrice(selectedPackage.numericPrice, selectedPackage.currency);
   const localPrice = formatPrice(selectedPackage.numericPrice, selectedPackage.currency);
 
   const handlePay = async () => {
@@ -56,7 +65,10 @@ export function PaymentConfirmationModal({
 
     setIsProcessing(true);
     try {
-      const res = await initializePaymentMutation.mutateAsync(bookingId);
+      const res = await initializePaymentMutation.mutateAsync({
+        bookingId,
+        currency: isLocalCharge ? payCurrency : "NGN",
+      });
       if (res?.authorizationUrl && res.authorizationUrl.startsWith("http")) {
         window.location.href = res.authorizationUrl;
         return;
@@ -113,7 +125,7 @@ export function PaymentConfirmationModal({
                 <span>Total</span>
                 <span className="text-[#FF5500]">{formattedTotal}</span>
               </div>
-              {localCurrency !== "NGN" && (
+              {payCurrency !== "NGN" && !isLocalCharge && !isQuoting && (
                 <p className="pt-2 text-xs font-normal text-[#667085]">
                   About {localPrice}. You&apos;ll pay in naira, and your bank may convert it at its
                   own rate.
@@ -125,7 +137,7 @@ export function PaymentConfirmationModal({
           {/* Pay Button */}
           <button
             type="button"
-            disabled={isProcessing}
+            disabled={isProcessing || isQuoting}
             onClick={handlePay}
             className="flex items-center justify-center gap-2 w-full rounded-full bg-[#FF5500] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#E04B00] active:scale-[0.99] disabled:opacity-60"
           >
@@ -142,7 +154,7 @@ export function PaymentConfirmationModal({
           {/* Paystack Trust Badge */}
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#667085]">
             <ShieldCheck className="size-3.5 text-[#12B76A]" />
-            <span>Powered by Paystack</span>
+            <span>Powered by {isLocalCharge ? "Flutterwave" : "Paystack"}</span>
           </div>
         </div>
       </DialogContent>
