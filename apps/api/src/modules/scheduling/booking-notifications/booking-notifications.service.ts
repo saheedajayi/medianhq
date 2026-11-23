@@ -10,7 +10,9 @@ export type BookingEvent =
   | 'DECLINED'
   | 'EXPIRED'
   | 'CANCELLED'
-  | 'RESCHEDULED';
+  | 'RESCHEDULED'
+  | 'REMINDER_1H'
+  | 'REMINDER_15M';
 
 type Person = { id: string; email: string; firstName: string; lastName: string };
 
@@ -22,6 +24,8 @@ const EVENT_PREFERENCE: Partial<Record<BookingEvent, string>> = {
   EXPIRED: 'bookingUpdates',
   RESCHEDULED: 'bookingUpdates',
   CANCELLED: 'cancellations',
+  REMINDER_1H: 'sessionReminders',
+  REMINDER_15M: 'sessionReminders',
 };
 
 /**
@@ -72,6 +76,8 @@ export class BookingNotificationsService {
       const fullName = (person: Person) =>
         `${person.firstName} ${person.lastName}`.trim();
 
+      const isReminder = event === 'REMINDER_1H' || event === 'REMINDER_15M';
+
       const send = async (
         to: Person,
         subject: string,
@@ -88,7 +94,13 @@ export class BookingNotificationsService {
           details,
           ctaLabel,
           ctaPath,
-          idempotencyKey: `booking:${booking.id}:${event}:${booking.updatedAt.getTime()}:${to.email}`,
+          // Reminders are keyed on the start time: joining the call updates the booking,
+          // and a rescheduled session should be reminded again
+          idempotencyKey: `booking:${booking.id}:${event}:${
+            isReminder
+              ? booking.startsAt.getTime()
+              : booking.updatedAt.getTime()
+          }:${to.email}`,
         });
       };
 
@@ -178,6 +190,43 @@ export class BookingNotificationsService {
             ),
           ]);
           return;
+        case 'REMINDER_1H':
+        case 'REMINDER_15M': {
+          if (booking.status !== 'CONFIRMED') return;
+          const soon = event === 'REMINDER_15M';
+          const remind = (to: Person, other: Person, ctaPath: string) =>
+            send(
+              to,
+              soon
+                ? `Your session with ${fullName(other)} starts in 15 minutes`
+                : `Your session with ${fullName(other)} starts in 1 hour`,
+              [
+                soon
+                  ? `Your session with ${fullName(other)} starts in 15 minutes. The room is open now, so you can join and check your camera and microphone.`
+                  : `Your session with ${fullName(other)} starts in 1 hour. You can join from your bookings 15 minutes before it starts.`,
+              ],
+              soon ? 'Join session' : 'View booking',
+              ctaPath,
+            );
+          // Someone already in the room doesn't need telling it's about to start
+          await Promise.all([
+            booking.mentorJoinedAt
+              ? null
+              : remind(
+                  booking.mentor,
+                  booking.mentee,
+                  '/mentor/bookings?tab=upcoming',
+                ),
+            booking.menteeJoinedAt
+              ? null
+              : remind(
+                  booking.mentee,
+                  booking.mentor,
+                  '/mentee/booking-session?tab=upcoming',
+                ),
+          ]);
+          return;
+        }
       }
     } catch (err) {
       this.logger.error(

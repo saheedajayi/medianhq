@@ -17,18 +17,31 @@ import { useLocalParticipant, useRoomContext } from "@livekit/components-react";
 import { Mic, MicOff, Video, VideoOff, ScreenShare, PhoneOff } from "lucide-react";
 import { stopAllMediaTracks } from "@/components/bookings/media-utils";
 
+/**
+ * off: not asked for · waiting: you agreed, the other person hasn't yet ·
+ * recording: live · unavailable: recording isn't set up, so it can't be asked for
+ */
+export type RecordingState = "off" | "waiting" | "recording" | "unavailable";
+
+const RECORDING_LABELS: Record<RecordingState, string> = {
+  off: "Record",
+  waiting: "Waiting to record",
+  recording: "Recording",
+  unavailable: "Recording unavailable",
+};
+
 interface LiveKitCallControlsProps {
   /** Called when the user clicks "End call" — caller handles modal/routing */
   onLeave: () => void;
-  /** Optional: whether recording was requested at lobby (UI only pill) */
-  isRecording?: boolean;
+  /** Where recording stands for this participant */
+  recordingState?: RecordingState;
   /** Called when user toggles recording pill */
   onToggleRecording?: () => void;
 }
 
 export function LiveKitCallControls({
   onLeave,
-  isRecording = false,
+  recordingState = "off",
   onToggleRecording,
 }: LiveKitCallControlsProps) {
   const { localParticipant, isCameraEnabled, isMicrophoneEnabled } =
@@ -139,18 +152,30 @@ export function LiveKitCallControls({
         <button
           type="button"
           onClick={onToggleRecording}
-          className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold transition ${
-            isRecording
+          disabled={recordingState === "unavailable"}
+          title={
+            recordingState === "waiting"
+              ? "Recording starts once the other person agrees. Click to cancel."
+              : undefined
+          }
+          className={`flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-xs font-semibold transition ${
+            recordingState === "recording"
               ? "border border-[#FF5514]/40 bg-[#FF5514]/15 text-[#FF5514]"
-              : "bg-[#252A34] text-[#98A2B3] hover:text-white"
+              : recordingState === "waiting"
+                ? "border border-white/15 bg-[#252A34] text-white"
+                : "bg-[#252A34] text-[#98A2B3] enabled:hover:text-white disabled:opacity-60"
           }`}
         >
           <span
             className={`size-2.5 rounded-full ${
-              isRecording ? "animate-pulse bg-[#FF5514]" : "bg-[#98A2B3]"
+              recordingState === "recording"
+                ? "animate-pulse bg-[#FF5514]"
+                : recordingState === "waiting"
+                  ? "animate-pulse bg-[#98A2B3]"
+                  : "bg-[#98A2B3]"
             }`}
           />
-          {isRecording ? "Recording" : "Record"}
+          {RECORDING_LABELS[recordingState]}
         </button>
       )}
 

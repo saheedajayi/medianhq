@@ -6,6 +6,15 @@ export const RESPONSE_WINDOW_MS = 24 * 60 * 60 * 1000;
 /** The video room opens this long before the session starts */
 export const JOIN_WINDOW_MS = 15 * 60 * 1000;
 
+/** Reminder emails go out this many minutes before a confirmed session starts */
+export const REMINDER_LEAD_MINUTES = [60, 15] as const;
+
+/**
+ * How far past its moment a reminder is still worth sending, so a short API
+ * outage doesn't swallow it but a session confirmed late gets no stale one.
+ */
+export const REMINDER_GRACE_MS = 5 * 60 * 1000;
+
 /** Unpaid checkouts hold their slot this long before others can book it */
 export const PAYMENT_HOLD_MS = 30 * 60 * 1000;
 

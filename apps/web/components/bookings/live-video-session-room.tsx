@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import { Clock } from "iconsax-react";
-import { useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
-import { Booking, RecordingOption } from "./types";
+import {
+  useLocalParticipant,
+  useRemoteParticipants,
+  useRoomContext,
+} from "@livekit/components-react";
+import { Booking } from "./types";
+import type { MeetingEntry } from "./session-lobby";
 import { LiveKitRoomProvider } from "@/components/ui/custom/livekit-room-provider";
 import { LiveKitVideoTile } from "@/components/ui/custom/livekit-video-tile";
 import { LiveKitCallControls } from "@/components/ui/custom/livekit-call-controls";
@@ -19,30 +24,85 @@ import {
 // Inner room — must be rendered inside <LiveKitRoomProvider>
 // --------------------------------------------------------------------------
 
+/** The last stretch of a session, when both people are warned it is about to end */
+const ENDING_SOON_SECONDS = 5 * 60;
+
 interface RoomInnerProps {
   booking: Booking;
-  recordingOption: RecordingOption;
+  entry: MeetingEntry;
   onEndCall: () => void;
 }
 
-function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
+function RoomInner({ booking, entry, onEndCall }: RoomInnerProps) {
+  const { recordingOption, clockOffsetMs } = entry;
+  const room = useRoomContext();
   const { localParticipant, isMicrophoneEnabled } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
   const { data: recording } = useBookingRecording(booking.id, { poll: true });
   const recordingConsentMutation = useSetRecordingConsent();
   // Recording only runs once both people have agreed and joined, so this follows the server
   const isRecording = recording?.isRecording ?? false;
+  const isRecordingUnavailable = recording?.available === false;
   const myConsent = recording?.myConsent ?? recordingOption === "record";
-  const [secondsElapsed, setSecondsElapsed] = useState(0);
+  const otherConsent = recording?.otherConsent ?? null;
   const totalDurationSeconds = (booking.durationMinutes || 30) * 60;
 
-  // Tick the session timer
+  // The clock runs from the booked start on the API's time, so both people see the
+  // same timer whenever they joined. Without a start time it falls back to joining.
+  const [nowMs, setNowMs] = useState(() => Date.now() + clockOffsetMs);
+  const [joinedAtMs] = useState(() => Date.now() + clockOffsetMs);
+  const startsAtMs = booking.startsAt ? new Date(booking.startsAt).getTime() : joinedAtMs;
+  const secondsToStart = Math.max(0, Math.ceil((startsAtMs - nowMs) / 1000));
+  const secondsElapsed = Math.min(
+    totalDurationSeconds,
+    Math.max(0, Math.floor((nowMs - startsAtMs) / 1000))
+  );
+  const secondsLeft = totalDurationSeconds - secondsElapsed;
+  const hasStarted = secondsToStart === 0;
+  const isEndingSoon = hasStarted && secondsLeft <= ENDING_SOON_SECONDS && secondsLeft > 0;
+  const isOver = hasStarted && secondsLeft <= 0;
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSecondsElapsed((prev) => prev + 1);
-    }, 1000);
+    const timer = setInterval(() => setNowMs(Date.now() + clockOffsetMs), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [clockOffsetMs]);
+
+  // One warning as the session enters its last five minutes
+  const minutesLeftRef = useRef(0);
+  minutesLeftRef.current = Math.max(1, Math.ceil(secondsLeft / 60));
+  useEffect(() => {
+    if (!isEndingSoon) return;
+    const minutes = minutesLeftRef.current;
+    toast.warning(`${minutes} ${minutes === 1 ? "minute" : "minutes"} left`, {
+      description: "The call ends automatically at the booked end time.",
+      duration: 10_000,
+    });
+  }, [isEndingSoon]);
+
+  // The call ends for both people at the booked end; the API also closes the room
+  const onEndCallRef = useRef(onEndCall);
+  onEndCallRef.current = onEndCall;
+  useEffect(() => {
+    if (!isOver) return;
+    toast("Session time is up", { description: "The call has ended." });
+    void room
+      .disconnect(true)
+      .catch(() => {})
+      .finally(() => {
+        stopAllMediaTracks();
+        onEndCallRef.current();
+      });
+  }, [isOver, room]);
+
+  // If the other person asks to record after we said no, say so once
+  useEffect(() => {
+    if (otherConsent !== true || myConsent || isRecording || isRecordingUnavailable) return;
+    toast.info(`${booking.participantName} would like to record this session`, {
+      description: "Click Record if you agree.",
+    });
+    // Only when their answer changes, not when ours does
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otherConsent]);
 
   // Ensure all media tracks and camera hardware are released on unmount
   useEffect(() => {
@@ -110,8 +170,16 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
             {booking.title} Session with {booking.participantName}
           </span>
 
-          <div className="flex items-center rounded-full bg-[#1D2939] px-3.5 py-1.5 text-xs font-mono font-medium text-[#F9FAFB] ring-1 ring-white/10">
-            {formatTime(secondsElapsed)} / {formatTime(totalDurationSeconds)}
+          <div
+            className={`flex items-center rounded-full px-3.5 py-1.5 text-xs font-mono font-medium ring-1 ${
+              isEndingSoon
+                ? "bg-[#FF5514]/15 text-[#FF5514] ring-[#FF5514]/40"
+                : "bg-[#1D2939] text-[#F9FAFB] ring-white/10"
+            }`}
+          >
+            {hasStarted
+              ? `${formatTime(secondsElapsed)} / ${formatTime(totalDurationSeconds)}`
+              : `Starts in ${formatTime(secondsToStart)}`}
           </div>
         </div>
       </header>
@@ -161,7 +229,15 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
       <footer className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 rounded-full bg-[#1A1D24]/90 p-2 sm:p-2.5 backdrop-blur-md ring-1 ring-white/10">
         <LiveKitCallControls
           onLeave={onEndCall}
-          isRecording={isRecording}
+          recordingState={
+            isRecording
+              ? "recording"
+              : isRecordingUnavailable
+                ? "unavailable"
+                : myConsent
+                  ? "waiting"
+                  : "off"
+          }
           onToggleRecording={handleToggleRecording}
         />
       </footer>
@@ -175,32 +251,33 @@ function RoomInner({ booking, recordingOption, onEndCall }: RoomInnerProps) {
 
 interface LiveVideoSessionRoomProps {
   booking: Booking;
-  recordingOption: RecordingOption;
+  /** The lobby's choices plus the LiveKit pass for this call */
+  entry: MeetingEntry;
   onEndCall: () => void;
-  /** LiveKit JWT issued by /api/livekit/token */
-  livekitToken: string;
-  /** wss:// URL of the LiveKit server (NEXT_PUBLIC_LIVEKIT_URL) */
-  livekitServerUrl: string;
 }
 
-export function LiveVideoSessionRoom({
-  booking,
-  recordingOption,
-  onEndCall,
-  livekitToken,
-  livekitServerUrl,
-}: LiveVideoSessionRoomProps) {
+export function LiveVideoSessionRoom({ booking, entry, onEndCall }: LiveVideoSessionRoomProps) {
+  const { micDeviceId, cameraDeviceId, speakerDeviceId } = entry;
+  // The devices picked in the lobby, also used when a muted mic or camera is turned on later
+  const roomOptions = useMemo(
+    () => ({
+      ...(micDeviceId ? { audioCaptureDefaults: { deviceId: micDeviceId } } : {}),
+      ...(cameraDeviceId ? { videoCaptureDefaults: { deviceId: cameraDeviceId } } : {}),
+      ...(speakerDeviceId ? { audioOutput: { deviceId: speakerDeviceId } } : {}),
+    }),
+    [micDeviceId, cameraDeviceId, speakerDeviceId]
+  );
+
   return (
     <LiveKitRoomProvider
-      serverUrl={livekitServerUrl}
-      token={livekitToken}
+      serverUrl={entry.livekitServerUrl}
+      token={entry.livekitToken}
+      audio={entry.micOn}
+      video={entry.cameraOn}
+      options={roomOptions}
       onDisconnected={onEndCall}
     >
-      <RoomInner
-        booking={booking}
-        recordingOption={recordingOption}
-        onEndCall={onEndCall}
-      />
+      <RoomInner booking={booking} entry={entry} onEndCall={onEndCall} />
     </LiveKitRoomProvider>
   );
 }

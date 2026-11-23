@@ -84,7 +84,13 @@ export class RecordingsService {
     );
 
     if (consent) {
-      await this.maybeStart(bookingId);
+      // A recording that can't start must not stop the person joining their session;
+      // it is tried again when the other person joins or answers
+      await this.maybeStart(bookingId).catch((err) =>
+        this.logger.error(
+          `Could not start recording for booking ${bookingId}: ${String(err)}`,
+        ),
+      );
     } else {
       // Either side saying no ends any recording already running
       await Promise.all(
@@ -257,6 +263,8 @@ export class RecordingsService {
         ? booking.menteeRecordingConsent
         : booking.mentorRecordingConsent,
       isRecording: booking.recordings.length > 0,
+      // False when recording isn't set up here, so nobody is left waiting for one to start
+      available: !!this.liveKit() && this.storage.isConfigured,
       retentionDays: this.retentionDays,
     };
   }

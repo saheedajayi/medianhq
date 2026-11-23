@@ -16,18 +16,32 @@ import {
 } from "lucide-react";
 import { Booking, RecordingOption } from "./types";
 import { stopAllMediaTracks } from "./media-utils";
-import { useBookingRoomToken, useSetRecordingConsent } from "@/services/bookings/queries/bookings.queries";
+import {
+  useBookingRecording,
+  useBookingRoomToken,
+  useSetRecordingConsent,
+} from "@/services/bookings/queries/bookings.queries";
+import { DevicePicker, type DeviceOption } from "./device-picker";
+
+/** What the lobby hands over when someone joins the call */
+export interface MeetingEntry {
+  recordingOption: RecordingOption;
+  micOn: boolean;
+  cameraOn: boolean;
+  livekitToken: string;
+  livekitServerUrl: string;
+  /** The devices picked in the lobby; unset means the browser's default */
+  micDeviceId?: string;
+  cameraDeviceId?: string;
+  speakerDeviceId?: string;
+  /** Add to Date.now() to get the API's time */
+  clockOffsetMs: number;
+}
 
 interface SessionLobbyProps {
   booking: Booking;
   onBack?: () => void;
-  onEnterMeeting: (
-    recordingOption: RecordingOption,
-    initialMicOn: boolean,
-    initialCameraOn: boolean,
-    livekitToken: string,
-    livekitServerUrl: string
-  ) => void;
+  onEnterMeeting: (entry: MeetingEntry) => void;
 }
 
 export function SessionLobby({
@@ -40,6 +54,10 @@ export function SessionLobby({
   const [audioTrack, setAudioTrack] = useState<LocalAudioTrack | null>(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [micDeviceId, setMicDeviceId] = useState<string>();
+  const [cameraDeviceId, setCameraDeviceId] = useState<string>();
+  const [speakerDeviceId, setSpeakerDeviceId] = useState<string>();
 
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [recordingChoice, setRecordingChoice] =
@@ -48,6 +66,8 @@ export function SessionLobby({
   const roomTokenMutation = useBookingRoomToken();
   const recordingConsentMutation = useSetRecordingConsent();
   const [roomError, setRoomError] = useState<string | null>(null);
+  const { data: recordingStatus } = useBookingRecording(booking.id);
+  const isRecordingUnavailable = recordingStatus?.available === false;
 
   // --------------------------------------------------------------------------
   // Acquire local camera + mic on mount for preview — no room joined yet
@@ -55,6 +75,17 @@ export function SessionLobby({
   useEffect(() => {
     let vid: LocalVideoTrack | null = null;
     let aud: LocalAudioTrack | null = null;
+    let cancelled = false;
+
+    // Device names are only readable once the browser has been given permission
+    const loadDevices = () => {
+      navigator.mediaDevices
+        ?.enumerateDevices()
+        .then((list) => {
+          if (!cancelled) setDevices(list);
+        })
+        .catch(() => {});
+    };
 
     createLocalTracks({ audio: true, video: true })
       .then((tracks) => {
@@ -62,18 +93,26 @@ export function SessionLobby({
           if (track.kind === Track.Kind.Video) {
             vid = track as LocalVideoTrack;
             setVideoTrack(vid);
+            setCameraDeviceId(vid.mediaStreamTrack.getSettings().deviceId);
             if (videoRef.current) vid.attach(videoRef.current);
           } else if (track.kind === Track.Kind.Audio) {
             aud = track as LocalAudioTrack;
             setAudioTrack(aud);
+            setMicDeviceId(aud.mediaStreamTrack.getSettings().deviceId);
           }
         }
       })
       .catch(() => {
         // Camera / mic unavailable — the placeholder will render instead
-      });
+      })
+      .finally(loadDevices);
+
+    // Plugging in or removing a headset updates the lists
+    navigator.mediaDevices?.addEventListener("devicechange", loadDevices);
 
     return () => {
+      cancelled = true;
+      navigator.mediaDevices?.removeEventListener("devicechange", loadDevices);
       vid?.stop();
       aud?.stop();
       if (vid && "mediaStreamTrack" in vid) {
@@ -112,6 +151,24 @@ export function SessionLobby({
   }, [videoTrack, isCameraOn]);
 
   // --------------------------------------------------------------------------
+  // Choosing a different microphone, camera or speaker
+  // --------------------------------------------------------------------------
+  const devicesOfKind = (kind: MediaDeviceKind): DeviceOption[] =>
+    devices
+      .filter((device) => device.kind === kind && device.deviceId && device.label)
+      .map(({ deviceId, label }) => ({ deviceId, label }));
+
+  const selectMic = (deviceId: string) => {
+    setMicDeviceId(deviceId);
+    void audioTrack?.setDeviceId(deviceId).catch(() => {});
+  };
+
+  const selectCamera = (deviceId: string) => {
+    setCameraDeviceId(deviceId);
+    void videoTrack?.setDeviceId(deviceId).catch(() => {});
+  };
+
+  // --------------------------------------------------------------------------
   // Step 1: open recording consent modal
   // --------------------------------------------------------------------------
   const handleStartJoin = () => setShowRecordingModal(true);
@@ -126,9 +183,11 @@ export function SessionLobby({
       // Saved first, so nothing is recorded on a choice the server never heard
       await recordingConsentMutation.mutateAsync({
         bookingId: booking.id,
-        consent: recordingChoice === "record",
+        consent: recordingChoice === "record" && !isRecordingUnavailable,
       });
-      const { token, serverUrl } = await roomTokenMutation.mutateAsync(booking.id);
+      const { token, serverUrl, serverTime } = await roomTokenMutation.mutateAsync(booking.id);
+      const serverMs = serverTime ? new Date(serverTime).getTime() : NaN;
+      const clockOffsetMs = Number.isFinite(serverMs) ? serverMs - Date.now() : 0;
 
       // Stop preview tracks before the real room publishes its own
       videoTrack?.stop();
@@ -144,7 +203,17 @@ export function SessionLobby({
       }
 
       setShowRecordingModal(false);
-      onEnterMeeting(recordingChoice, isMicOn, isCameraOn, token, serverUrl);
+      onEnterMeeting({
+        recordingOption: isRecordingUnavailable ? "do_not_record" : recordingChoice,
+        micDeviceId,
+        cameraDeviceId,
+        speakerDeviceId,
+        micOn: isMicOn,
+        cameraOn: isCameraOn,
+        livekitToken: token,
+        livekitServerUrl: serverUrl,
+        clockOffsetMs,
+      });
     } catch (err) {
       setRoomError(
         err instanceof Error ? err.message : "Something went wrong"
@@ -243,16 +312,33 @@ export function SessionLobby({
           </button>
         </div>
 
-        {/* Speaker / Device Selector */}
-        <div className="relative">
-          <button
-            type="button"
-            className="h-[43px] rounded-lg border border-[#D0D5DD] bg-white px-4 text-xs font-medium text-[#344054] inline-flex items-center gap-2.5 hover:bg-[#F9FAFB] transition cursor-pointer"
-          >
-            <Volume2 className="size-4 text-[#667085]" />
-            <span>Default Speakers</span>
-            <ChevronDown className="size-3.5 text-[#667085]" />
-          </button>
+        {/* Device selectors */}
+        <div className="flex flex-wrap items-center gap-3">
+          <DevicePicker
+            name="Microphone"
+            icon={<Mic className="size-4" />}
+            devices={devicesOfKind("audioinput")}
+            selectedId={micDeviceId}
+            fallbackLabel="Default microphone"
+            onSelect={selectMic}
+          />
+          <DevicePicker
+            name="Camera"
+            icon={<Video className="size-4" />}
+            devices={devicesOfKind("videoinput")}
+            selectedId={cameraDeviceId}
+            fallbackLabel="Default camera"
+            onSelect={selectCamera}
+          />
+          {/* Some browsers (Safari, Firefox) don't let a page choose the speaker */}
+          <DevicePicker
+            name="Speakers"
+            icon={<Volume2 className="size-4" />}
+            devices={devicesOfKind("audiooutput")}
+            selectedId={speakerDeviceId}
+            fallbackLabel="Default speakers"
+            onSelect={setSpeakerDeviceId}
+          />
         </div>
       </div>
 
@@ -337,17 +423,20 @@ export function SessionLobby({
 
                 {/* Record this session */}
                 <label
-                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${
-                    recordingChoice === "record"
-                      ? "border-[#FF5514] bg-[#FDF9F6]/60 ring-1 ring-[#FF5514]"
-                      : "border-[#EAECF0] bg-white hover:border-[#D0D5DD]"
+                  className={`flex items-start gap-3 rounded-2xl border p-4 transition ${
+                    isRecordingUnavailable
+                      ? "cursor-not-allowed border-[#EAECF0] bg-white opacity-60"
+                      : recordingChoice === "record"
+                        ? "cursor-pointer border-[#FF5514] bg-[#FDF9F6]/60 ring-1 ring-[#FF5514]"
+                        : "cursor-pointer border-[#EAECF0] bg-white hover:border-[#D0D5DD]"
                   }`}
                 >
                   <input
                     type="radio"
                     name="recordingChoice"
                     value="record"
-                    checked={recordingChoice === "record"}
+                    checked={recordingChoice === "record" && !isRecordingUnavailable}
+                    disabled={isRecordingUnavailable}
                     onChange={() => setRecordingChoice("record")}
                     className="mt-1 size-4 accent-[#FF5514]"
                   />
@@ -356,8 +445,9 @@ export function SessionLobby({
                       Record this session
                     </strong>
                     <span className="mt-0.5 block text-xs text-[#667085]">
-                      Recording stored securely for 30 days, encrypted, and
-                      deletable anytime from your dashboard.
+                      {isRecordingUnavailable
+                        ? "Recording isn't available right now."
+                        : "Recording stored securely for 30 days, encrypted, and deletable anytime from your dashboard."}
                     </span>
                   </div>
                 </label>

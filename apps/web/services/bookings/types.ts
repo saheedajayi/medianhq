@@ -30,6 +30,8 @@ export interface SessionRecordingStatus {
   myConsent: boolean | null;
   otherConsent: boolean | null;
   isRecording: boolean;
+  /** False when recording isn't set up on the server */
+  available?: boolean;
   retentionDays: number;
 }
 
@@ -37,6 +39,8 @@ export interface RoomTokenResponse {
   token: string;
   roomName: string;
   serverUrl: string;
+  /** The API's clock when the pass was issued, so the call timer doesn't trust the device's */
+  serverTime?: string;
 }
 
 export interface BookingActionItem {
