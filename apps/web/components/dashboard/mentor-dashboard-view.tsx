@@ -6,7 +6,7 @@ import type { Booking } from "@/components/bookings/types";
 import type { AuthUser } from "@/services/auth/types";
 import { useBookingEvents } from "@/hooks/use-booking-events";
 import { useMyBookings } from "@/services/bookings/queries/bookings.queries";
-import { useMentorEarningsSummary } from "@/services/earnings/queries/earnings.queries";
+import { useMentorEarningsSummary, usePayoutAccount } from "@/services/earnings/queries/earnings.queries";
 import { useMentorAvailability } from "@/services/mentor-sessions/queries/mentor-sessions.queries";
 import { useMentorReviews } from "@/services/reviews/queries/reviews.queries";
 import { ActivationChecklistCard } from "./activation-checklist-card";
@@ -25,6 +25,7 @@ export function MentorDashboardView({ user }: { user?: AuthUser }) {
   const bookingsQuery = useMyBookings(REFRESH_ON_RETURN);
   const earningsQuery = useMentorEarningsSummary(REFRESH_ON_RETURN);
   const availabilityQuery = useMentorAvailability();
+  const { data: payoutAccount, isLoading: isLoadingPayoutAccount } = usePayoutAccount();
   const { data: bookingsData, isLoading: isLoadingBookings } = bookingsQuery;
   const { data: earnings, isLoading: isLoadingEarnings } = earningsQuery;
   const { data: reviews, isLoading: isLoadingReviews } = useMentorReviews(user?.id ?? "");
@@ -84,9 +85,9 @@ export function MentorDashboardView({ user }: { user?: AuthUser }) {
         userId={user?.id}
         isProfileComplete={!!(profile?.gender && profile.skills?.length && profile.tools?.length)}
         hasAvailability={(availability ?? []).some((slot) => slot.isActive !== false)}
-        // Bank details aren't stored on their own yet; they're only sent with a payout request
-        hasPayoutDetails={!!earnings?.recentPayouts.length}
-        isLoading={!user || isLoadingEarnings || isLoadingAvailability}
+        // A saved payout account ticks this; a past payout still counts if that lookup fails
+        hasPayoutDetails={!!payoutAccount || !!earnings?.recentPayouts.length}
+        isLoading={!user || isLoadingEarnings || isLoadingAvailability || isLoadingPayoutAccount}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
