@@ -295,6 +295,14 @@ export class BookingsRepository {
     });
   }
 
+  /** The action items already saved for a booking, if the mentor has reviewed it */
+  findFeedbackActionItems(bookingId: string) {
+    return this.prisma.menteeFeedback.findUnique({
+      where: { bookingId },
+      select: { actionItems: true },
+    });
+  }
+
   upsertFeedback(data: {
     bookingId: string;
     authorId: string;

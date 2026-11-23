@@ -270,4 +270,45 @@ describe('BookingsService money flows', () => {
       expect(payments.refund).not.toHaveBeenCalled();
     });
   });
+
+  describe('submitFeedback', () => {
+    const mentor = { id: 'mentor' } as never;
+    const feedback = (items: string[]) => ({
+      rating: 5,
+      actionItems: items.map((text) => ({ text })),
+    });
+
+    beforeEach(() => {
+      repository.findBookingForAction.mockResolvedValue({
+        id: 'b1',
+        mentorId: 'mentor',
+        menteeId: 'mentee',
+        status: BookingStatus.COMPLETED,
+        startsAt: new Date(Date.now() - 2 * HOUR),
+      });
+      repository.findFeedbackActionItems = jest.fn().mockResolvedValue(null);
+      repository.upsertFeedback = jest.fn().mockResolvedValue({});
+      repository.findEarningForBooking = jest.fn().mockResolvedValue(null);
+    });
+
+    it('emails the mentee the first time they are given action items', async () => {
+      await service.submitFeedback(mentor, 'b1', feedback(['Read', 'Apply']));
+      expect(notifications.notify).toHaveBeenCalledWith('b1', 'ACTION_ITEMS', {
+        actionItemCount: 2,
+      });
+    });
+
+    it("doesn't email again when the mentor edits the review", async () => {
+      repository.findFeedbackActionItems.mockResolvedValue({
+        actionItems: [{ id: 'item-1', text: 'Read', completed: false }],
+      });
+      await service.submitFeedback(mentor, 'b1', feedback(['Read', 'Apply']));
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+
+    it("doesn't email a review with no action items", async () => {
+      await service.submitFeedback(mentor, 'b1', feedback([]));
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+  });
 });

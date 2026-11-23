@@ -569,6 +569,10 @@ export class BookingsService {
         completed: !!item.completed,
       }));
 
+    const previous = await this.bookingsRepository.findFeedbackActionItems(id);
+    const hadActionItems =
+      Array.isArray(previous?.actionItems) && previous.actionItems.length > 0;
+
     const feedback = await this.bookingsRepository.upsertFeedback({
       bookingId: id,
       authorId: user.id,
@@ -577,6 +581,13 @@ export class BookingsService {
       actionItems,
       followUpNotes: dto.followUpNotes?.trim().slice(0, 4000) || undefined,
     });
+
+    // Only the first time the mentee is given action items, not on every edit
+    if (actionItems.length > 0 && !hadActionItems) {
+      void this.bookingNotifications.notify(id, 'ACTION_ITEMS', {
+        actionItemCount: actionItems.length,
+      });
+    }
 
     const earning = await this.bookingsRepository.findEarningForBooking(id);
     return { success: true, feedback, earning };

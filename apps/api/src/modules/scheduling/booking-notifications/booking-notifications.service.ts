@@ -12,9 +12,15 @@ export type BookingEvent =
   | 'CANCELLED'
   | 'RESCHEDULED'
   | 'REMINDER_1H'
-  | 'REMINDER_15M';
+  | 'REMINDER_15M'
+  | 'ACTION_ITEMS';
 
-type Person = { id: string; email: string; firstName: string; lastName: string };
+type Person = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+};
 
 // Which notification preference controls each email; new requests have no toggle
 // because mentors must always hear about them before the 24-hour deadline
@@ -26,6 +32,7 @@ const EVENT_PREFERENCE: Partial<Record<BookingEvent, string>> = {
   CANCELLED: 'cancellations',
   REMINDER_1H: 'sessionReminders',
   REMINDER_15M: 'sessionReminders',
+  ACTION_ITEMS: 'actionItems',
 };
 
 /**
@@ -45,14 +52,22 @@ export class BookingNotificationsService {
   async notify(
     bookingId: string,
     event: BookingEvent,
-    extra: { reason?: string | null; refundAmount?: number | null } = {},
+    extra: {
+      reason?: string | null;
+      refundAmount?: number | null;
+      actionItemCount?: number;
+    } = {},
   ) {
     try {
       const booking = await this.prisma.booking.findUnique({
         where: { id: bookingId },
         include: {
-          mentor: { select: { id: true, email: true, firstName: true, lastName: true } },
-          mentee: { select: { id: true, email: true, firstName: true, lastName: true } },
+          mentor: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+          mentee: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
           payment: { select: { currency: true } },
         },
       });
@@ -227,6 +242,21 @@ export class BookingNotificationsService {
           ]);
           return;
         }
+        case 'ACTION_ITEMS': {
+          const count = extra.actionItemCount ?? 0;
+          if (count < 1) return;
+          const items = count === 1 ? '1 action item' : `${count} action items`;
+          await send(
+            booking.mentee,
+            `${fullName(booking.mentor)} left you ${items}`,
+            [
+              `${fullName(booking.mentor)} left you ${items} after the session below. You can find them on your dashboard.`,
+            ],
+            'View action items',
+            '/dashboard',
+          );
+          return;
+        }
       }
     } catch (err) {
       this.logger.error(
@@ -236,7 +266,6 @@ export class BookingNotificationsService {
     }
   }
 
-  /** "Tue, 27 Oct 2026, 3:00 PM - 3:30 PM WAT" in the mentor's time zone */
   private async wantsEmail(userId: string, event: BookingEvent) {
     const preference = EVENT_PREFERENCE[event];
     if (!preference) return true;
@@ -252,6 +281,7 @@ export class BookingNotificationsService {
     return preferences[preference]?.email !== false;
   }
 
+  /** "Tue, 27 Oct 2026, 3:00 PM - 3:30 PM WAT" in the mentor's time zone */
   private formatWhen(startsAt: Date, durationMinutes: number) {
     const shift = (date: Date) =>
       new Date(date.getTime() + MENTOR_UTC_OFFSET_MINUTES * 60 * 1000);
