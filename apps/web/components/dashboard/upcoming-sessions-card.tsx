@@ -30,7 +30,7 @@ export function UpcomingSessionsCard({ sessions, isLoading = false }: UpcomingSe
             href="/mentee/booking-session"
             className="text-xs font-semibold text-[#FF5500] hover:underline"
           >
-            View all ({upcomingList.length})
+            <span className="text-[#FF5500]">View all ({upcomingList.length})</span>
           </Link>
         </div>
 
@@ -68,7 +68,10 @@ export function UpcomingSessionsCard({ sessions, isLoading = false }: UpcomingSe
                   href="/mentee/booking-session"
                   className="rounded-full bg-[#FF5500] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#E04B00]"
                 >
-                  {session.isReadyToJoin ? "Join Session" : "View Details"}
+                  {/* Links inherit their colour globally, so the text sets its own */}
+                  <span className="text-white">
+                    {session.isReadyToJoin ? "Join Session" : "View Details"}
+                  </span>
                 </Link>
               </div>
             </div>
@@ -81,7 +84,7 @@ export function UpcomingSessionsCard({ sessions, isLoading = false }: UpcomingSe
             href="/mentee/explore"
             className="text-xs font-semibold text-[#FF5500] hover:underline"
           >
-            Book with a mentor →
+            <span className="text-[#FF5500]">Book with a mentor →</span>
           </Link>
         </div>
       </div>

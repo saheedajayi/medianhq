@@ -22,6 +22,7 @@ import { MentorDashboardView } from "@/components/dashboard/mentor-dashboard-vie
 import { MentorsForYouSection } from "@/components/dashboard/mentors-for-you-section";
 import { UpcomingSessionsCard } from "@/components/dashboard/upcoming-sessions-card";
 import { ActionItemsCard } from "@/components/dashboard/action-items-card";
+import { useBookingEvents } from "@/hooks/use-booking-events";
 import { useMyBookings } from "@/services/bookings/queries/bookings.queries";
 import type { Booking } from "@/components/bookings/types";
 
@@ -74,6 +75,8 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
   const is100PercentComplete = completionPercentage === 100;
   const needsMenteeSetup = !isMentor && user?.hasMenteeGoals === false;
 
+  // Keeps sessions current when a mentor accepts or the mentee comes back to the tab
+  useBookingEvents();
   const {
     data: bookings,
     isLoading: isLoadingBookings,
@@ -94,9 +97,7 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
     }
 
     const typedBookings = bookings as unknown as Booking[];
-    const upcoming = typedBookings.filter(
-      (b) => b.tab === "upcoming" || b.status === "confirmed"
-    );
+    const upcoming = typedBookings.filter((b) => b.tab === "upcoming");
 
     // Collect action items
     const allActionItems: any[] = [];
