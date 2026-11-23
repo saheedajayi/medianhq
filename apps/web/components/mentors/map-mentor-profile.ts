@@ -1,8 +1,52 @@
-import type { MentorDetailProfile, MentorReview } from "./types";
+import type { MentorDetailProfile, MentorLink, MentorReview } from "./types";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const formatMonth = (month?: number | null, year?: number | null) =>
+  year ? [MONTHS[(month ?? 0) - 1], year].filter(Boolean).join(" ") : "";
+
+/** "Mar 2022 - Present" or "Sep 2010 - Jul 2014" */
+const formatPeriod = (entry: any) =>
+  [
+    formatMonth(entry.startMonth, entry.startYear),
+    entry.isCurrent ? "Present" : formatMonth(entry.endMonth, entry.endYear),
+  ]
+    .filter(Boolean)
+    .join(" - ");
+
+const LINK_KINDS: Record<string, MentorLink["kind"]> = {
+  WEBSITE: "website",
+  LINKEDIN: "linkedin",
+  X: "x",
+  CUSTOM: "custom",
+};
+const LINK_TITLES: Record<MentorLink["kind"], string> = {
+  website: "Website",
+  linkedin: "LinkedIn",
+  x: "X",
+  custom: "Link",
+};
+const LINK_ORDER: MentorLink["kind"][] = ["website", "linkedin", "x", "custom"];
+
+const isWebUrl = (url: unknown): url is string => typeof url === "string" && /^https?:\/\//i.test(url);
+
+/** The links saved in Settings, or the LinkedIn profile from the mentor's application if none is saved */
+function mapLinks(res: any): MentorLink[] {
+  const links: MentorLink[] = (Array.isArray(res.socialLinks) ? res.socialLinks : [])
+    .filter((link: any) => LINK_KINDS[link.kind] && isWebUrl(link.url))
+    .map((link: any) => {
+      const kind = LINK_KINDS[link.kind] as MentorLink["kind"];
+      return { kind, url: link.url, title: link.title || LINK_TITLES[kind] };
+    });
+  if (!links.some((link) => link.kind === "linkedin") && isWebUrl(res.linkedinUrl)) {
+    links.push({ kind: "linkedin", url: res.linkedinUrl, title: LINK_TITLES.linkedin });
+  }
+  return links.sort((a, b) => LINK_ORDER.indexOf(a.kind) - LINK_ORDER.indexOf(b.kind));
+}
 
 /**
  * Builds a profile page model from the GET /mentors/:id response alone (no preview data).
- * Open dates are loaded separately per session length; group sessions and most socials stay empty.
+ * Open dates are loaded separately per session length; group sessions stay empty.
  */
 export function mapApiMentorProfile(res: any): MentorDetailProfile {
   const role = res.role || "Mentor";
@@ -36,10 +80,25 @@ export function mapApiMentorProfile(res: any): MentorDetailProfile {
     rating: res.rating ?? 0,
     reviewCount: res.reviewCount ?? reviews.length,
     avatarUrl: res.avatarUrl || "/default-avatar.svg",
-    socials: { linkedin: res.linkedinUrl || undefined },
+    links: mapLinks(res),
     bio: res.bio || "",
     expertise: Array.isArray(res.tags) ? res.tags : [],
-    experience: [{ role, company, period: "Present" }],
+    // Until the mentor adds their history in Settings, their current role stands in for it
+    experience:
+      Array.isArray(res.workExperiences) && res.workExperiences.length > 0
+        ? res.workExperiences.map((entry: any) => ({
+            role: entry.role,
+            company: entry.company,
+            period: formatPeriod(entry),
+          }))
+        : [{ role, company, period: "Present" }],
+    education: Array.isArray(res.educations)
+      ? res.educations.map((entry: any) => ({
+          role: entry.fieldOfStudy,
+          company: entry.school,
+          period: formatPeriod(entry),
+        }))
+      : [],
     reviews,
     // The API lists the mentor's live 1:1 sessions, or a standard 1:1 at their profile price
     packages: Array.isArray(res.packages)

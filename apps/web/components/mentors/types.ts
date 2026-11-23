@@ -4,6 +4,13 @@ export interface MentorTimelineItem {
   period: string;
 }
 
+/** A link the mentor added in Settings; only custom links carry a title */
+export interface MentorLink {
+  kind: "website" | "linkedin" | "x" | "custom";
+  url: string;
+  title: string;
+}
+
 export interface MentorReview {
   id: string;
   authorName: string;
@@ -58,15 +65,12 @@ export interface MentorDetailProfile {
   rating: number;
   reviewCount: number;
   avatarUrl: string;
-  socials: {
-    website?: string;
-    facebook?: string;
-    instagram?: string;
-    linkedin?: string;
-  };
+  links: MentorLink[];
   bio: string;
   expertise: string[];
   experience: MentorTimelineItem[];
+  /** Field of study as the role, school as the company */
+  education: MentorTimelineItem[];
   reviews: MentorReview[];
   packages: SessionPackage[];
   availableDates: AvailableDateSlot[];

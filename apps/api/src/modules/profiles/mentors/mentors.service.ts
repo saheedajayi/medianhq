@@ -346,6 +346,10 @@ export class MentorsService {
       mentorUserId: mentor.userId,
       experience: mentor.experience,
       linkedinUrl: mentor.linkedinUrl,
+      // Saved in Settings; empty until the mentor adds them
+      workExperiences: mentor.user?.workExperiences ?? [],
+      educations: mentor.user?.educations ?? [],
+      socialLinks: mentor.user?.socialLinks ?? [],
       packages,
       reviews,
     };
