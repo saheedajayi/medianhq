@@ -26,6 +26,9 @@ export const ADMIN_ACCOUNT_ACTIONS = [
   'RECORDING_VIEWED',
 ] as const;
 
+/** How long a user can see their own security events */
+export const SECURITY_EVENT_RETENTION_DAYS = 90;
+
 export type SecurityEventAction =
   | (typeof ADMIN_ACCOUNT_ACTIONS)[number]
   | 'PASSWORD_RESET'
@@ -76,12 +79,20 @@ export class SecurityAuditService {
   }
 
   /**
-   * Retrieves security audit events for a specific user (access-controlled to owner).
+   * Retrieves a user's own security events from the last 90 days (access-controlled to owner).
    */
   async getLogsForUser(userId: string, limit = 20) {
     return this.prisma.securityAuditLog.findMany({
       // Admin actions on the account are for the admin log, not the user's own list
-      where: { userId, action: { notIn: [...ADMIN_ACCOUNT_ACTIONS] } },
+      where: {
+        userId,
+        action: { notIn: [...ADMIN_ACCOUNT_ACTIONS] },
+        createdAt: {
+          gte: new Date(
+            Date.now() - SECURITY_EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+          ),
+        },
+      },
       orderBy: { createdAt: 'desc' },
       take: Math.min(limit, 50),
       select: {
