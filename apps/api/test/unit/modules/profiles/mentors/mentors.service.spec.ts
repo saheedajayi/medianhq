@@ -397,6 +397,59 @@ describe('MentorsService', () => {
       expect(result.rating).toBe(5);
       expect(result.reviews).toHaveLength(1);
       expect(result.reviews[0].comment).toBe('Great session!');
+      // Nothing saved in Settings yet
+      expect(result.workExperiences).toEqual([]);
+      expect(result.educations).toEqual([]);
+      expect(result.socialLinks).toEqual([]);
+    });
+
+    it('includes the experience, education and links saved in Settings', async () => {
+      const workExperiences = [
+        {
+          id: 'w1',
+          role: 'Engineering Director',
+          company: 'Moniepoint',
+          startMonth: 3,
+          startYear: 2022,
+          endMonth: null,
+          endYear: null,
+          isCurrent: true,
+        },
+      ];
+      const educations = [
+        {
+          id: 'e1',
+          fieldOfStudy: 'Computer Science',
+          school: 'University of Lagos',
+          startMonth: 9,
+          startYear: 2010,
+          endMonth: 7,
+          endYear: 2014,
+          isCurrent: false,
+        },
+      ];
+      const socialLinks = [
+        { id: 's1', kind: 'X', title: null, url: 'https://x.com/chidinma' },
+      ];
+      repository.findMentorById.mockResolvedValue({
+        id: 'mentor-1',
+        pricePerSession: 0,
+        currency: 'NGN',
+        user: {
+          firstName: 'Chidinma',
+          lastName: 'Okafor',
+          mentorBookings: [],
+          workExperiences,
+          educations,
+          socialLinks,
+        },
+      });
+
+      const result = await service.getMentorProfile('mentor-1');
+
+      expect(result.workExperiences).toEqual(workExperiences);
+      expect(result.educations).toEqual(educations);
+      expect(result.socialLinks).toEqual(socialLinks);
     });
   });
 

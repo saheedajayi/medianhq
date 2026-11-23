@@ -126,6 +126,45 @@ export class MentorsRepository {
             firstName: true,
             lastName: true,
             email: true,
+            // What the mentor added in Settings, shown on their public profile
+            workExperiences: {
+              select: {
+                id: true,
+                role: true,
+                company: true,
+                startMonth: true,
+                startYear: true,
+                endMonth: true,
+                endYear: true,
+                isCurrent: true,
+              },
+              orderBy: [
+                { isCurrent: 'desc' },
+                { startYear: 'desc' },
+                { startMonth: 'desc' },
+              ],
+            },
+            educations: {
+              select: {
+                id: true,
+                fieldOfStudy: true,
+                school: true,
+                startMonth: true,
+                startYear: true,
+                endMonth: true,
+                endYear: true,
+                isCurrent: true,
+              },
+              orderBy: [
+                { isCurrent: 'desc' },
+                { startYear: 'desc' },
+                { startMonth: 'desc' },
+              ],
+            },
+            socialLinks: {
+              select: { id: true, kind: true, title: true, url: true },
+              orderBy: { createdAt: 'asc' },
+            },
             mentorBookings: {
               include: {
                 review: {

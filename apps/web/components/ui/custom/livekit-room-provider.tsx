@@ -16,6 +16,7 @@
  */
 
 import { LiveKitRoom } from "@livekit/components-react";
+import type { RoomOptions } from "livekit-client";
 import type { ReactNode } from "react";
 
 interface LiveKitRoomProviderProps {
@@ -29,6 +30,8 @@ interface LiveKitRoomProviderProps {
   audio?: boolean;
   /** Auto-publish camera track on connect (default: true) */
   video?: boolean;
+  /** Room settings such as which microphone, camera and speakers to use */
+  options?: RoomOptions;
   children: ReactNode;
 }
 
@@ -38,6 +41,7 @@ export function LiveKitRoomProvider({
   onDisconnected,
   audio = true,
   video = true,
+  options,
   children,
 }: LiveKitRoomProviderProps) {
   return (
@@ -47,6 +51,7 @@ export function LiveKitRoomProvider({
       connect={true}
       audio={audio}
       video={video}
+      options={options}
       onDisconnected={onDisconnected}
     >
       {children}

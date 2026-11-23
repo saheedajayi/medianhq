@@ -95,12 +95,16 @@ describe('SecurityAuditService', () => {
       ];
       prisma.securityAuditLog.findMany.mockResolvedValue(mockLogs);
 
+      jest.useFakeTimers().setSystemTime(new Date('2026-11-23T12:00:00Z'));
       const result = await service.getLogsForUser('user-1', 10);
+      jest.useRealTimers();
       expect(result).toEqual(mockLogs);
       expect(prisma.securityAuditLog.findMany).toHaveBeenCalledWith({
         where: {
           userId: 'user-1',
           action: { notIn: [...ADMIN_ACCOUNT_ACTIONS] },
+          // Nothing older than 90 days is shown
+          createdAt: { gte: new Date('2026-08-25T12:00:00Z') },
         },
         orderBy: { createdAt: 'desc' },
         take: 10,

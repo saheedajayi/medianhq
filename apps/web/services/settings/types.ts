@@ -10,6 +10,11 @@ export const NOTIFICATION_TYPES = [
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]["value"];
+/** Their features aren't live yet, so these rows are shown switched off with a "Soon" tag */
+export const COMING_SOON_NOTIFICATION_TYPES: readonly NotificationType[] = [
+  "community",
+  "achievements",
+];
 export type NotificationChannel = "email" | "inApp";
 export type NotificationPreferences = Partial<
   Record<NotificationType, Partial<Record<NotificationChannel, boolean>>>

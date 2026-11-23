@@ -3,7 +3,35 @@
 import Image from "next/image";
 import { Star } from "lucide-react";
 import { SegmentedTabs } from "@/components/ui/custom/segmented-tabs";
-import { MentorDetailProfile } from "./types";
+import { MentorDetailProfile, MentorTimelineItem } from "./types";
+
+/** A dated list, newest first: the mentor's roles or their education */
+function TimelineCard({ title, items }: { title: string; items: MentorTimelineItem[] }) {
+  return (
+    <div className="rounded-2xl border border-[#F2F2F7] bg-white p-5">
+      <h2 className="text-base font-bold text-[#101828]">{title}</h2>
+      <div className="mt-4 flex flex-col gap-5">
+        {items.map((item, index) => (
+          <div key={`${item.role}-${index}`} className="relative flex items-start gap-3.5">
+            {/* Timeline Bullet with Connecting Vertical Line */}
+            <div className="relative flex flex-col items-center">
+              <div className="mt-1 size-3 rounded-full bg-[#FF5500]" />
+              {index < items.length - 1 && <div className="mt-1 h-10 w-0.5 bg-[#EAECF0]" />}
+            </div>
+
+            {/* Role & Company Details */}
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-[#101828]">{item.role}</span>
+              <span className="text-xs text-[#667085]">
+                {[item.company, item.period].filter(Boolean).join(" • ")}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface MentorProfileTabsProps {
   mentor: MentorDetailProfile;
@@ -59,33 +87,10 @@ export function MentorProfileTabs({
             </div>
           </div>
 
-          {/* Experience Timeline Card */}
-          <div className="rounded-2xl border border-[#F2F2F7] bg-white p-5">
-            <h2 className="text-base font-bold text-[#101828]">Experience</h2>
-            <div className="mt-4 flex flex-col gap-5">
-              {mentor.experience.map((item, index) => (
-                <div key={`${item.role}-${index}`} className="relative flex items-start gap-3.5">
-                  {/* Timeline Bullet with Connecting Vertical Line */}
-                  <div className="relative flex flex-col items-center">
-                    <div className="mt-1 size-3 rounded-full bg-[#FF5500]" />
-                    {index < mentor.experience.length - 1 && (
-                      <div className="mt-1 h-10 w-0.5 bg-[#EAECF0]" />
-                    )}
-                  </div>
-
-                  {/* Role & Company Details */}
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-[#101828]">
-                      {item.role}
-                    </span>
-                    <span className="text-xs text-[#667085]">
-                      {item.company} • {item.period}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <TimelineCard title="Experience" items={mentor.experience} />
+          {mentor.education.length > 0 && (
+            <TimelineCard title="Education" items={mentor.education} />
+          )}
         </div>
       )}
 

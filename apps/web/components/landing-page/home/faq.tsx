@@ -24,7 +24,7 @@ const FAQS = [
   {
     question: "How do sessions work?",
     answer:
-      "Sessions are 30 or 60 minutes via native video. You book from your mentor's live calendar, get instant confirmation, and reminders at 24h, 1h, and 10 min before.",
+      "Sessions are 30 or 60 minutes via native video. You book from your mentor's live calendar, get instant confirmation, and email reminders 1 hour and 15 minutes before.",
   },
   {
     question: "Can I be both a mentor and a mentee?",

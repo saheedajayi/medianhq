@@ -10,7 +10,6 @@ import {
   Booking,
   BookingTab,
   MeetingFlowState,
-  RecordingOption,
   ActionItem,
   ViewerRole,
 } from "./types";
@@ -20,7 +19,7 @@ import { BookingDetailsDrawer } from "./booking-details-drawer";
 import { RescheduleSessionModal } from "./reschedule-session-modal";
 import { CancelSessionModal } from "./cancel-session-modal";
 import { DeclineRequestModal } from "./decline-request-modal";
-import { SessionLobby } from "./session-lobby";
+import { SessionLobby, type MeetingEntry } from "./session-lobby";
 import { LiveVideoSessionRoom } from "./live-video-session-room";
 import { SessionReviewModal } from "./session-review-modal";
 import { SessionCompletedModal } from "./session-completed-modal";
@@ -148,10 +147,8 @@ export function BookingsView({ viewerRole }: { viewerRole: ViewerRole }) {
   // Meeting flow states
   const [meetingBooking, setMeetingBooking] = useState<Booking | null>(null);
   const [meetingFlow, setMeetingFlow] = useState<MeetingFlowState>("none");
-  const [recordingChoice, setRecordingChoice] = useState<RecordingOption>("do_not_record");
-  // LiveKit session credentials
-  const [livekitToken, setLivekitToken] = useState<string | null>(null);
-  const [livekitServerUrl, setLivekitServerUrl] = useState<string | null>(null);
+  // The lobby's choices and LiveKit credentials for the call in progress
+  const [meetingEntry, setMeetingEntry] = useState<MeetingEntry | null>(null);
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -189,16 +186,8 @@ export function BookingsView({ viewerRole }: { viewerRole: ViewerRole }) {
     setMeetingFlow("lobby");
   };
 
-  const handleEnterMeeting = (
-    recChoice: RecordingOption,
-    _micOn: boolean,
-    _cameraOn: boolean,
-    token: string,
-    serverUrl: string
-  ) => {
-    setRecordingChoice(recChoice);
-    setLivekitToken(token);
-    setLivekitServerUrl(serverUrl);
+  const handleEnterMeeting = (entry: MeetingEntry) => {
+    setMeetingEntry(entry);
     setMeetingFlow("live_room");
   };
 
@@ -332,13 +321,11 @@ export function BookingsView({ viewerRole }: { viewerRole: ViewerRole }) {
   }
 
   // If in live video session room:
-  if (meetingFlow === "live_room" && meetingBooking && livekitToken && livekitServerUrl) {
+  if (meetingFlow === "live_room" && meetingBooking && meetingEntry) {
     return (
       <LiveVideoSessionRoom
         booking={meetingBooking}
-        recordingOption={recordingChoice}
-        livekitToken={livekitToken}
-        livekitServerUrl={livekitServerUrl}
+        entry={meetingEntry}
         onEndCall={handleEndCall}
       />
     );

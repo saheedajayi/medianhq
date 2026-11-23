@@ -13,7 +13,7 @@ import {
   UserRole,
 } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
-import { AccessToken } from 'livekit-server-sdk';
+import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import type { AuthUser } from '../../identity/auth/dto/auth.dto';
 import type { CreateBookingDto } from './dto/create-booking.dto';
 import {
@@ -28,6 +28,8 @@ import { buildAvailableDays, type AvailableDay } from './availability-slots';
 import {
   JOIN_WINDOW_MS,
   MIN_LEAD_TIME_MS,
+  REMINDER_GRACE_MS,
+  REMINDER_LEAD_MINUTES,
   getCancellationRefund,
   getEarningsBreakdown,
   getEndsAt,
@@ -61,6 +63,8 @@ const DISPLAY_TIME_ZONE = 'Africa/Lagos';
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
+  /** Reminders this instance already sent, so each sweep doesn't ask the email provider again */
+  private readonly sentReminders = new Map<string, number>();
 
   constructor(
     private readonly bookingsRepository: BookingsRepository,
@@ -336,10 +340,11 @@ export class BookingsService {
       (isMentor ? 'Mentor' : 'Mentee');
     const roomName = sessionRoomName(booking.id);
 
+    // The pass only lets you in until the booked end; the sweep closes the room after that
     const at = new AccessToken(key, secret, {
       identity: user.id,
       name: participantName,
-      ttl: '3h',
+      ttl: Math.max(60, Math.ceil((endsAt.getTime() - now.getTime()) / 1000)),
     });
 
     at.addGrant({
@@ -354,6 +359,8 @@ export class BookingsService {
       token: await at.toJwt(),
       roomName,
       serverUrl,
+      // Lets the call clock follow our time rather than the device's
+      serverTime: now.toISOString(),
     };
   }
 
@@ -562,6 +569,10 @@ export class BookingsService {
         completed: !!item.completed,
       }));
 
+    const previous = await this.bookingsRepository.findFeedbackActionItems(id);
+    const hadActionItems =
+      Array.isArray(previous?.actionItems) && previous.actionItems.length > 0;
+
     const feedback = await this.bookingsRepository.upsertFeedback({
       bookingId: id,
       authorId: user.id,
@@ -571,16 +582,70 @@ export class BookingsService {
       followUpNotes: dto.followUpNotes?.trim().slice(0, 4000) || undefined,
     });
 
+    // Only the first time the mentee is given action items, not on every edit
+    if (actionItems.length > 0 && !hadActionItems) {
+      void this.bookingNotifications.notify(id, 'ACTION_ITEMS', {
+        actionItemCount: actionItems.length,
+      });
+    }
+
     const earning = await this.bookingsRepository.findEarningForBooking(id);
     return { success: true, feedback, earning };
   }
 
   // ---------------------------------------------------------------------------
-  // Background sweep: expiries and session outcomes
+  // Background sweep: reminders, expiries and session outcomes
   // ---------------------------------------------------------------------------
+
+  /** Emails both people shortly before a confirmed session; safe to run repeatedly */
+  private async sendReminders(now: Date) {
+    for (const [key, startsAt] of this.sentReminders) {
+      if (startsAt < now.getTime()) this.sentReminders.delete(key);
+    }
+
+    for (const minutes of REMINDER_LEAD_MINUTES) {
+      const due = new Date(now.getTime() + minutes * 60 * 1000);
+      const bookings =
+        (await this.bookingsRepository.findConfirmedStartingBetween(
+          new Date(due.getTime() - REMINDER_GRACE_MS),
+          due,
+        )) ?? [];
+      for (const booking of bookings) {
+        const key = `${booking.id}:${minutes}:${booking.startsAt.getTime()}`;
+        if (this.sentReminders.has(key)) continue;
+        this.sentReminders.set(key, booking.startsAt.getTime());
+        // The email itself is keyed on the start time too, so other instances can't double-send
+        await this.bookingNotifications.notify(
+          booking.id,
+          minutes === 60 ? 'REMINDER_1H' : 'REMINDER_15M',
+        );
+      }
+    }
+  }
+
+  /** Ends the video call for anyone still in it; a room that's already gone is fine */
+  private async closeRoom(bookingId: string) {
+    try {
+      const url = this.configService.get<string>('LIVEKIT_URL');
+      const key = this.configService.get<string>('LIVEKIT_API_KEY');
+      const secret = this.configService.get<string>('LIVEKIT_API_SECRET');
+      if (!url || !key || !secret) return;
+      await new RoomServiceClient(
+        url.replace(/^ws/, 'http'),
+        key,
+        secret,
+      ).deleteRoom(sessionRoomName(bookingId));
+    } catch (err) {
+      this.logger.debug(
+        `No open room to close for booking ${bookingId}: ${String(err)}`,
+      );
+    }
+  }
 
   /** Expires unanswered requests and settles finished sessions; safe to run repeatedly */
   async sweep(now = new Date()) {
+    await this.sendReminders(now);
+
     for (const booking of await this.bookingsRepository.findExpiredRequests(
       now,
     )) {
@@ -617,6 +682,7 @@ export class BookingsService {
           { status: BookingStatus.COMPLETED },
         );
         if (!completed) continue;
+        await this.closeRoom(booking.id);
         await this.bookingsRepository.recordCompletedSession(
           booking.id,
           getEndsAt(booking.startsAt, booking.durationMinutes),
@@ -641,6 +707,7 @@ export class BookingsService {
         { status: BookingStatus.NO_SHOW, noShowParty },
       );
       if (!marked) continue;
+      await this.closeRoom(booking.id);
       if (noShowParty === 'MENTEE') {
         if (paid > 0) await this.recordEarning(booking, paid, currency);
       } else {

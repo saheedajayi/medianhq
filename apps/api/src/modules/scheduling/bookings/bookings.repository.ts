@@ -244,6 +244,17 @@ export class BookingsRepository {
     });
   }
 
+  /** Confirmed sessions starting after `from`, up to and including `to` */
+  findConfirmedStartingBetween(from: Date, to: Date) {
+    return this.prisma.booking.findMany({
+      where: {
+        status: BookingStatus.CONFIRMED,
+        startsAt: { gt: from, lte: to },
+      },
+      select: { id: true, startsAt: true },
+    });
+  }
+
   /** Confirmed sessions whose end time has passed and still need an outcome */
   async findEndedSessions(now: Date) {
     const candidates = await this.prisma.booking.findMany({
@@ -281,6 +292,14 @@ export class BookingsRepository {
       where: { bookingId },
       create: { bookingId, completedAt, completedMinutes },
       update: { completedAt, completedMinutes },
+    });
+  }
+
+  /** The action items already saved for a booking, if the mentor has reviewed it */
+  findFeedbackActionItems(bookingId: string) {
+    return this.prisma.menteeFeedback.findUnique({
+      where: { bookingId },
+      select: { actionItems: true },
     });
   }
 

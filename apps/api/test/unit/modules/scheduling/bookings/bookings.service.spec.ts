@@ -19,6 +19,7 @@ describe('BookingsService money flows', () => {
     repository = {
       findExpiredRequests: jest.fn().mockResolvedValue([]),
       findEndedSessions: jest.fn().mockResolvedValue([]),
+      findConfirmedStartingBetween: jest.fn().mockResolvedValue([]),
       transition: jest.fn().mockResolvedValue(true),
       createEarning: jest.fn(),
       recordCompletedSession: jest.fn(),
@@ -37,7 +38,7 @@ describe('BookingsService money flows', () => {
     notifications = { notify: jest.fn() };
     service = new BookingsService(
       repository as never,
-      {} as never,
+      { get: jest.fn() } as never,
       payments as never,
       notifications as never,
       {
@@ -53,6 +54,55 @@ describe('BookingsService money flows', () => {
 
   describe('sweep', () => {
     const now = new Date('2026-10-26T12:00:00Z');
+
+    it('reminds both people an hour and 15 minutes before, once each', async () => {
+      const inAnHour = new Date(now.getTime() + HOUR - 30 * 1000);
+      const inFifteen = new Date(now.getTime() + 15 * 60 * 1000);
+      repository.findConfirmedStartingBetween.mockImplementation(
+        (_from: Date, to: Date) =>
+          Promise.resolve(
+            to.getTime() === now.getTime() + HOUR
+              ? [{ id: 'hour', startsAt: inAnHour }]
+              : [{ id: 'soon', startsAt: inFifteen }],
+          ),
+      );
+
+      await service.sweep(now);
+      await service.sweep(now);
+
+      expect(notifications.notify.mock.calls).toEqual([
+        ['hour', 'REMINDER_1H'],
+        ['soon', 'REMINDER_15M'],
+      ]);
+      // Only sessions that reach the mark within the last few minutes are picked up
+      expect(repository.findConfirmedStartingBetween).toHaveBeenCalledWith(
+        new Date(now.getTime() + 10 * 60 * 1000),
+        new Date(now.getTime() + 15 * 60 * 1000),
+      );
+    });
+
+    it('reminds again when a session moves to a new time', async () => {
+      const first = new Date(now.getTime() + 15 * 60 * 1000);
+      const later = new Date(now.getTime() + 3 * HOUR);
+      repository.findConfirmedStartingBetween.mockImplementation(
+        (_from: Date, to: Date) =>
+          Promise.resolve(
+            to.getTime() === first.getTime()
+              ? [{ id: 'b1', startsAt: first }]
+              : to.getTime() === later.getTime()
+                ? [{ id: 'b1', startsAt: later }]
+                : [],
+          ),
+      );
+
+      await service.sweep(now);
+      await service.sweep(new Date(later.getTime() - 15 * 60 * 1000));
+
+      expect(notifications.notify.mock.calls).toEqual([
+        ['b1', 'REMINDER_15M'],
+        ['b1', 'REMINDER_15M'],
+      ]);
+    });
     const ended = {
       id: 'b1',
       mentorId: 'mentor',
@@ -218,6 +268,47 @@ describe('BookingsService money flows', () => {
       });
       await expect(service.cancel(user, 'b1')).rejects.toThrow('started');
       expect(payments.refund).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('submitFeedback', () => {
+    const mentor = { id: 'mentor' } as never;
+    const feedback = (items: string[]) => ({
+      rating: 5,
+      actionItems: items.map((text) => ({ text })),
+    });
+
+    beforeEach(() => {
+      repository.findBookingForAction.mockResolvedValue({
+        id: 'b1',
+        mentorId: 'mentor',
+        menteeId: 'mentee',
+        status: BookingStatus.COMPLETED,
+        startsAt: new Date(Date.now() - 2 * HOUR),
+      });
+      repository.findFeedbackActionItems = jest.fn().mockResolvedValue(null);
+      repository.upsertFeedback = jest.fn().mockResolvedValue({});
+      repository.findEarningForBooking = jest.fn().mockResolvedValue(null);
+    });
+
+    it('emails the mentee the first time they are given action items', async () => {
+      await service.submitFeedback(mentor, 'b1', feedback(['Read', 'Apply']));
+      expect(notifications.notify).toHaveBeenCalledWith('b1', 'ACTION_ITEMS', {
+        actionItemCount: 2,
+      });
+    });
+
+    it("doesn't email again when the mentor edits the review", async () => {
+      repository.findFeedbackActionItems.mockResolvedValue({
+        actionItems: [{ id: 'item-1', text: 'Read', completed: false }],
+      });
+      await service.submitFeedback(mentor, 'b1', feedback(['Read', 'Apply']));
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+
+    it("doesn't email a review with no action items", async () => {
+      await service.submitFeedback(mentor, 'b1', feedback([]));
+      expect(notifications.notify).not.toHaveBeenCalled();
     });
   });
 });
