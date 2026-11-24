@@ -47,6 +47,12 @@ export interface SuspendUserDto {
   reason?: string;
 }
 
+export interface EmailUserDto {
+  subject?: string;
+  /** The formatted message; checked by readEmailBody */
+  body?: unknown;
+}
+
 export interface FlagUserDto {
   flagged?: boolean;
 }

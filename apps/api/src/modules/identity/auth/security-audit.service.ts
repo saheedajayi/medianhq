@@ -24,6 +24,7 @@ export const ADMIN_ACCOUNT_ACTIONS = [
   'PAYOUT_REJECTED',
   'ADMIN_ACCESS_CHANGED',
   'RECORDING_VIEWED',
+  'EMAIL_SENT_BY_ADMIN',
 ] as const;
 
 /** How long a user can see their own security events */

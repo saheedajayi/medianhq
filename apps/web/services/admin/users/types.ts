@@ -1,3 +1,5 @@
+import type { RichTextBlock } from "@/components/admin/shared/rich-text";
+
 export type AdminUserRole = "MENTOR" | "MENTEE";
 export type AdminUserStatus = "ACTIVE" | "UNDER_REVIEW" | "SUSPENDED" | "INACTIVE";
 
@@ -79,3 +81,9 @@ export type AdminUserDetail = AdminUserRow & {
   };
   activity: { id: string; at: string; text: string; reference: string | null }[];
 };
+
+/** A message an admin writes to one user */
+export interface AdminUserEmail {
+  subject: string;
+  body: RichTextBlock[];
+}

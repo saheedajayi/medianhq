@@ -2,12 +2,14 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { BookingStatus, MentorStatus, Prisma, UserRole } from '@prisma/client';
 import {
   SecurityAuditService,
   type SecurityEventAction,
 } from '../../identity/auth/security-audit.service';
+import { EmailService } from '../../platform/email/email.service';
 import { fullName, oneOf, type AdminActor } from '../common/admin-actor';
 import { countryOf } from '../common/location';
 import {
@@ -22,7 +24,9 @@ import type {
   AdminUsersFilters,
   AdminUsersQueryDto,
   AdminUserStatus,
+  EmailUserDto,
 } from './dto/admin-users.dto';
+import { readEmailBody, renderEmailHtml, renderEmailText } from './email-body';
 import {
   computeTrustScore,
   type TrustScore,
@@ -33,6 +37,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 8;
 const EXPORT_LIMIT = 5000;
 const ACTIVITY_LIMIT = 10;
+const MAX_EMAIL_SUBJECT_LENGTH = 150;
 
 const TRUST_RANGES = {
   '85+': [85, 100],
@@ -49,6 +54,7 @@ export class AdminUsersService {
   constructor(
     private readonly usersRepository: AdminUsersRepository,
     private readonly securityAudit: SecurityAuditService,
+    private readonly emailService: EmailService,
   ) {}
 
   async list(query: AdminUsersQueryDto, now = new Date()) {
@@ -201,6 +207,55 @@ export class AdminUsersService {
     await this.usersRepository.suspendUser(userId, trimmed);
     await this.recordAction(user, 'ACCOUNT_SUSPENDED', actor, trimmed);
     return { userId, status: 'SUSPENDED' as const };
+  }
+
+  /** Sends the user a message from Median and notes it on their activity log */
+  async email(userId: string, dto: EmailUserDto, actor?: AdminActor) {
+    const subject = dto.subject?.trim().replace(/\s+/g, ' ');
+    if (!subject) {
+      throw new BadRequestException('A subject is required.');
+    }
+    if (subject.length > MAX_EMAIL_SUBJECT_LENGTH) {
+      throw new BadRequestException(
+        `The subject cannot exceed ${MAX_EMAIL_SUBJECT_LENGTH} characters.`,
+      );
+    }
+    const body = readEmailBody(dto.body);
+    const message = renderEmailText(body);
+    const user = await this.findManagedUser(userId);
+
+    const metadata = { adminId: actor?.id ?? null, reason: subject, message };
+    const record = (status: 'SUCCESS' | 'FAILURE') =>
+      this.securityAudit.record({
+        userId: user.id,
+        email: user.email,
+        action: 'EMAIL_SENT_BY_ADMIN',
+        status,
+        metadata,
+      });
+
+    let sent = false;
+    try {
+      sent = await this.emailService.sendAdminMessage({
+        email: user.email,
+        firstName: user.firstName,
+        subject,
+        bodyHtml: renderEmailHtml(body),
+        bodyText: message,
+        idempotencyKey: `admin-message:${user.id}:${Date.now()}`,
+      });
+    } catch {
+      sent = false;
+    }
+    if (!sent) {
+      await record('FAILURE');
+      throw new ServiceUnavailableException(
+        "The email couldn't be sent. Please try again.",
+      );
+    }
+
+    await record('SUCCESS');
+    return { userId, sent: true };
   }
 
   async reinstate(userId: string, actor?: AdminActor) {

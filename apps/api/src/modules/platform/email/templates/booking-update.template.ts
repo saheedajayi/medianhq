@@ -3,6 +3,10 @@ export type BookingUpdateTemplateInput = {
   subject: string;
   /** Plain-text paragraphs; escaped before going into the HTML */
   paragraphs: string[];
+  /** Ready-made, already-escaped HTML to use in place of the paragraphs */
+  bodyHtml?: string;
+  /** The plain-text version of bodyHtml */
+  bodyText?: string;
   /** Label/value rows shown in a details box, e.g. session name and time */
   details: { label: string; value: string }[];
   ctaLabel: string;
@@ -38,9 +42,11 @@ export function buildBookingUpdateTemplate(
   };
   const logoUrl = `${htmlInput.assetUrl}/median-logo.png`;
   const footerLogoUrl = `${htmlInput.assetUrl}/median-logo-light.png`;
-  const paragraphsHtml = input.paragraphs
-    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p><br>`)
-    .join('');
+  const paragraphsHtml =
+    input.bodyHtml ??
+    input.paragraphs
+      .map((paragraph) => `<p>${escapeHtml(paragraph)}</p><br>`)
+      .join('');
   const detailsHtml = input.details.length
     ? `<div class="details-box" style="background-color:#F9FAFB;border:1px solid #EAECF0;border-radius:8px;padding:16px;margin:16px 0;font-size:14px;">${input.details
         .map(
@@ -142,7 +148,9 @@ export function buildBookingUpdateTemplate(
     text: [
       `Hi ${input.firstName},`,
       '',
-      ...input.paragraphs.flatMap((paragraph) => [paragraph, '']),
+      ...(input.bodyText
+        ? [input.bodyText, '']
+        : input.paragraphs.flatMap((paragraph) => [paragraph, ''])),
       ...input.details.map((row) => `${row.label}: ${row.value}`),
       '',
       `${input.ctaLabel}: ${input.ctaUrl}`,

@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import type { AdminActor } from '../common/admin-actor';
 import { AdminUsersService } from './admin-users.service';
 import type {
   AdminUsersQueryDto,
+  EmailUserDto,
   FlagUserDto,
   SuspendUserDto,
 } from './dto/admin-users.dto';
@@ -37,6 +39,15 @@ export class AdminUsersController {
   @Get(':userId')
   getDetail(@Param('userId') userId: string) {
     return this.usersService.getDetail(userId);
+  }
+
+  @Post(':userId/email')
+  email(
+    @Param('userId') userId: string,
+    @Body() dto: EmailUserDto,
+    @CurrentUser() admin?: AdminActor,
+  ) {
+    return this.usersService.email(userId, dto, admin);
   }
 
   @Patch(':userId/suspend')

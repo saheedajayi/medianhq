@@ -74,6 +74,10 @@ export type BookingUpdateEmailInput = {
   ctaPath: string;
   /** Same booking + event must not email twice if a request is retried */
   idempotencyKey: string;
+  /** Replaces the paragraphs with ready-made HTML; never pass anything unescaped */
+  bodyHtml?: string;
+  /** The plain-text version of bodyHtml */
+  bodyText?: string;
 };
 
 export type SendLetterInput = {
@@ -156,6 +160,8 @@ export class EmailService {
       firstName: input.firstName,
       subject: input.subject,
       paragraphs: input.paragraphs,
+      bodyHtml: input.bodyHtml,
+      bodyText: input.bodyText,
       details: input.details,
       ctaLabel: input.ctaLabel,
       ctaUrl: `${siteUrl}${input.ctaPath}`,
@@ -178,6 +184,30 @@ export class EmailService {
       },
       input.idempotencyKey,
     );
+  }
+
+  /**
+   * A message an admin wrote to one person, in the usual Median layout.
+   * Returns false when email isn't set up, so the admin isn't told it went.
+   */
+  async sendAdminMessage(input: {
+    email: string;
+    firstName: string;
+    subject: string;
+    /** Already-safe HTML, built by the API from the admin's formatted message */
+    bodyHtml: string;
+    bodyText: string;
+    idempotencyKey: string;
+  }) {
+    if (!this.getConfiguredFrom('admin message')) return false;
+    await this.sendBookingUpdate({
+      ...input,
+      paragraphs: [],
+      details: [],
+      ctaLabel: 'Open Median',
+      ctaPath: '/dashboard',
+    });
+    return true;
   }
 
   /**
