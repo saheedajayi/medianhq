@@ -234,6 +234,55 @@ describe('BookingsService money flows', () => {
     });
   });
 
+  describe('a time someone else takes at the same moment', () => {
+    const startsAt = new Date(Date.now() + 72 * HOUR);
+
+    beforeEach(() => {
+      // The time looks free when checked, then is gone by the time it is saved
+      jest
+        .spyOn(service as never, 'assertSlotAvailable')
+        .mockResolvedValue(undefined as never);
+    });
+
+    it("isn't booked twice", async () => {
+      repository.findUserWithMentorProfile.mockResolvedValue({
+        id: 'mentor',
+        mentorProfile: { status: 'APPROVED', pricePerSession: 0 },
+      });
+      repository.findActiveBookingOfSession.mockResolvedValue(null);
+      repository.createBookingWithPayment.mockResolvedValue(null);
+
+      await expect(
+        service.create(
+          { id: 'mentee' } as never,
+          { mentorId: 'mentor', startsAt: startsAt.toISOString() } as never,
+        ),
+      ).rejects.toThrow('no longer available');
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+
+    it("isn't taken by a reschedule", async () => {
+      repository.findBookingForAction.mockResolvedValue({
+        id: 'b1',
+        mentorId: 'mentor',
+        menteeId: 'mentee',
+        status: BookingStatus.CONFIRMED,
+        startsAt: new Date(Date.now() + 48 * HOUR),
+        durationMinutes: 30,
+      });
+      repository.rescheduleBooking = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.reschedule(
+          { id: 'mentee' } as never,
+          'b1',
+          startsAt.toISOString(),
+        ),
+      ).rejects.toThrow('no longer available');
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+  });
+
   describe('cancel', () => {
     const user = { id: 'mentee', role: UserRole.MENTEE } as never;
 

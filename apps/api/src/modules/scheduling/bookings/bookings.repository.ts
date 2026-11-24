@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { BookingStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
 import { PAYMENT_HOLD_MS } from './booking-policy';
+import {
+  ACTIVE_STATUSES,
+  isTimeTaken,
+  lockMentorCalendar,
+} from './mentor-calendar';
 
 const PARTICIPANTS_INCLUDE = {
   mentor: {
@@ -29,12 +34,6 @@ const PARTICIPANTS_INCLUDE = {
 export type BookingWithDetails = Prisma.BookingGetPayload<{
   include: typeof PARTICIPANTS_INCLUDE;
 }>;
-
-/** Bookings that hold a slot on the mentor's calendar */
-const ACTIVE_STATUSES = [
-  BookingStatus.PENDING_CONFIRMATION,
-  BookingStatus.CONFIRMED,
-];
 
 @Injectable()
 export class BookingsRepository {
@@ -96,6 +95,7 @@ export class BookingsRepository {
       .filter((range) => range.endsAt > from);
   }
 
+  /** Saves the booking unless someone took the time first; null means it was taken */
   async createBookingWithPayment(
     bookingData: {
       mentorId: string;
@@ -119,27 +119,54 @@ export class BookingsRepository {
       provider: string;
     },
   ) {
-    const booking = await this.prisma.booking.create({
-      data: bookingData,
-    });
-
-    let payment = null;
-    if (paymentData) {
-      payment = await this.prisma.payment.create({
-        data: {
-          bookingId: booking.id,
-          amount: paymentData.amount,
-          currency: paymentData.currency,
-          listedAmount: paymentData.listedAmount,
-          listedCurrency: paymentData.listedCurrency,
-          exchangeRate: paymentData.exchangeRate,
-          status: paymentData.status,
-          provider: paymentData.provider,
-        },
+    return this.prisma.$transaction(async (tx) => {
+      await lockMentorCalendar(tx, bookingData.mentorId);
+      const taken = await isTimeTaken(tx, {
+        mentorId: bookingData.mentorId,
+        startsAt: bookingData.startsAt,
+        durationMinutes: bookingData.durationMinutes,
+        excludeBookingId: undefined,
+        checkoutsHeldAt: new Date(),
       });
-    }
+      if (taken) return null;
 
-    return { booking, payment };
+      const booking = await tx.booking.create({ data: bookingData });
+      const payment = paymentData
+        ? await tx.payment.create({
+            data: {
+              bookingId: booking.id,
+              amount: paymentData.amount,
+              currency: paymentData.currency,
+              listedAmount: paymentData.listedAmount,
+              listedCurrency: paymentData.listedCurrency,
+              exchangeRate: paymentData.exchangeRate,
+              status: paymentData.status,
+              provider: paymentData.provider,
+            },
+          })
+        : null;
+
+      return { booking, payment };
+    });
+  }
+
+  /** Moves a booking to a new time unless someone took it first; null means it was taken */
+  rescheduleBooking(
+    booking: { id: string; mentorId: string; durationMinutes: number },
+    data: { startsAt: Date; respondBy?: Date },
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await lockMentorCalendar(tx, booking.mentorId);
+      const taken = await isTimeTaken(tx, {
+        mentorId: booking.mentorId,
+        startsAt: data.startsAt,
+        durationMinutes: booking.durationMinutes,
+        excludeBookingId: booking.id,
+        checkoutsHeldAt: new Date(),
+      });
+      if (taken) return null;
+      return tx.booking.update({ where: { id: booking.id }, data });
+    });
   }
 
   findUserBookings(userId: string) {
