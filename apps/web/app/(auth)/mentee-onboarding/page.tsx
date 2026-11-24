@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
-import { MenteeOnboardingPage } from "@/features/auth/mentee-onboarding-page";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
+import { MenteeOnboardingPage } from "@/components/auth/mentee-onboarding-page";
 
 export const dynamic = "force-dynamic";
 

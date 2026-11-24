@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
-import BackofficePage from "@/features/backoffice/waitlist/waitlist-backoffice";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
+import BackofficePage from "@/components/backoffice/waitlist/waitlist-backoffice";
 
 import { noIndexMetadata } from "@/lib/page-metadata";
 

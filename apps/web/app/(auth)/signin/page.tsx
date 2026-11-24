@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
-import { LoginPage } from "@/features/auth/login-page";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
+import { LoginPage } from "@/components/auth/login-page";
 
 import { createPageMetadata } from "@/lib/page-metadata";
 

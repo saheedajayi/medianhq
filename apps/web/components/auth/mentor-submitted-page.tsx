@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/base/button";
 import Link from "next/link";
-import { SubmittedCheckIcon } from "@/components/ui/submitted-check-icon";
+import { SubmittedCheckIcon } from "@/components/ui/custom/submitted-check-icon";
 
 export function MentorSubmittedPage() {
   return (
