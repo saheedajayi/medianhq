@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import type { CreateMenteeProfileDto } from './dto/create-mentee-profile.dto';
 import { MenteesService } from './mentees.service';
@@ -29,5 +37,11 @@ export class MenteesController {
       ...result,
       user: tokens.user,
     };
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':id')
+  getProfile(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.menteesService.getProfile(user, id);
   }
 }

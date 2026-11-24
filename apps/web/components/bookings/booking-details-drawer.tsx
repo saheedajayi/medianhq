@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { X, ArrowRight, Star, Check, Clock } from "lucide-react";
 import { Booking, ViewerRole } from "./types";
 import { formatTimeLeft } from "./booking-utils";
@@ -70,7 +71,16 @@ export function BookingDetailsDrawer({
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight text-[#101828]">
-                    {currentBooking.participantName}
+                    {isMentor && currentBooking.participantId ? (
+                      <Link
+                        href={`/mentor/mentees/${currentBooking.participantId}`}
+                        className="hover:underline"
+                      >
+                        {currentBooking.participantName}
+                      </Link>
+                    ) : (
+                      currentBooking.participantName
+                    )}
                   </h2>
                   <p className="mt-0.5 text-sm !text-[#667085]">
                     {currentBooking.participantRole}
