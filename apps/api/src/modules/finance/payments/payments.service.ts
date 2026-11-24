@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -96,6 +97,11 @@ export class PaymentsService {
         bookingId,
         getRespondBy(new Date(), booking.startsAt),
       );
+      if (moved.slotTaken) {
+        throw new ConflictException(
+          'That time is no longer available. Please pick another slot.',
+        );
+      }
       if (moved.count > 0) {
         await this.bookingNotifications.notify(bookingId, 'REQUESTED');
       }
@@ -349,6 +355,7 @@ export class PaymentsService {
       payment: updatedPayment,
       booking: updatedBooking,
       movedToMentor,
+      slotTaken,
     } = await this.paymentsRepository.confirmPaymentAndRequestMentor(
       payment.id,
       payment.bookingId,
@@ -361,8 +368,19 @@ export class PaymentsService {
       updatedBooking &&
       updatedBooking.status !== BookingStatus.PENDING_CONFIRMATION
     ) {
-      // Paid after the booking was cancelled or expired: give the money back
-      await this.refund(payment.bookingId, updatedPayment.amount);
+      // Paid after the booking was cancelled or expired, or after someone
+      // else took the time: give the money back
+      const refundAmount = await this.refund(
+        payment.bookingId,
+        updatedPayment.amount,
+      );
+      if (slotTaken) {
+        await this.bookingNotifications.notify(
+          payment.bookingId,
+          'SLOT_TAKEN',
+          { refundAmount },
+        );
+      }
     }
 
     return {

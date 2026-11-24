@@ -59,6 +59,8 @@ const DEFAULT_DURATION_MINUTES = 30;
 const AVAILABILITY_DAYS = 14;
 /** Booking times are shown in the mentors' time zone (see availability-slots.ts) */
 const DISPLAY_TIME_ZONE = 'Africa/Lagos';
+const SLOT_TAKEN_MESSAGE =
+  'That time is no longer available. Please pick another slot.';
 
 @Injectable()
 export class BookingsService {
@@ -131,9 +133,7 @@ export class BookingsService {
     const wanted = params.startsAt.toISOString();
     const isOpen = days.some((day) => day.slots.includes(wanted));
     if (!isOpen) {
-      throw new ConflictException(
-        'That time is no longer available. Please pick another slot.',
-      );
+      throw new ConflictException(SLOT_TAKEN_MESSAGE);
     }
   }
 
@@ -221,37 +221,39 @@ export class BookingsService {
       notes = `${notes} (Goals: ${dto.goals.join(', ')})`.trim();
     }
 
-    const { booking, payment } =
-      await this.bookingsRepository.createBookingWithPayment(
-        {
-          mentorId: mentorUser.id,
-          menteeId: user.id,
-          startsAt,
-          durationMinutes,
-          title,
-          mentorSessionId,
-          // Free sessions skip checkout and go straight to the mentor
-          status: isFree
-            ? BookingStatus.PENDING_CONFIRMATION
-            : BookingStatus.PENDING_PAYMENT,
-          respondBy: isFree ? getRespondBy(new Date(), startsAt) : undefined,
-          notes,
-          meetingUrl: `/mentee/booking-session`,
-        },
-        !isFree
-          ? {
-              amount: charge!.amount,
-              currency: 'NGN',
-              ...(charge!.exchangeRate && {
-                listedAmount: price,
-                listedCurrency: currency,
-                exchangeRate: charge!.exchangeRate,
-              }),
-              status: PaymentStatus.PENDING,
-              provider: 'PAYSTACK',
-            }
-          : undefined,
-      );
+    const created = await this.bookingsRepository.createBookingWithPayment(
+      {
+        mentorId: mentorUser.id,
+        menteeId: user.id,
+        startsAt,
+        durationMinutes,
+        title,
+        mentorSessionId,
+        // Free sessions skip checkout and go straight to the mentor
+        status: isFree
+          ? BookingStatus.PENDING_CONFIRMATION
+          : BookingStatus.PENDING_PAYMENT,
+        respondBy: isFree ? getRespondBy(new Date(), startsAt) : undefined,
+        notes,
+        meetingUrl: `/mentee/booking-session`,
+      },
+      !isFree
+        ? {
+            amount: charge!.amount,
+            currency: 'NGN',
+            ...(charge!.exchangeRate && {
+              listedAmount: price,
+              listedCurrency: currency,
+              exchangeRate: charge!.exchangeRate,
+            }),
+            status: PaymentStatus.PENDING,
+            provider: 'PAYSTACK',
+          }
+        : undefined,
+    );
+    // Someone else took the time between the check above and saving
+    if (!created) throw new ConflictException(SLOT_TAKEN_MESSAGE);
+    const { booking, payment } = created;
 
     if (isFree) {
       void this.bookingNotifications.notify(booking.id, 'REQUESTED');
@@ -519,7 +521,7 @@ export class BookingsService {
       excludeBookingId: id,
     });
 
-    const updated = await this.bookingsRepository.updateBooking(id, {
+    const updated = await this.bookingsRepository.rescheduleBooking(booking, {
       startsAt,
       // A pending request still can't be accepted after the new start time
       ...(booking.status === BookingStatus.PENDING_CONFIRMATION &&
@@ -531,6 +533,7 @@ export class BookingsService {
           }
         : {}),
     });
+    if (!updated) throw new ConflictException(SLOT_TAKEN_MESSAGE);
 
     void this.bookingNotifications.notify(id, 'RESCHEDULED', { reason });
     return { success: true, booking: updated };

@@ -6,6 +6,7 @@ import type { ApiError } from "@/services/api-client";
 import {
   adminUsersService,
   type AdminUserDetail,
+  type AdminUserEmail,
   type AdminUsersFilters,
   type AdminUsersPage,
 } from "@/services/admin/users";
@@ -43,6 +44,9 @@ const useUserMutation = <TVariables,>(mutationFn: (variables: TVariables) => Pro
     onSuccess: () => queryClient.invalidateQueries({ queryKey: adminUsersQueryKeys.all }),
   });
 };
+
+export const useEmailUser = (userId: string) =>
+  useUserMutation((email: AdminUserEmail) => adminUsersService.emailUser(userId, email));
 
 export const useSuspendUser = (userId: string) =>
   useUserMutation((reason: string) => adminUsersService.suspendUser(userId, reason));

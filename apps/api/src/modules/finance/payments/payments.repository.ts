@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { BookingStatus, PaymentStatus } from '@prisma/client';
+import { BookingStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
+import {
+  isTimeTaken,
+  lockMentorCalendar,
+} from '../../scheduling/bookings/mentor-calendar';
+
+/** Saved on a booking that was paid for after someone else took its time */
+export const SLOT_TAKEN_REASON =
+  'Another booking took this time before payment was completed.';
 
 @Injectable()
 export class PaymentsRepository {
@@ -21,10 +29,49 @@ export class PaymentsRepository {
 
   /** Free bookings skip checkout and go straight to the mentor */
   requestMentorForFreeBooking(bookingId: string, respondBy: Date) {
-    return this.prisma.booking.updateMany({
-      where: { id: bookingId, status: BookingStatus.PENDING_PAYMENT },
-      data: { status: BookingStatus.PENDING_CONFIRMATION, respondBy },
+    return this.prisma.$transaction((tx) =>
+      this.sendToMentorIfFree(tx, bookingId, respondBy),
+    );
+  }
+
+  /**
+   * Moves an unpaid checkout on to the mentor. A checkout only holds its time
+   * for a while, so if someone else booked it since, this one is cancelled
+   * instead of putting two people in the same slot.
+   */
+  private async sendToMentorIfFree(
+    tx: Prisma.TransactionClient,
+    bookingId: string,
+    respondBy: Date,
+  ) {
+    const booking = await tx.booking.findUnique({ where: { id: bookingId } });
+    if (!booking || booking.status !== BookingStatus.PENDING_PAYMENT) {
+      return { count: 0, slotTaken: false };
+    }
+
+    await lockMentorCalendar(tx, booking.mentorId);
+    const slotTaken = await isTimeTaken(tx, {
+      mentorId: booking.mentorId,
+      startsAt: booking.startsAt,
+      durationMinutes: booking.durationMinutes,
+      excludeBookingId: booking.id,
+      // Other unpaid checkouts don't count: the one that is paid for first wins
+      checkoutsHeldAt: null,
     });
+    const moved = await tx.booking.updateMany({
+      where: { id: bookingId, status: BookingStatus.PENDING_PAYMENT },
+      data: slotTaken
+        ? {
+            status: BookingStatus.CANCELLED,
+            cancelledAt: new Date(),
+            cancellationReason: SLOT_TAKEN_REASON,
+          }
+        : { status: BookingStatus.PENDING_CONFIRMATION, respondBy },
+    });
+    return {
+      count: slotTaken ? 0 : moved.count,
+      slotTaken: slotTaken && moved.count > 0,
+    };
   }
 
   upsertPayment(
@@ -80,20 +127,22 @@ export class PaymentsRepository {
     bookingId: string,
     respondBy: Date,
   ) {
-    const [payment, moved] = await this.prisma.$transaction([
-      this.prisma.payment.update({
+    const { payment, moved } = await this.prisma.$transaction(async (tx) => ({
+      payment: await tx.payment.update({
         where: { id: paymentId },
         data: { status: PaymentStatus.SUCCESSFUL },
       }),
-      this.prisma.booking.updateMany({
-        where: { id: bookingId, status: BookingStatus.PENDING_PAYMENT },
-        data: { status: BookingStatus.PENDING_CONFIRMATION, respondBy },
-      }),
-    ]);
+      moved: await this.sendToMentorIfFree(tx, bookingId, respondBy),
+    }));
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
     });
-    return { payment, booking, movedToMentor: moved.count > 0 };
+    return {
+      payment,
+      booking,
+      movedToMentor: moved.count > 0,
+      slotTaken: moved.slotTaken,
+    };
   }
 
   findPaymentByBookingId(bookingId: string) {

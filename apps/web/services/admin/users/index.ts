@@ -1,5 +1,5 @@
 import { apiClient } from "@/services/api-client";
-import type { AdminUserDetail, AdminUserRow, AdminUsersFilters, AdminUsersPage } from "./types";
+import type { AdminUserDetail, AdminUserEmail, AdminUserRow, AdminUsersFilters, AdminUsersPage } from "./types";
 
 const USERS_PATH = "/admin/users";
 const userPath = (userId: string) => `${USERS_PATH}/${encodeURIComponent(userId)}`;
@@ -15,6 +15,10 @@ export const adminUsersService = {
   getUser(userId: string) {
     return apiClient.get<AdminUserDetail>(userPath(userId));
   },
+  /** Sends the user an email from Median; it is noted on their activity log */
+  emailUser(userId: string, email: AdminUserEmail) {
+    return apiClient.post(`${userPath(userId)}/email`, email);
+  },
   suspendUser(userId: string, reason: string) {
     return apiClient.patch(`${userPath(userId)}/suspend`, { reason });
   },
@@ -28,6 +32,7 @@ export const adminUsersService = {
 
 export type {
   AdminUserDetail,
+  AdminUserEmail,
   AdminUserNote,
   AdminUserRole,
   AdminUserRow,

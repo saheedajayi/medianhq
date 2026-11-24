@@ -41,7 +41,17 @@ interface MentorSessionModalProps {
 
 const SESSION_TYPE_TABS: readonly SegmentedTabItem<"ONE_ON_ONE" | "GROUP">[] = [
   { value: "ONE_ON_ONE", label: "1 on 1 Session" },
-  { value: "GROUP", label: "Group Session" },
+  // Group sessions can't be booked yet, so new ones can't be created
+  {
+    value: "GROUP",
+    disabled: true,
+    label: (
+      <span className="inline-flex items-center gap-2">
+        Group Session
+        <span className="rounded-full bg-[#EAECF0] px-2 py-0.5 text-[11px] font-medium text-[#667085]">Soon</span>
+      </span>
+    ),
+  },
 ] as const;
 
 const DURATION_OPTIONS = [

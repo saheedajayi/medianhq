@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Clock, Timer } from "lucide-react";
 import { Booking, ViewerRole } from "./types";
 import { formatTimeLeft } from "./booking-utils";
@@ -115,7 +116,20 @@ export function BookingCard({
               />
             </div>
             <div>
-              <h4 className="text-[15px] text-[#101828]">{booking.participantName}</h4>
+              <h4 className="text-[15px] text-[#101828]">
+                {/* A mentor can open the profile of the mentee who booked them */}
+                {isMentor && booking.participantId ? (
+                  <Link
+                    href={`/mentor/mentees/${booking.participantId}`}
+                    onClick={(event) => event.stopPropagation()}
+                    className="hover:underline"
+                  >
+                    {booking.participantName}
+                  </Link>
+                ) : (
+                  booking.participantName
+                )}
+              </h4>
               <p className="text-[13px] text-[#667085]">{booking.participantRole}</p>
             </div>
           </div>

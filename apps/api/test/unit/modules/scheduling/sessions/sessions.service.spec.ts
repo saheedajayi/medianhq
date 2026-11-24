@@ -105,6 +105,19 @@ describe('SessionsService approval rule', () => {
     expect(repository.createSession).toHaveBeenCalled();
   });
 
+  it('refuses new group sessions until they launch', async () => {
+    const { repository, service } = setup();
+
+    await expect(
+      service.create(mentor('APPROVED'), { ...dto, type: 'GROUP' }),
+    ).rejects.toThrow('coming soon');
+    await expect(
+      service.update(mentor('APPROVED'), 's1', { type: 'GROUP' }),
+    ).rejects.toThrow('coming soon');
+    expect(repository.createSession).not.toHaveBeenCalled();
+    expect(repository.updateSession).not.toHaveBeenCalled();
+  });
+
   it('refuses to put a session live before approval', async () => {
     const { repository, service } = setup();
 

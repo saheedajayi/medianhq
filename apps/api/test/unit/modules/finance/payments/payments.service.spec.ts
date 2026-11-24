@@ -171,6 +171,42 @@ describe('PaymentsService with Flutterwave', () => {
     expect(repository.confirmPaymentAndRequestMentor).not.toHaveBeenCalled();
   });
 
+  it('refunds and tells the mentee when the time was taken before they paid', async () => {
+    const { repository, notifications, service } = setup();
+    const paid = {
+      ...payment,
+      provider: 'FLUTTERWAVE',
+      providerReference: 'MEDIAN_b1_1',
+      chargeAmount: 300,
+      chargeCurrency: 'GHS',
+      booking,
+    };
+    repository.findPaymentByReference.mockResolvedValue(paid);
+    repository.confirmPaymentAndRequestMentor.mockResolvedValue({
+      payment: { ...paid, status: PaymentStatus.SUCCESSFUL },
+      booking: { ...booking, status: 'CANCELLED' },
+      movedToMentor: false,
+      slotTaken: true,
+    });
+    jest
+      .spyOn(FlutterwaveClient.prototype, 'findTransaction')
+      .mockResolvedValue({
+        id: 9001,
+        tx_ref: 'MEDIAN_b1_1',
+        status: 'successful',
+        amount: 300,
+        currency: 'GHS',
+      });
+    const refund = jest.spyOn(service, 'refund').mockResolvedValue(30000);
+
+    await service.verify('MEDIAN_b1_1');
+
+    expect(refund).toHaveBeenCalledWith('b1', 30000);
+    expect(notifications.notify.mock.calls).toEqual([
+      ['b1', 'SLOT_TAKEN', { refundAmount: 30000 }],
+    ]);
+  });
+
   it('refunds the same share of what was paid, in that currency', async () => {
     const { repository, service } = setup();
     repository.findPaymentByBookingId.mockResolvedValue({

@@ -13,7 +13,8 @@ export type BookingEvent =
   | 'RESCHEDULED'
   | 'REMINDER_1H'
   | 'REMINDER_15M'
-  | 'ACTION_ITEMS';
+  | 'ACTION_ITEMS'
+  | 'SLOT_TAKEN';
 
 type Person = {
   id: string;
@@ -22,8 +23,9 @@ type Person = {
   lastName: string;
 };
 
-// Which notification preference controls each email; new requests have no toggle
-// because mentors must always hear about them before the 24-hour deadline
+// Which notification preference controls each email. New requests have no toggle
+// because mentors must always hear about them before the 24-hour deadline, and a
+// mentee must always hear that a session they paid for didn't go through
 const EVENT_PREFERENCE: Partial<Record<BookingEvent, string>> = {
   ACCEPTED: 'bookingUpdates',
   DECLINED: 'bookingUpdates',
@@ -242,6 +244,19 @@ export class BookingNotificationsService {
           ]);
           return;
         }
+        case 'SLOT_TAKEN':
+          await send(
+            booking.mentee,
+            'That session time was just taken',
+            [
+              `Someone else booked ${fullName(booking.mentor)} for this time before your payment came through, so your booking didn't go ahead.`,
+              refundLine,
+              'You can pick another time whenever you are ready.',
+            ],
+            'Pick another time',
+            '/explore',
+          );
+          return;
         case 'ACTION_ITEMS': {
           const count = extra.actionItemCount ?? 0;
           if (count < 1) return;

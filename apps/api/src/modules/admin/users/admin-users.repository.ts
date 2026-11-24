@@ -230,7 +230,13 @@ export class AdminUsersRepository {
   findManagedUser(userId: string) {
     return this.prisma.user.findFirst({
       where: { id: userId, role: MANAGED_ROLES },
-      select: { id: true, email: true, suspendedAt: true, flaggedAt: true },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        suspendedAt: true,
+        flaggedAt: true,
+      },
     });
   }
 

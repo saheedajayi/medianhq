@@ -17,6 +17,8 @@ const MIN_PAID_PRICE: Record<string, number> = { NGN: 100, USD: 1 };
 const BOOKINGS_PAGE_SIZE = 8;
 const MIN_DURATION_MINUTES = 15;
 const MAX_DURATION_MINUTES = 240;
+/** Group sessions can't be booked yet, so new ones aren't accepted */
+const GROUP_SOON = 'Group sessions are coming soon.';
 
 @Injectable()
 export class SessionsService {
@@ -32,6 +34,7 @@ export class SessionsService {
     this.ensureApproved(user);
     this.assertValidDuration(dto.durationMinutes);
     this.assertValidPrice(dto.price ?? 0, dto.currency ?? 'NGN');
+    if (dto.type === 'GROUP') throw new BadRequestException(GROUP_SOON);
 
     return this.sessionsRepository.createSession({
       mentorId: user.id,
@@ -51,6 +54,9 @@ export class SessionsService {
     this.ensureMentor(user);
     if (dto.isLive === true) this.ensureApproved(user);
     const existing = await this.findOwnSession(user, id);
+    if (dto.type === 'GROUP' && existing.type !== 'GROUP') {
+      throw new BadRequestException(GROUP_SOON);
+    }
 
     if (dto.durationMinutes !== undefined) {
       this.assertValidDuration(dto.durationMinutes);

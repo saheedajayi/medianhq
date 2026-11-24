@@ -3,8 +3,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import type { ApiError } from "@/services/api-client";
-import type { AdminUserDetail } from "@/services/admin/users";
-import { useReinstateUser, useSetUserFlag, useSuspendUser } from "@/services/admin/users/queries/users.queries";
+import type { AdminUserDetail, AdminUserEmail } from "@/services/admin/users";
+import {
+  useEmailUser,
+  useReinstateUser,
+  useSetUserFlag,
+  useSuspendUser,
+} from "@/services/admin/users/queries/users.queries";
 import { cn } from "@/lib/utils";
 import {
   badgeClass,
@@ -15,6 +20,7 @@ import {
   primaryPillClass,
 } from "../shared/shared";
 import { useAdminAccess } from "../shared/admin-access";
+import { EmailUserModal } from "./email-user-modal";
 import { SuspendAccountModal } from "./suspend-account-modal";
 
 const showError = (error: ApiError) => toast.error(error.message || "That didn't work. Please try again.");
@@ -25,6 +31,8 @@ interface AccountActionsCardProps {
 
 export function AccountActionsCard({ user }: AccountActionsCardProps) {
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const emailUser = useEmailUser(user.id);
   const suspendUser = useSuspendUser(user.id);
   const reinstateUser = useReinstateUser(user.id);
   const setUserFlag = useSetUserFlag(user.id);
@@ -41,6 +49,15 @@ export function AccountActionsCard({ user }: AccountActionsCardProps) {
       onSuccess: () => {
         toast.success("Account suspended.");
         setIsSuspendModalOpen(false);
+      },
+      onError: showError,
+    });
+
+  const handleEmail = (email: AdminUserEmail) =>
+    emailUser.mutate(email, {
+      onSuccess: () => {
+        toast.success(`Email sent to ${user.name}.`);
+        setIsEmailModalOpen(false);
       },
       onError: showError,
     });
@@ -65,9 +82,9 @@ export function AccountActionsCard({ user }: AccountActionsCardProps) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <a href={`mailto:${user.email}`} className={primaryPillClass}>
+        <button type="button" onClick={() => setIsEmailModalOpen(true)} className={primaryPillClass}>
           Manual email
-        </a>
+        </button>
         <button type="button" disabled={isSaving || isSuspended} onClick={handleToggleFlag} className={neutralPillClass}>
           {user.isFlagged ? "Remove flag" : "Flag for review"}
         </button>
@@ -92,6 +109,16 @@ export function AccountActionsCard({ user }: AccountActionsCardProps) {
       <p className="mt-4 text-xs text-[#667085]">
         Suspension requires a reason and a separate confirmation. Reinstate is available only for suspended accounts.
       </p>
+
+      {isEmailModalOpen && (
+        <EmailUserModal
+          userName={user.name}
+          userEmail={user.email}
+          isSubmitting={emailUser.isPending}
+          onClose={() => setIsEmailModalOpen(false)}
+          onSend={handleEmail}
+        />
+      )}
 
       {isSuspendModalOpen && (
         <SuspendAccountModal

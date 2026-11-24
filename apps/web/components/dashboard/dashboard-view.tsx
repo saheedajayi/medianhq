@@ -91,9 +91,14 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
     ? (bookings ?? []).filter((b) => b.tab === "pending").length
     : 0;
 
-  const { upcomingSessions, actionItems, stats } = useMemo(() => {
+  const { upcomingSessions, actionItems, stats, needsFirstSession } = useMemo(() => {
     if (isMentor || !Array.isArray(bookings)) {
-      return { upcomingSessions: [] as Booking[], actionItems: [] as any[], stats: undefined };
+      return {
+        upcomingSessions: [] as Booking[],
+        actionItems: [] as any[],
+        stats: undefined,
+        needsFirstSession: false,
+      };
     }
 
     const typedBookings = bookings as unknown as Booking[];
@@ -125,6 +130,8 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
     return {
       upcomingSessions: upcoming,
       actionItems: allActionItems,
+      // The "book your first session" nudge is for mentees with nothing done and nothing coming up
+      needsFirstSession: completedCount === 0 && upcoming.length === 0,
       stats: [
         {
           label: "SESSIONS DONE",
@@ -159,8 +166,8 @@ function ApplicantOrMenteeDashboardView({ role }: { role: SessionHint["role"] })
     <div className="flex flex-col gap-6 md:gap-8">
       <MentorRejectionNotice open={!!user?.showMentorRejectionNotice} />
 
-      {/* Top Notice Banner (Visible strictly when completion reaches 100% for mentees) */}
-      {!isMentor && is100PercentComplete && <TopSignupNoticeBanner />}
+      {/* Top notice: mentees with a complete profile who haven't had or booked a session yet */}
+      {!isMentor && is100PercentComplete && needsFirstSession && <TopSignupNoticeBanner />}
 
       {/* Hero Banner with Geometric Tile Pattern & Dynamic Logged In User Greeting */}
       <DashboardHeroBanner

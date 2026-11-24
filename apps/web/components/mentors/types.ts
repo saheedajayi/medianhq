@@ -2,6 +2,8 @@ export interface MentorTimelineItem {
   role: string;
   company: string;
   period: string;
+  /** What they did there, or what they learned */
+  description?: string;
 }
 
 /** A link the mentor added in Settings; only custom links carry a title */

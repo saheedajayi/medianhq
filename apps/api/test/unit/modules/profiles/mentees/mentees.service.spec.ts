@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { MenteesService } from '../../../../../src/modules/profiles/mentees/mentees.service';
 import { MenteesRepository } from '../../../../../src/modules/profiles/mentees/mentees.repository';
@@ -13,6 +13,9 @@ describe('MenteesService', () => {
       findUserForOnboarding: jest.fn(),
       createProfile: jest.fn(),
       updateProfileByUserId: jest.fn(),
+      hasSharedBooking: jest.fn(),
+      findMenteeForProfile: jest.fn(),
+      countCompletedSessions: jest.fn(),
     };
 
     service = new MenteesService(
@@ -122,5 +125,126 @@ describe('MenteesService', () => {
     await expect(service.createProfile('user-1', validDto)).rejects.toThrow(
       'A mentee profile cannot be created for a mentor user.',
     );
+  });
+
+  describe('getProfile', () => {
+    const mentor = { id: 'mentor-1', role: UserRole.MENTOR };
+    const mentee = {
+      id: 'mentee-1',
+      firstName: 'Tolu',
+      lastName: 'Ade',
+      menteeProfile: {
+        avatarUrl: null,
+        location: 'Lagos',
+        bio: 'Learning product design.',
+        currentRole: 'Junior Designer',
+      },
+      workExperiences: [
+        { id: 'w1', company: 'Andela', isCurrent: true, skills: ['Figma'] },
+        {
+          id: 'w2',
+          company: 'Kuda',
+          isCurrent: false,
+          skills: ['Figma', 'Research'],
+        },
+      ],
+      socialLinks: [],
+      menteeBookings: [
+        {
+          feedback: {
+            id: 'f1',
+            rating: 4,
+            comment: 'Came prepared.',
+            createdAt: new Date('2026-01-01'),
+            author: {
+              firstName: 'Ada',
+              lastName: 'Obi',
+              mentorProfile: { avatarUrl: 'https://example.com/a.png' },
+            },
+          },
+        },
+        {
+          feedback: {
+            id: 'f2',
+            rating: 5,
+            comment: null,
+            createdAt: new Date('2026-02-01'),
+            author: { firstName: 'Ben', lastName: 'Eze', mentorProfile: null },
+          },
+        },
+      ],
+    };
+
+    it('refuses a mentor who has no booking with the mentee', async () => {
+      repository.hasSharedBooking.mockResolvedValue(false);
+
+      await expect(service.getProfile(mentor, 'mentee-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(repository.hasSharedBooking).toHaveBeenCalledWith(
+        'mentor-1',
+        'mentee-1',
+      );
+      expect(repository.findMenteeForProfile).not.toHaveBeenCalled();
+    });
+
+    it('refuses another mentee without checking bookings', async () => {
+      await expect(
+        service.getProfile(
+          { id: 'mentee-2', role: UserRole.MENTEE },
+          'mentee-1',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(repository.hasSharedBooking).not.toHaveBeenCalled();
+      expect(repository.findMenteeForProfile).not.toHaveBeenCalled();
+    });
+
+    it('shows the profile to a mentor the mentee has booked', async () => {
+      repository.hasSharedBooking.mockResolvedValue(true);
+      repository.findMenteeForProfile.mockResolvedValue(mentee);
+      repository.countCompletedSessions.mockResolvedValue(3);
+
+      const result = await service.getProfile(mentor, 'mentee-1');
+
+      expect(result).toMatchObject({
+        id: 'mentee-1',
+        name: 'Tolu Ade',
+        role: 'Junior Designer',
+        company: 'Andela',
+        location: 'Lagos',
+        expertise: ['Figma', 'Research'],
+        sessionCount: 3,
+        rating: 4.5,
+        reviewCount: 2,
+      });
+      expect(result.reviews[0]).toMatchObject({
+        authorName: 'Ada Obi',
+        authorAvatar: 'https://example.com/a.png',
+        comment: 'Came prepared.',
+      });
+    });
+
+    it('lets a mentee load their own profile', async () => {
+      repository.findMenteeForProfile.mockResolvedValue(mentee);
+      repository.countCompletedSessions.mockResolvedValue(0);
+
+      const result = await service.getProfile(
+        { id: 'mentee-1', role: UserRole.MENTEE },
+        'mentee-1',
+      );
+
+      expect(result.name).toBe('Tolu Ade');
+      expect(repository.hasSharedBooking).not.toHaveBeenCalled();
+    });
+
+    it('reports a missing mentee as not found', async () => {
+      repository.hasSharedBooking.mockResolvedValue(true);
+      repository.findMenteeForProfile.mockResolvedValue(null);
+      repository.countCompletedSessions.mockResolvedValue(0);
+
+      await expect(service.getProfile(mentor, 'gone')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 });
