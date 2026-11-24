@@ -1,12 +1,25 @@
 import type { MentorDetailProfile, MentorLink, MentorReview } from "./types";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 const formatMonth = (month?: number | null, year?: number | null) =>
   year ? [MONTHS[(month ?? 0) - 1], year].filter(Boolean).join(" ") : "";
 
-/** "Mar 2022 - Present" or "Sep 2010 - Jul 2014" */
-const formatPeriod = (entry: any) =>
+/** "March 2022 - Present" or "September 2010 - July 2014" */
+export const formatPeriod = (entry: any) =>
   [
     formatMonth(entry.startMonth, entry.startYear),
     entry.isCurrent ? "Present" : formatMonth(entry.endMonth, entry.endYear),
@@ -31,7 +44,7 @@ const LINK_ORDER: MentorLink["kind"][] = ["website", "linkedin", "x", "custom"];
 const isWebUrl = (url: unknown): url is string => typeof url === "string" && /^https?:\/\//i.test(url);
 
 /** The links saved in Settings, or the LinkedIn profile from the mentor's application if none is saved */
-function mapLinks(res: any): MentorLink[] {
+export function mapLinks(res: any): MentorLink[] {
   const links: MentorLink[] = (Array.isArray(res.socialLinks) ? res.socialLinks : [])
     .filter((link: any) => LINK_KINDS[link.kind] && isWebUrl(link.url))
     .map((link: any) => {
@@ -90,6 +103,7 @@ export function mapApiMentorProfile(res: any): MentorDetailProfile {
             role: entry.role,
             company: entry.company,
             period: formatPeriod(entry),
+            description: entry.contribution || "",
           }))
         : [{ role, company, period: "Present" }],
     education: Array.isArray(res.educations)
@@ -97,6 +111,7 @@ export function mapApiMentorProfile(res: any): MentorDetailProfile {
           role: entry.fieldOfStudy,
           company: entry.school,
           period: formatPeriod(entry),
+          description: entry.learnings || "",
         }))
       : [],
     reviews,
