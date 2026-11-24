@@ -15,7 +15,7 @@ import { CreatableMultiSelect } from "@/components/ui/custom/creatable-multi-sel
 import {
   MAX_MENTOR_PROFILE_ITEMS,
   MENTOR_SKILL_SUGGESTIONS,
-  MENTOR_TOOL_SUGGESTIONS,
+  getToolSuggestions,
 } from "@/constants/mentor-profile";
 import type { CareerDates, Education, WorkExperience } from "@/services/settings";
 import {
@@ -313,7 +313,7 @@ function CareerEntryForm({
         required
         values={tools}
         onChange={setTools}
-        options={MENTOR_TOOL_SUGGESTIONS}
+        options={getToolSuggestions(config.showIndustry ? industry : null)}
         maxItems={MAX_MENTOR_PROFILE_ITEMS}
       />
 
