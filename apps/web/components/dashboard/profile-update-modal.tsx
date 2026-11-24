@@ -26,7 +26,7 @@ import { CreatableMultiSelect } from "@/components/ui/custom/creatable-multi-sel
 import {
   MAX_MENTOR_PROFILE_ITEMS,
   MENTOR_SKILL_SUGGESTIONS,
-  MENTOR_TOOL_SUGGESTIONS,
+  getToolSuggestions,
 } from "@/constants/mentor-profile";
 
 // Zod Validation Schema for Profile Update
@@ -407,7 +407,7 @@ export function ProfileUpdateModal({
                   setTools(next);
                   setErrors((prev) => ({ ...prev, tools: "" }));
                 }}
-                options={MENTOR_TOOL_SUGGESTIONS}
+                options={getToolSuggestions()}
                 maxItems={MAX_MENTOR_PROFILE_ITEMS}
                 error={errors.tools}
               />
