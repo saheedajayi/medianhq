@@ -1,6 +1,6 @@
 import { CloudUpload } from "lucide-react";
 import Image from "next/image";
-import { SubmittedCheckIcon } from "@/components/ui/submitted-check-icon";
+import { SubmittedCheckIcon } from "@/components/ui/custom/submitted-check-icon";
 import { LandingStepCard } from "../shared/step-card";
 
 function FormPreview() {

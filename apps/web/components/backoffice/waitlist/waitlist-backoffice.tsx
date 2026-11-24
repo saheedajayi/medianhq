@@ -25,8 +25,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/base/card";
-import { verifyBackofficeAccessKey } from "@/features/backoffice/actions";
-import { useBackofficeStore } from "@/features/backoffice/store";
+import { verifyBackofficeAccessKey } from "@/components/backoffice/actions";
+import { useBackofficeStore } from "@/components/backoffice/store";
 import {
   backofficeWaitlistService,
   type WaitlistAudience,

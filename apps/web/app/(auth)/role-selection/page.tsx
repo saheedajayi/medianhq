@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
-import { RoleSelectionPage } from "@/features/auth/role-selection-page";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
+import { RoleSelectionPage } from "@/components/auth/role-selection-page";
 
 export const dynamic = "force-dynamic";
 

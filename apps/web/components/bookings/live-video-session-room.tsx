@@ -10,9 +10,9 @@ import {
 } from "@livekit/components-react";
 import { Booking } from "./types";
 import type { MeetingEntry } from "./session-lobby";
-import { LiveKitRoomProvider } from "@/components/ui/custom/livekit-room-provider";
-import { LiveKitVideoTile } from "@/components/ui/custom/livekit-video-tile";
-import { LiveKitCallControls } from "@/components/ui/custom/livekit-call-controls";
+import { LiveKitRoomProvider } from "./livekit-room-provider";
+import { LiveKitVideoTile } from "./livekit-video-tile";
+import { LiveKitCallControls } from "./livekit-call-controls";
 import { stopAllMediaTracks } from "./media-utils";
 import { toast } from "sonner";
 import {

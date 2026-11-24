@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
-import { EmailVerificationPage } from "@/features/auth/email-verification-page";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
+import { EmailVerificationPage } from "@/components/auth/email-verification-page";
 
 export const dynamic = "force-dynamic";
 

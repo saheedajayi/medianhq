@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AcceptAdminInvitePage } from "@/features/auth/accept-admin-invite-page";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
+import { AcceptAdminInvitePage } from "@/components/auth/accept-admin-invite-page";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
 
 export const dynamic = "force-dynamic";
 

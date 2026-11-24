@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChangePasswordForm } from "@/features/auth/change-password-form";
-import { SessionsManager } from "@/features/auth/sessions-manager";
-import { SecurityAuditTrail } from "@/features/auth/security-audit-trail";
+import { ChangePasswordForm } from "@/components/auth/change-password-form";
+import { SessionsManager } from "@/components/auth/sessions-manager";
+import { SecurityAuditTrail } from "@/components/auth/security-audit-trail";
 import { NotificationsTab } from "./mentee/notifications-tab";
 
 export function SettingsView() {

@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/base/select";
 import { CountrySelect } from "@/components/ui/custom/country-select";
-import { useWaitlistStore } from "@/features/waitlist/store";
+import { useWaitlistStore } from "@/components/waitlist/store";
 import { waitlistQueryKeys } from "@/services/waitlist/queries/query-keys";
 import { useCreateWaitlistEntry } from "@/services/waitlist/queries/waitlist.queries";
 import type { WaitlistAudienceTab } from "@/services/waitlist";

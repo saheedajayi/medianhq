@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
-import { MentorSubmittedPage } from "@/features/auth/mentor-submitted-page";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
+import { MentorSubmittedPage } from "@/components/auth/mentor-submitted-page";
 
 export const dynamic = "force-dynamic";
 

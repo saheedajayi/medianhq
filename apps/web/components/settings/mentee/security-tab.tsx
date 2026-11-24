@@ -6,7 +6,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { Laptop, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton, SkeletonGroup } from "@/components/ui/base/skeleton";
-import { changePasswordSchema } from "@/features/auth/change-password-form";
+import { changePasswordSchema } from "@/components/auth/change-password-form";
 import type { DeviceSession } from "@/services/auth/types";
 import {
   useChangePassword,

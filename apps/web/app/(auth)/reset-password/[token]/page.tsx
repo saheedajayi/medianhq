@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { AuthFormSkeleton } from "@/features/auth/auth-form-skeleton";
-import { NewPasswordPage } from "@/features/auth/new-password-page";
+import { AuthFormSkeleton } from "@/components/auth/auth-form-skeleton";
+import { NewPasswordPage } from "@/components/auth/new-password-page";
 
 export const dynamic = "force-dynamic";
 
